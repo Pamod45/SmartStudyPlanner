@@ -9,9 +9,13 @@ import SwiftUI
 
 @main
 struct SmartStudyPlannerApp: App {
+    @StateObject private var themeManager = ThemeManager()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(themeManager)
+                .environment(\.theme, themeManager.current)
         }
     }
 }
