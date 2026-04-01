@@ -22,7 +22,7 @@ struct ContentView: View {
             .tag(AppTab.dashboard)
 
             NavigationStack {
-                Text("Subjects")
+                SubjectsView()
             }
             .tabItem {
                 Label(AppTab.subjects.title, systemImage: AppTab.subjects.icon)

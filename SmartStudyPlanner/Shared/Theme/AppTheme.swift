@@ -43,6 +43,7 @@ struct ThemeTypography {
 struct ThemeSpacing {
     let xs: CGFloat
     let sm: CGFloat
+    let m: CGFloat
     let md: CGFloat
     let lg: CGFloat
     let xl: CGFloat
@@ -83,7 +84,7 @@ extension AppTheme {
             caption: .custom("SF Pro Text", size: 12, weight: .regular),
             label: .custom("SF Pro Text", size: 11, weight: .medium)
         ),
-        spacing: ThemeSpacing(xs: 4, sm: 8, md: 16, lg: 24, xl: 32,  xxl: 48),
+        spacing: ThemeSpacing(xs: 4, sm: 8, m: 12, md: 16, lg: 24, xl: 32,  xxl: 48),
         radius: ThemeRadius(sm: 8, md: 12, lg: 16, xl: 24, full: 999)
     )
 }
