@@ -65,7 +65,7 @@ extension AppTheme {
             background: Color(hex: "#0A0A0B"),
             surface: Color(hex: "#1F1F23"),
             error: Color(hex: "#EF4444"),
-            textPrimary: Color(hex: "#D9D9D9"),
+            textPrimary: Color(hex: "#E7E5E4"),
             textSecondary: Color(hex: "#ACABAA"),
             textOnPrimary: Color(hex: "#002442"),
             border: Color(hex: "#444444"),
@@ -83,7 +83,7 @@ extension AppTheme {
             caption: .custom("SF Pro Text", size: 12, weight: .regular),
             label: .custom("SF Pro Text", size: 11, weight: .medium)
         ),
-        spacing: ThemeSpacing(xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48),
+        spacing: ThemeSpacing(xs: 4, sm: 8, md: 16, lg: 24, xl: 32,  xxl: 48),
         radius: ThemeRadius(sm: 8, md: 12, lg: 16, xl: 24, full: 999)
     )
 }

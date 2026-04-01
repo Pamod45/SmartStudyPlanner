@@ -39,8 +39,8 @@ struct TextButton: View {
                     Image(systemName: iconName)
                         
                 }
-                Text(title)
-            }.font(theme.typography.bodyMedium)
+                Text(title).font(theme.typography.bodyMedium)
+            }
              .fontWeight(style == .bold ? .semibold : .regular)
              .foregroundColor(theme.colors.primary)
             
