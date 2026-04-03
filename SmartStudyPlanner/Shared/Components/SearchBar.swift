@@ -25,8 +25,8 @@ struct SearchBar: View {
                     .font(theme.typography.bodyLarge.weight(.medium))
             )
             .font(theme.typography.bodyLarge.weight(.semibold))
-                .foregroundColor(theme.colors.textPrimary)
-                .tint(theme.colors.primary)
+            .foregroundColor(theme.colors.textPrimary)
+            .tint(theme.colors.primary)
         }
         .padding(.horizontal, theme.spacing.md)
         .padding(.vertical, theme.spacing.md)

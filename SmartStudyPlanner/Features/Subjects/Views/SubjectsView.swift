@@ -67,12 +67,12 @@ struct SubjectsView: View {
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: theme.spacing.xs) {
-                Text("Learning Track")
-                    .font(theme.typography.bodyMedium)
-                    .fontWeight(.bold)
-                    .foregroundColor(theme.colors.textSecondary)
-                    .lineSpacing(2)
-                    .textCase(.uppercase)
+//                Text("Learning Track")
+//                    .font(theme.typography.bodyMedium)
+//                    .fontWeight(.bold)
+//                    .foregroundColor(theme.colors.textSecondary)
+//                    .lineSpacing(2)
+//                    .textCase(.uppercase)
                 
                 Text("Subjects")
                     .font(theme.typography.headingMedium)
@@ -88,8 +88,7 @@ struct SubjectsView: View {
                     .fontWeight(.semibold)
                     .foregroundColor(theme.colors.textPrimary)
                     .frame(width: 36, height: 36)
-                    .background(theme.colors.surface)
-                    .clipShape(Circle())
+                    .glassEffect(.regular, in: Circle())
             }
             
             
@@ -105,8 +104,7 @@ struct SubjectsView: View {
                     .fontWeight(.semibold)
                     .foregroundColor(theme.colors.textPrimary)
                     .frame(width: 36, height: 36)
-                    .background(theme.colors.surface)
-                    .clipShape(Circle())
+                    .glassEffect(.regular, in: Circle())
             }
             
             Menu {
@@ -121,8 +119,7 @@ struct SubjectsView: View {
                     .fontWeight(.semibold)
                     .foregroundColor(theme.colors.textPrimary)
                     .frame(width: 36, height: 36)
-                    .background(theme.colors.surface)
-                    .clipShape(Circle())
+                    .glassEffect(.regular, in: Circle())
             }
         }
     }

@@ -16,6 +16,7 @@ struct AppNotification: Identifiable {
     
     var color : Color {
         switch notificationType {
+            case .all: return .clear    
             case .study: return .blue
             case .deadline: return .red
             case .quiz: return .purple
@@ -25,6 +26,7 @@ struct AppNotification: Identifiable {
     
     var icon : String {
         switch notificationType {
+            case .all: return ""
             case .study: return "book.fill"
             case .deadline: return "exclamationmark.triangle.fill"
             case .quiz: return "pencil.and.list.clipboard"
@@ -33,11 +35,14 @@ struct AppNotification: Identifiable {
     }
 }
 
-enum NotificationType: String {
+enum NotificationType: String, CaseIterable, Identifiable {
+    case all = "All"
     case study = "Study"
     case deadline = "Deadline"
     case quiz = "Quizzes"
     case general = "General"
+    
+    var id: String { self.rawValue }
 }
 
 extension AppNotification {
@@ -76,7 +81,7 @@ extension AppNotification {
                 }
             }
         }
-    static let samples: [AppNotification] = [
+    static var samples: [AppNotification] = [
         AppNotification(title: "Exam Tomorrow", message:"iOS Development Exam is happening tomorrow at 10:00 AM.", date: Date(), notificationType: .deadline),
         AppNotification(title: "Upcoming Session",message:"SwiftUI Layout session starts in 15 minutes.", date: Date(), notificationType: .study),
         AppNotification(title: "Daily Goal Met", message:"Awesome! You've completed 4 hours of study today.", date: Date(), notificationType: .general),

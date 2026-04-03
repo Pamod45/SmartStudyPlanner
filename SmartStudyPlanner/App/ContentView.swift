@@ -55,6 +55,8 @@ struct ContentView: View {
         }
         .environment(\.theme, themeManager.current)
         .tint(themeManager.current.colors.primary)
+        .preferredColorScheme(.dark)
+        
     }
 }
 
