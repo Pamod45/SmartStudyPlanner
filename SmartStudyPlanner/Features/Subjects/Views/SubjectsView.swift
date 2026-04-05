@@ -44,17 +44,31 @@ struct SubjectsView: View {
                     .fill(Color.clear)
                     .frame(height: theme.spacing.md)
                 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: theme.spacing.md) {
-                        
-                        ForEach(filtered) { subject in
-                            SubjectCard(subject: subject) {
-                            }
+                List() {
+                    ForEach(filtered) { subject in
+                        SubjectCard(subject: subject) {
+                        }
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(
+                            top: 0,
+                            leading: theme.spacing.sm,
+                            bottom: theme.spacing.md,
+                            trailing: theme.spacing.sm
+                        ))
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                subjects.removeAll { $0.id == subject.id }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }.tint(Color.red)
                         }
                     }
-                    .padding(.horizontal, theme.spacing.sm)
-                    .padding(.bottom, theme.spacing.lg)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .scrollIndicators(.hidden)
+                .background(theme.colors.background)
             }
         }.sheet(isPresented: $showAddSubject) {
             AddSubjectSheet { newSubject in
@@ -67,12 +81,6 @@ struct SubjectsView: View {
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: theme.spacing.xs) {
-//                Text("Learning Track")
-//                    .font(theme.typography.bodyMedium)
-//                    .fontWeight(.bold)
-//                    .foregroundColor(theme.colors.textSecondary)
-//                    .lineSpacing(2)
-//                    .textCase(.uppercase)
                 
                 Text("Subjects")
                     .font(theme.typography.headingMedium)

@@ -64,7 +64,7 @@ struct NotificationListView: View {
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }.tint(Color.red)
-                        }
+                            }
                     }
                 }
                 .listStyle(.plain)
