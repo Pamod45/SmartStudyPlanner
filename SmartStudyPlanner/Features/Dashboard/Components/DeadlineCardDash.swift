@@ -15,7 +15,7 @@ struct DeadlineCard: View {
     var body: some View {
         HStack(alignment: .center, spacing: theme.spacing.md) {
             VStack {
-                Text(deadline.month.uppercased())
+                Text(deadline.month)
                     .font(theme.typography.caption)
                     .fontWeight(.semibold)
                     .foregroundColor(deadline.subjectColor)
@@ -24,7 +24,7 @@ struct DeadlineCard: View {
                     .fontWeight(.bold)
                     .foregroundColor(theme.colors.textPrimary)
             }
-            .frame(width: 48,height: 48)
+            .frame(width: 48, height: 48)
             .cornerRadius(theme.spacing.sm)
             .overlay(
                 RoundedRectangle(cornerRadius: theme.spacing.sm)
@@ -32,11 +32,11 @@ struct DeadlineCard: View {
             )
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(deadline.title)
+                Text(deadline.name)
                     .font(theme.typography.bodyLarge)
                     .fontWeight(.semibold)
                     .foregroundColor(theme.colors.textPrimary)
-                Text(deadline.subtitle)
+                Text(deadline.formattedDate)
                     .font(theme.typography.bodyMedium)
                     .foregroundColor(theme.colors.textSecondary)
             }
@@ -44,11 +44,9 @@ struct DeadlineCard: View {
             Spacer()
 
             RoundNavButton(action: action)
-            
         }
         .padding(theme.spacing.md)
         .background(theme.colors.surface)
         .cornerRadius(theme.radius.xl)
     }
 }
-
