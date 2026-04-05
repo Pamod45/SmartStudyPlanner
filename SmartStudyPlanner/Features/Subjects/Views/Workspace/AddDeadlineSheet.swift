@@ -124,6 +124,7 @@ struct AddDeadlineSheet: View {
                     .padding(.bottom, theme.spacing.xl)
                 }
             }
+            .background(theme.colors.surface.opacity(0.2))
         }
     }
 

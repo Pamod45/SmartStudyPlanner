@@ -13,48 +13,52 @@ struct WorkspaceDeadlineCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: theme.spacing.sm) {
-            HStack {
-                Spacer()
-                if let tag = deadline.tags.first {
-                    Text(tag.rawValue.replacingOccurrences(of: "#", with: ""))
-                        .font(theme.typography.labelSmall)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white.opacity(0.7))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.15))
-                        .clipShape(Capsule())
+            HStack(alignment: .top) {
+                ZStack {
+                    Rectangle()
+                        .fill(deadline.color.opacity(0.2))
+                        .frame(width: 48, height: 48)
+                        .cornerRadius(theme.radius.lg)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: theme.radius.lg)
+                                .stroke(deadline.color.opacity(0.4), lineWidth: 1)
+                        )
+                    Image(systemName: deadline.icon )
+                        .font(theme.typography.headingMedium.weight(.semibold))
+                        .foregroundColor(deadline.color)
                 }
+
+                Spacer()
+                
+                Text(deadline.tag.rawValue)
+                    .font(theme.typography.labelSmall)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white.opacity(0.7))
+                    .padding(.horizontal, theme.spacing.sm)
+                    .padding(.vertical, theme.spacing.xs)
+                    .background(Color.white.opacity(0.15))
+                    .clipShape(Capsule())
+                
+
             }
 
             Spacer()
+            
+            VStack (spacing:theme.spacing.sm){
+                Text(deadline.name)
+                    .font(theme.typography.bodyMedium)
+                    .fontWeight(.bold)
+                    .foregroundColor(theme.colors.textPrimary)
 
-            Image(systemName: deadline.isHighPriority ? "calendar.badge.exclamationmark" : "doc.text.fill")
-                .font(.system(size: 28))
-                .foregroundColor(.white.opacity(0.9))
-
-            Spacer()
-
-            Text(deadline.name)
-                .font(theme.typography.bodyMedium)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-
-            Text(deadline.formattedDate)
-                .font(theme.typography.bodySmall)
-                .foregroundColor(.white.opacity(0.7))
+                Text(deadline.formattedDate)
+                    .font(theme.typography.caption)
+                    .foregroundColor(theme.colors.textSecondary)
+            }
+            
         }
-        .padding(theme.spacing.md)
-        .frame(width: 160, height: 160)
-        .background(
-            LinearGradient(
-                colors: deadline.isHighPriority
-                    ? [Color.red.opacity(0.8), Color.orange.opacity(0.6)]
-                    : [theme.colors.primary.opacity(0.8), theme.colors.primary.opacity(0.5)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
+        .padding(theme.spacing.lg)
+        .frame(width: 240, height: 175)
+        .background(theme.colors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
     }
 }

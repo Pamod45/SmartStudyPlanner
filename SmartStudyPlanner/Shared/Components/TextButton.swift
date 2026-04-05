@@ -36,7 +36,7 @@ struct TextButton: View {
         Button(action: action) {
             HStack(spacing: theme.spacing.xs) {
                 if let iconName = icon {
-                    Image(systemName: iconName)
+                    Image(systemName: iconName).font(theme.typography.caption)
                         
                 }
                 Text(title).font(theme.typography.bodyMedium)

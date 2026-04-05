@@ -14,10 +14,7 @@ struct DashboardView: View {
         StudySession(subject: "Web API", title: "REST API", timeRange: "8:30PM - 9:00PM", duration: "30 min", subjectColor: Color(hex: "#F9ABFF"))
     ]
 
-    private let deadlines: [Deadline] = [
-        Deadline(month: "APR", day: 18, title: "Data Structures CW 1", subtitle: "Class Test Physical", subjectColor: Color(hex: "#93C5FF") ),
-        Deadline(month: "APR", day: 25, title: "iOS Development Viva", subtitle: "Final Presentations and Viva", subjectColor: Color(hex: "#F9ABFF"))
-    ]
+    private let deadlines: [Deadline] = Deadline.dashboardSamples
 
     private let shortcuts: [Shortcut] = [
         Shortcut(title: "SCAN NOTES", icon: "doc.viewfinder", color: .blue),

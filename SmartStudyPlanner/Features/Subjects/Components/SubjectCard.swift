@@ -25,8 +25,8 @@ struct SubjectCard: View {
                     .foregroundColor(theme.colors.textPrimary)
 
                 Spacer()
-
-                RoundNavButton(action: {})
+                
+                RoundNavButton(action: onTap)
             }
 
             HStack(alignment: .bottom) {

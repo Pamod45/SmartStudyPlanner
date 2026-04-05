@@ -38,6 +38,7 @@ struct ThemeTypography {
     let bodySmall: Font
     let caption: Font
     let label: Font
+    let labelSmall: Font
 }
 
 struct ThemeSpacing {
@@ -82,7 +83,8 @@ extension AppTheme {
             bodyMedium: .custom("SF Pro Text", size: 14, weight: .regular),
             bodySmall: .custom("SF Pro Text", size: 13, weight: .regular),
             caption: .custom("SF Pro Text", size: 12, weight: .regular),
-            label: .custom("SF Pro Text", size: 11, weight: .medium)
+            label: .custom("SF Pro Text", size: 11, weight: .medium),
+            labelSmall: .custom("SF Pro Text", size: 10, weight: .medium)
         ),
         spacing: ThemeSpacing(xs: 4, sm: 8, m: 12, md: 16, lg: 24, xl: 32,  xxl: 48),
         radius: ThemeRadius(sm: 8, md: 12, lg: 16, xl: 24, full: 999)
