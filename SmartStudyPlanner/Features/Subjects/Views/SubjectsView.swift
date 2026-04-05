@@ -10,14 +10,21 @@ import SwiftUI
 struct SubjectsView: View {
     @Environment(\.theme) var theme
     @State private var searchText: String = ""
-
-    let subjects: [Subject] = Subject.samples
+    @State private var sortOption = 0
+    @State private var isAscending: Bool = true
+    @State private var showAddSubject: Bool = false
+    @State private var subjects: [Subject] = Subject.samples
 
     var filtered: [Subject] {
-        if searchText.isEmpty { return subjects }
-        return subjects.filter {
+        var list = searchText.isEmpty ? subjects : subjects.filter {
             $0.name.localizedCaseInsensitiveContains(searchText)
         }
+        
+        if sortOption == 1 {
+            list.sort { isAscending ? ($0.name < $1.name) : ($0.name > $1.name) }
+        }
+        
+        return list
     }
 
     var body: some View {
@@ -33,33 +40,47 @@ struct SubjectsView: View {
                 SearchBar(text: $searchText, placeholder: "Search subjects")
                     .padding(.horizontal, theme.spacing.sm)
                     
-                Rectangle().frame(height: theme.spacing.md)
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(height: theme.spacing.md)
                 
-                ScrollView {
-                    VStack(spacing: theme.spacing.md) {
-                        
-                        ForEach(filtered) { subject in
-                            SubjectCard(subject: subject) {
-                            }
+                List() {
+                    ForEach(filtered) { subject in
+                        SubjectCard(subject: subject) {
+                        }
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(
+                            top: 0,
+                            leading: theme.spacing.sm,
+                            bottom: theme.spacing.md,
+                            trailing: theme.spacing.sm
+                        ))
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                subjects.removeAll { $0.id == subject.id }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }.tint(Color.red)
                         }
                     }
-                    .padding(.horizontal, theme.spacing.sm)
-                    .padding(.bottom, theme.spacing.lg)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .scrollIndicators(.hidden)
+                .background(theme.colors.background)
             }
-            
+        }.sheet(isPresented: $showAddSubject) {
+            AddSubjectSheet { newSubject in
+                subjects.append(newSubject)
+            }
+            .environment(\.theme, theme)
         }
     }
     
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: theme.spacing.xs) {
-                Text("Learning Track")
-                    .font(theme.typography.bodyMedium)
-                    .fontWeight(.bold)
-                    .foregroundColor(theme.colors.textSecondary)
-                    .lineSpacing(2)
-                    .textCase(.uppercase)
                 
                 Text("Subjects")
                     .font(theme.typography.headingMedium)
@@ -69,24 +90,44 @@ struct SubjectsView: View {
             
             Spacer()
             
-            Button { }
+            Button { showAddSubject = true  }
             label: {
                 Image(systemName: "plus")
                     .fontWeight(.semibold)
                     .foregroundColor(theme.colors.textPrimary)
                     .frame(width: 36, height: 36)
-                    .background(theme.colors.surface)
-                    .clipShape(Circle())
+                    .glassEffect(.regular, in: Circle())
             }
             
-            Button { }
-            label: {
+            
+            Menu {
+                Button{ sortOption = 0 } label: {
+                    Label("Date Created", systemImage: sortOption == 0 ? "checkmark" : "")
+                }
+                Button{ sortOption = 1 } label: {
+                    Label("Alphabetical", systemImage: sortOption == 1 ? "checkmark" : "")
+                }
+            } label: {
                 Image(systemName: "slider.horizontal.3")
                     .fontWeight(.semibold)
                     .foregroundColor(theme.colors.textPrimary)
                     .frame(width: 36, height: 36)
-                    .background(theme.colors.surface)
-                    .clipShape(Circle())
+                    .glassEffect(.regular, in: Circle())
+            }
+            
+            Menu {
+                Button{ isAscending = true } label: {
+                    Label("Ascending", systemImage:   isAscending ? "checkmark" : "")
+                }
+                Button{ isAscending = false } label: {
+                    Label("Descending", systemImage: !isAscending ? "checkmark" : "")
+                }
+            } label: {
+                Image(systemName: isAscending ? "arrow.up" : "arrow.down")
+                    .fontWeight(.semibold)
+                    .foregroundColor(theme.colors.textPrimary)
+                    .frame(width: 36, height: 36)
+                    .glassEffect(.regular, in: Circle())
             }
         }
     }

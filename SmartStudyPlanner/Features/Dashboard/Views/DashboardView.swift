@@ -71,8 +71,10 @@ struct DashboardView: View {
             }
 
             Spacer()
-
-            Button {
+            
+            NavigationLink {
+                NotificationListView()
+                    .environment(\.theme, theme)
             } label: {
                 Image(systemName: "bell")
                     .font(.system(size: 20))
