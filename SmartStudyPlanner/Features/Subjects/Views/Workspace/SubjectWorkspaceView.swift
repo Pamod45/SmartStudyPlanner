@@ -26,6 +26,8 @@ struct SubjectWorkspaceView: View {
     @State private var resources: [Resource]
     @State private var isDeadlinesExpanded: Bool = false
     @State private var showAddDeadline: Bool = false
+    @State private var selectedDeadline: Deadline? = nil
+    @State private var showAddResource: Bool = false
 
     init(subject: Subject) {
         self.subject = subject
@@ -48,7 +50,8 @@ struct SubjectWorkspaceView: View {
                         DeadlineSection(
                             deadlines: $deadlines,
                             isExpanded: $isDeadlinesExpanded,
-                            onAdd: { showAddDeadline = true }
+                            onAdd: { showAddDeadline = true },
+                            onCardTap: { deadline in selectedDeadline = deadline }
                         )
                         .padding(.bottom, theme.spacing.md)
 
@@ -68,6 +71,25 @@ struct SubjectWorkspaceView: View {
         .sheet(isPresented: $showAddDeadline) {
             AddDeadlineSheet(subjectID: subject.id) { newDeadline in
                 deadlines.append(newDeadline)
+            }
+            .environment(\.theme, theme)
+        }
+        .sheet(item: $selectedDeadline) { deadline in
+            AddDeadlineSheet(
+                subjectID: subject.id,
+                existingDeadline: deadline,
+                onSave: { _ in },
+                onUpdate: { updated in
+                    if let index = deadlines.firstIndex(where: { $0.id == updated.id }) {
+                        deadlines[index] = updated
+                    }
+                }
+            )
+            .environment(\.theme, theme)
+        }
+        .sheet(isPresented: $showAddResource) {
+            AddResourceSheet { newResource in
+                resources.append(newResource)
             }
             .environment(\.theme, theme)
         }
@@ -137,10 +159,10 @@ struct SubjectWorkspaceView: View {
 //                        Image(systemName: "magnifyingglass")
 //                            .font(.system(size: 12, weight: .semibold))
 //                            .foregroundColor(theme.colors.textPrimary)
-//                        
+//
 //                    }
 
-                    TextButton(title: "Add", icon: "plus" , style: .bold, action: {} )
+                    TextButton(title: "Add", icon: "plus", style: .bold, action: { showAddResource = true })
                 }
 //                HStack{
 //                    Button { dismiss() } label: {

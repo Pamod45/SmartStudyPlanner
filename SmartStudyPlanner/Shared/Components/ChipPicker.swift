@@ -19,7 +19,7 @@ struct ChipPicker<T: Identifiable>: View {
                     Button(action: { selection = item }) {
                         Text(labelProvider(item))
                             .font(theme.typography.bodyMedium.weight(.semibold))
-                            .padding(.horizontal, theme.spacing.lg)
+                            .padding(.horizontal, (theme.spacing.md+theme.spacing.lg) / 2)
                             .padding(.vertical, theme.spacing.m)
                             .foregroundColor(selection.id == item.id ? .white : theme.colors.textPrimary)
                             .background(selection.id == item.id ? theme.colors.primary : theme.colors.surface)
