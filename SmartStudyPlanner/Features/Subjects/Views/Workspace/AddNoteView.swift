@@ -4,6 +4,7 @@ struct AddNoteView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
 
+    var existingResource: Resource? = nil
     var onSave: (Resource) -> Void
 
     @State private var title: String = ""
@@ -16,14 +17,23 @@ struct AddNoteView: View {
 
             VStack(spacing: 0) {
                 topBar
-
                 Divider().background(theme.colors.border.opacity(0.2))
-
                 MarkdownEditorView(storage: $storage)
                     .environment(\.theme, theme)
             }
         }
         .navigationBarHidden(true)
+        .onAppear {
+            if let existing = existingResource {
+                title = existing.name
+                if let data = existing.noteData,
+                   let attributed = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSAttributedString.self, from: data) {
+                    storage = attributed
+                } else if let content = existing.noteContent {
+                    storage = NSAttributedString(string: content)
+                }
+            }
+        }
     }
 
     private var topBar: some View {
@@ -64,11 +74,14 @@ struct AddNoteView: View {
     }
 
     private func save() {
+        let data = try? NSKeyedArchiver.archivedData(withRootObject: storage, requiringSecureCoding: true)
         let resource = Resource(
-            name: title,
+            id: existingResource?.id ?? UUID(),
+            name: title.isEmpty ? (existingResource?.name ?? "Untitled") : title,
             type: .note,
-            subjectID: UUID(),
-            noteContent: storage.string
+            subjectID: existingResource?.subjectID ?? UUID(),
+            noteContent: storage.string,
+            noteData: data
         )
         onSave(resource)
         dismiss()

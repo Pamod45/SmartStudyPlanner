@@ -42,6 +42,7 @@ struct Resource: Identifiable {
     var subjectID: UUID
     var url: String?
     var noteContent: String?
+    var noteData: Data?
     var filePath: String?
 
     init(
@@ -52,6 +53,7 @@ struct Resource: Identifiable {
         subjectID: UUID = UUID(),
         url: String? = nil,
         noteContent: String? = nil,
+        noteData: Data? = nil,
         filePath: String? = nil
     ) {
         self.id = id
@@ -61,6 +63,7 @@ struct Resource: Identifiable {
         self.subjectID = subjectID
         self.url = url
         self.noteContent = noteContent
+        self.noteData = noteData
         self.filePath = filePath
     }
 

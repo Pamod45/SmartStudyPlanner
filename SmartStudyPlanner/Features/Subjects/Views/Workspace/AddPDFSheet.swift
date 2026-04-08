@@ -1,26 +1,29 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
-struct AddLinkSheet: View {
+struct AddPDFSheet: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
-    
+
     var existingResource: Resource? = nil
     var onSave: (Resource) -> Void
     var onUpdate: ((Resource) -> Void)? = nil
-    
+
     @State private var name: String = ""
-    @State private var url: String = ""
-    
+    @State private var filePath: String = ""
+    @State private var fileSize: String = ""
+    @State private var showFilePicker: Bool = false
+
     private var isEditing: Bool { existingResource != nil }
-    
+
     private var isValid: Bool {
-        !name.isEmpty && !url.isEmpty && url.contains(".")
+        !name.isEmpty && !filePath.isEmpty
     }
-    
+
     var body: some View {
         ZStack {
             theme.colors.background.ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
                 HStack {
                     Button {
@@ -33,16 +36,16 @@ struct AddLinkSheet: View {
                             .background(theme.colors.surface)
                             .clipShape(Circle())
                     }
-                    
+
                     Spacer()
-                    
-                    Text(isEditing ? "Edit Link" : "Add Link")
+
+                    Text(isEditing ? "Edit PDF" : "Add PDF")
                         .font(theme.typography.headingMedium)
                         .fontWeight(.bold)
                         .foregroundColor(theme.colors.textPrimary)
-                    
+
                     Spacer()
-                    
+
                     Button("Save") {
                         save()
                     }
@@ -54,30 +57,30 @@ struct AddLinkSheet: View {
                 .padding(.horizontal, theme.spacing.lg)
                 .padding(.top, theme.spacing.lg)
                 .padding(.bottom, theme.spacing.md)
-                
+
                 Divider().background(theme.colors.border.opacity(0.3))
-                
+
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: theme.spacing.xl) {
                         ZStack {
                             RoundedRectangle(cornerRadius: theme.radius.xl)
-                                .fill(Color.orange.opacity(0.1))
+                                .fill(Color.red.opacity(0.1))
                                 .frame(height: 100)
                             VStack(spacing: theme.spacing.sm) {
-                                Image(systemName: "link.circle.fill")
+                                Image(systemName: "doc.richtext.fill")
                                     .font(.system(size: 36))
-                                    .foregroundColor(.orange)
-                                Text(isEditing ? "Update your saved URL" : "Save a URL as a resource")
+                                    .foregroundColor(.red)
+                                Text(isEditing ? "Update your PDF resource" : "Import a PDF as a resource")
                                     .font(theme.typography.bodySmall)
                                     .foregroundColor(theme.colors.textSecondary)
                             }
                         }
-                        
+
                         FieldSection(title: "RESOURCE NAME") {
                             TextField(
                                 "",
                                 text: $name,
-                                prompt: Text("e.g., Apple Developer Docs")
+                                prompt: Text("e.g., Lecture Slides Week 1")
                                     .foregroundColor(theme.colors.textSecondary)
                             )
                             .font(theme.typography.bodyMedium)
@@ -87,56 +90,74 @@ struct AddLinkSheet: View {
                             .background(theme.colors.surface)
                             .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
                         }
-                        
-                        FieldSection(title: "URL") {
-                            HStack(spacing: theme.spacing.sm) {
-                                Image(systemName: "link")
-                                    .foregroundColor(theme.colors.textSecondary)
-                                    .font(.system(size: 14))
-                                
-                                TextField(
-                                    "",
-                                    text: $url,
-                                    prompt: Text("https://...")
+
+                        FieldSection(title: "PDF FILE") {
+                            Button {
+                                showFilePicker = true
+                            } label: {
+                                HStack(spacing: theme.spacing.sm) {
+                                    Image(systemName: filePath.isEmpty ? "doc.badge.plus" : "doc.richtext.fill")
+                                        .foregroundColor(filePath.isEmpty ? theme.colors.textSecondary : .red)
+                                        .font(.system(size: 16))
+
+                                    Text(filePath.isEmpty ? "Select PDF file..." : (name.isEmpty ? "File selected" : name))
+                                        .font(theme.typography.bodyMedium)
+                                        .foregroundColor(filePath.isEmpty ? theme.colors.textSecondary : theme.colors.textPrimary)
+
+                                    Spacer()
+
+                                    if !fileSize.isEmpty {
+                                        Text(fileSize)
+                                            .font(theme.typography.bodySmall)
+                                            .foregroundColor(theme.colors.textSecondary)
+                                    }
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
                                         .foregroundColor(theme.colors.textSecondary)
-                                )
-                                .font(theme.typography.bodyMedium)
-                                .foregroundColor(theme.colors.textPrimary)
-                                .tint(theme.colors.primary)
-                                .keyboardType(.URL)
-                                .autocapitalization(.none)
-                                .autocorrectionDisabled()
+                                }
+                                .padding(theme.spacing.md)
+                                .background(theme.colors.surface)
+                                .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
                             }
-                            .padding(theme.spacing.md)
-                            .background(theme.colors.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(theme.spacing.lg)
                 }
             }
         }
+        .sheet(isPresented: $showFilePicker) {
+            FilePickerView { resource in
+                filePath = resource.filePath ?? ""
+                fileSize = resource.size
+                if name.isEmpty { name = resource.name }
+            }
+            .ignoresSafeArea()
+        }
         .onAppear {
             if let existing = existingResource {
                 name = existing.name
-                url = existing.url ?? ""
+                filePath = existing.filePath ?? ""
+                fileSize = existing.size
             }
         }
     }
-    
+
     private func save() {
-        let finalURL = url.hasPrefix("http") ? url : "https://\(url)"
         let resource = Resource(
             id: existingResource?.id ?? UUID(),
             name: name,
-            type: .link,
+            type: .pdf,
+            size: fileSize,
             subjectID: existingResource?.subjectID ?? UUID(),
-            url: finalURL
+            filePath: filePath
         )
         if isEditing {
             onUpdate?(resource)
         } else {
             onSave(resource)
         }
+        dismiss()
     }
 }

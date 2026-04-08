@@ -28,6 +28,15 @@ struct SubjectWorkspaceView: View {
     @State private var showAddDeadline: Bool = false
     @State private var selectedDeadline: Deadline? = nil
     @State private var showAddResource: Bool = false
+    @State private var searchText: String = ""
+    @State private var isSearching: Bool = false
+    @State private var selectedNote: Resource? = nil
+    @State private var selectedLink: Resource? = nil
+    @State private var selectedPDF: Resource? = nil
+    private var filteredResources: [Resource] {
+        if searchText.isEmpty { return resources }
+        return resources.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
 
     init(subject: Subject) {
         self.subject = subject
@@ -45,25 +54,34 @@ struct SubjectWorkspaceView: View {
                     .padding(.vertical, theme.spacing.md)
                     .background(theme.colors.background)
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        DeadlineSection(
-                            deadlines: $deadlines,
-                            isExpanded: $isDeadlinesExpanded,
-                            onAdd: { showAddDeadline = true },
-                            onCardTap: { deadline in selectedDeadline = deadline }
-                        )
+                DeadlineSection(
+                    deadlines: $deadlines,
+                    isExpanded: $isDeadlinesExpanded,
+                    onAdd: { showAddDeadline = true },
+                    onCardTap: { deadline in selectedDeadline = deadline }
+                )
+                .padding(.horizontal, theme.spacing.sm)
+                .padding(.bottom, theme.spacing.md)
+
+                workspaceTabPicker
+                    .padding(.horizontal, theme.spacing.sm)
+                    .padding(.bottom, theme.spacing.md)
+
+                tabContentHeader
+                    .padding(.horizontal, theme.spacing.sm)
+                    .padding(.bottom, theme.spacing.lg)
+
+                if isSearching && selectedTab == .resources {
+                    
+                    SearchBar(text: $searchText, placeholder: "Search subjects")
+                        .padding(.horizontal, theme.spacing.sm)
                         .padding(.bottom, theme.spacing.md)
+                    
+                }
 
-                        workspaceTabPicker
-                            
-                            .padding(.bottom, theme.spacing.md)
-
-                        tabContentHeader
-                            .padding(.bottom, theme.spacing.md)
-
-                        tabContent
-                    }.padding(.horizontal, theme.spacing.sm)
+                ScrollView(showsIndicators: false) {
+                    tabContent
+                        .padding(.horizontal, theme.spacing.sm)
                 }
             }
         }
@@ -91,6 +109,38 @@ struct SubjectWorkspaceView: View {
             AddResourceSheet { newResource in
                 resources.append(newResource)
             }
+            .environment(\.theme, theme)
+        }
+        .sheet(item: $selectedNote) { note in
+            AddNoteView(existingResource: note) { updatedResource in
+                if let index = resources.firstIndex(where: { $0.id == updatedResource.id }) {
+                    resources[index] = updatedResource
+                }
+            }
+            .environment(\.theme, theme)
+        }
+        .sheet(item: $selectedLink) { link in
+            AddLinkSheet(
+                existingResource: link,
+                onSave: { _ in },
+                onUpdate: { updated in
+                    if let index = resources.firstIndex(where: { $0.id == updated.id }) {
+                        resources[index] = updated
+                    }
+                }
+            )
+            .environment(\.theme, theme)
+        }
+        .sheet(item: $selectedPDF) { pdf in
+            AddPDFSheet(
+                existingResource: pdf,
+                onSave: { _ in },
+                onUpdate: { updated in
+                    if let index = resources.firstIndex(where: { $0.id == updated.id }) {
+                        resources[index] = updated
+                    }
+                }
+            )
             .environment(\.theme, theme)
         }
     }
@@ -153,36 +203,19 @@ struct SubjectWorkspaceView: View {
             Spacer()
             
             if selectedTab == .resources {
-                HStack(spacing: theme.spacing.md){
-//                    Button {
-//                    } label: {
-//                        Image(systemName: "magnifyingglass")
-//                            .font(.system(size: 12, weight: .semibold))
-//                            .foregroundColor(theme.colors.textPrimary)
-//
-//                    }
-
+                HStack(spacing: theme.spacing.md) {
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            isSearching.toggle()
+                            if !isSearching { searchText = "" }
+                        }
+                    } label: {
+                        Image(systemName: isSearching ? "xmark" : "magnifyingglass")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(theme.colors.textPrimary)
+                    }
                     TextButton(title: "Add", icon: "plus", style: .bold, action: { showAddResource = true })
                 }
-//                HStack{
-//                    Button { dismiss() } label: {
-//                        Image(systemName: "magnifyingglass")
-//                            .fontWeight(.semibold)
-//                            .foregroundColor(theme.colors.textSecondary)
-//                            .frame(width: 36, height: 36)
-//                    }
-//                    Button { dismiss() } label: {
-//                        Image(systemName: "plus")
-//                            .fontWeight(.semibold)
-//                            .foregroundColor(theme.colors.textSecondary)
-//                            .frame(width: 36, height: 36)                    }
-//                }.glassEffect(.regular, in: Capsule())
-//                .overlay(
-//                    Capsule()
-//                        .stroke(theme.colors.textSecondary.opacity(0.1), lineWidth: 0.5)
-//                )
-//                .font(theme.typography.bodyMedium)
-                
             }
                 
             
@@ -190,14 +223,25 @@ struct SubjectWorkspaceView: View {
         }
         .padding(.top, theme.spacing.md)
     }
-    
 
 
     @ViewBuilder
     private var tabContent: some View {
         switch selectedTab {
         case .resources:
-            ResourcesTabView(resources: $resources)
+            ResourcesTabView(
+                resources: $resources,
+                filteredResources: filteredResources,
+                onOpenNote: { resource in
+                    if resource.type == .note {
+                        selectedNote = resource
+                    } else if resource.type == .link {
+                        selectedLink = resource
+                    } else if resource.type == .pdf {
+                        selectedPDF = resource
+                    }
+                }
+            )
         case .studyPath:
             StudyPathTabView()
         case .quizzes:
@@ -207,7 +251,6 @@ struct SubjectWorkspaceView: View {
         }
     }
 }
-
 #Preview {
     SubjectWorkspaceView(subject: Subject.samples.first!)
         .environment(\.theme, AppTheme.defaultTheme)

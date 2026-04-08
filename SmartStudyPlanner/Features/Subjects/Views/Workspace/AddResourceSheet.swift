@@ -56,22 +56,27 @@ struct AddResourceSheet: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(theme.colors.textPrimary)
                             .frame(width: 36, height: 36)
-                            .background(theme.colors.surface)
-                            .clipShape(Circle())
+                            .glassEffect(.regular, in: Circle())
                     }
                 }
                 .padding(.horizontal, theme.spacing.lg)
                 .padding(.top, theme.spacing.xl)
 
                 VStack(spacing: theme.spacing.md) {
-                    ForEach(options, id: \.first?.title) { row in
-                        HStack(spacing: theme.spacing.md) {
-                            ForEach(row, id: \.title) { option in
-                                optionTile(option)
-                            }
+                    HStack(spacing: theme.spacing.md) {
+                        ForEach(options[0], id: \.title) { option in
+                            optionTile(option)
                         }
-                        .padding(.horizontal, theme.spacing.lg)
                     }
+                    .padding(.horizontal, theme.spacing.lg)
+
+                    HStack(spacing: theme.spacing.md) {
+                        ForEach(options[1], id: \.title) { option in
+                            optionTile(option)
+                                .frame(width: (UIScreen.main.bounds.width - (theme.spacing.lg * 2) - (theme.spacing.md * 2)) / 3)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
 
                 Spacer()
@@ -96,7 +101,8 @@ struct AddResourceSheet: View {
                 AddLinkSheet { resource in onAdd(resource); dismiss() }
                     .environment(\.theme, theme)
             case .addPDF:
-                FilePickerWrapper { resource in onAdd(resource); dismiss() }
+                AddPDFSheet { resource in onAdd(resource); dismiss() }
+                    .environment(\.theme, theme)
             }
         }
     }
