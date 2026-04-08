@@ -61,7 +61,7 @@ struct AddSubjectSheet: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: theme.spacing.xl) {
 
-                        fieldSection(title: "SUBJECT NAME") {
+                        FieldSection(title: "SUBJECT NAME") {
                             TextField(
                                 "",
                                 text: $subjectName,
@@ -77,11 +77,11 @@ struct AddSubjectSheet: View {
                             .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
                         }
 
-                        fieldSection(title: "COLOR") {
+                        FieldSection(title: "COLOR") {
                             ColorPickerRow(selectedColor: $selectedColor)
                         }
 
-                        fieldSection(title: "ADDITIONAL NOTES") {
+                        FieldSection(title: "ADDITIONAL NOTES") {
                             ZStack(alignment: .topLeading) {
                                 
                             
@@ -108,8 +108,7 @@ struct AddSubjectSheet: View {
                             .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
                         }
                     }
-                    .padding(.horizontal, theme.spacing.lg)
-                    .padding(.top, theme.spacing.lg)
+                    .padding(theme.spacing.lg)
                 }
             }
             .padding(.vertical, theme.spacing.lg)
@@ -118,16 +117,7 @@ struct AddSubjectSheet: View {
         }
     }
 
-    @ViewBuilder
-    private func fieldSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: theme.spacing.m) {
-            Text(title)
-                .font(theme.typography.caption.weight(.bold))
-                .foregroundColor(theme.colors.textPrimary)
-                .tracking(2)
-            content()
-        }
-    }
+    
 }
 
 #Preview {

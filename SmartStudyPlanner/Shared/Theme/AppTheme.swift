@@ -19,6 +19,7 @@ struct ThemeColors {
     let secondary: Color
     let background: Color
     let surface: Color
+    let onSurface: Color
     let error: Color
     let textPrimary: Color
     let textSecondary: Color
@@ -66,6 +67,7 @@ extension AppTheme {
             secondary: Color(hex: "#1F1F23"),
             background: Color(hex: "#0A0A0B"),
             surface: Color(hex: "#1F1F23"),
+            onSurface: Color(hex: "#2A2A2A"),
             error: Color(hex: "#EF4444"),
             textPrimary: Color(hex: "#E7E5E4"),
             textSecondary: Color(hex: "#ACABAA"),

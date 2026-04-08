@@ -11,15 +11,17 @@ import SwiftUI
 struct ResourcesTabView: View {
     @Environment(\.theme) var theme
     @Binding var resources: [Resource]
+    var filteredResources: [Resource]
+    var onOpenNote: (Resource) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
-            if resources.isEmpty {
+            if filteredResources.isEmpty {
                 VStack(spacing: theme.spacing.md) {
-                    Image(systemName: "tray")
+                    Image(systemName: resources.isEmpty ? "tray" : "magnifyingglass")
                         .font(.system(size: 36))
                         .foregroundColor(theme.colors.textSecondary)
-                    Text("No resources yet")
+                    Text(resources.isEmpty ? "No resources yet" : "No results found")
                         .font(theme.typography.bodyMedium)
                         .foregroundColor(theme.colors.textSecondary)
                 }
@@ -27,14 +29,27 @@ struct ResourcesTabView: View {
                 .padding(.top, 40)
             } else {
                 VStack(spacing: theme.spacing.md) {
-                    ForEach(resources) { resource in
-                        ResourceCard(resource: resource) {
-                            resources.removeAll { $0.id == resource.id }
-                        }
+                    ForEach(filteredResources) { resource in
+                        ResourceCard(
+                            resource: resource,
+                            onOpen: { onOpenNote(resource) },
+                            onDelete: {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    resources.removeAll { $0.id == resource.id }
+                                }
+                            }
+                        )
+                        .transition(
+                            .asymmetric(
+                                insertion: .opacity.combined(with: .move(edge: .top)),
+                                removal: .opacity.combined(with: .scale(scale: 0.95))
+                            )
+                        )
                     }
                 }
             }
         }
         .padding(.bottom, theme.spacing.xl)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: resources.map { $0.id })
     }
 }
