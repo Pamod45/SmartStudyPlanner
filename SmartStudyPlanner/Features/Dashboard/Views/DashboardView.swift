@@ -9,10 +9,26 @@ import SwiftUI
 struct DashboardView: View {
     @Environment(\.theme) var theme
 
-    private let sessions: [StudySession] = [
-        StudySession(subject: "iOS", title: "SwiftUI Layout", timeRange: "7:30PM - 8:15PM", duration: "45 min", subjectColor: Color(hex: "#93C5FF")),
-        StudySession(subject: "Web API", title: "REST API", timeRange: "8:30PM - 9:00PM", duration: "30 min", subjectColor: Color(hex: "#F9ABFF"))
-    ]
+    private let sessions: [StudySession] = {
+        let cal = Calendar.current
+        let today = Date()
+        return [
+            StudySession(
+                subject: "iOS",
+                title: "SwiftUI Layout",
+                startTime: cal.date(bySettingHour: 19, minute: 30, second: 0, of: today)!,
+                endTime: cal.date(bySettingHour: 20, minute: 15, second: 0, of: today)!,
+                subjectColor: Color(hex: "#93C5FF")
+            ),
+            StudySession(
+                subject: "Web API",
+                title: "REST API",
+                startTime: cal.date(bySettingHour: 20, minute: 30, second: 0, of: today)!,
+                endTime: cal.date(bySettingHour: 21, minute: 0, second: 0, of: today)!,
+                subjectColor: Color(hex: "#F9ABFF")
+            )
+        ]
+    }()
 
     private let deadlines: [Deadline] = Deadline.dashboardSamples
 

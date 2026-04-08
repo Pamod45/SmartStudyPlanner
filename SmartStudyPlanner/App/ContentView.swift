@@ -30,7 +30,7 @@ struct ContentView: View {
             .tag(AppTab.subjects)
 
             NavigationStack {
-                Text("Plan")
+                StudyPlanView()
             }
             .tabItem {
                 Label(AppTab.plan.title, systemImage: AppTab.plan.icon)
