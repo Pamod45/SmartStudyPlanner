@@ -67,7 +67,7 @@ extension AppTheme {
             secondary: Color(hex: "#1F1F23"),
             background: Color(hex: "#0A0A0B"),
             surface: Color(hex: "#1F1F23"),
-            onSurface: Color(hex: "#2A2A2A"),
+            onSurface: Color(hex: "#292931"),
             error: Color(hex: "#EF4444"),
             textPrimary: Color(hex: "#E7E5E4"),
             textSecondary: Color(hex: "#ACABAA"),

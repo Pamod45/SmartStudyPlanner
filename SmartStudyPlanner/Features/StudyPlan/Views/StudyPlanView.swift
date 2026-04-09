@@ -6,6 +6,13 @@ struct StudyPlanView: View {
     @State private var availabilitySlots: [AvailabilitySlot] = AvailabilitySlot.samples
     @State private var showManageAvailability: Bool = false
     @State private var showCreateStudyPlan: Bool = false
+    @State private var selectedDeadline: Deadline? = nil
+    @State private var sessionSheetSlot: AvailabilitySlot? = nil
+    @State private var editingSession: (slot: AvailabilitySlot, session: StudySession)? = nil
+    @State private var studySessions: [StudySession] = StudySession.planSamples
+    @State private var deadlines: [Deadline] = Subject.samples.flatMap {
+        Deadline.samples(for: $0.id, color: $0.color)
+    }
 
     var slotsForSelectedDate: [AvailabilitySlot] {
         guard let selected = selectedDate,
@@ -26,6 +33,18 @@ struct StudyPlanView: View {
         }
     }
 
+    var sessionsForSelectedDate: [StudySession] {
+        guard let selected = selectedDate,
+              let date = Calendar.current.date(from: selected) else { return [] }
+        return studySessions.filter { Calendar.current.isDate($0.startTime, inSameDayAs: date) }
+    }
+
+    var deadlinesForSelectedDate: [Deadline] {
+        guard let selected = selectedDate,
+              let date = Calendar.current.date(from: selected) else { return [] }
+        return deadlines.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }
+    }
+
     var body: some View {
         ZStack {
             theme.colors.background.ignoresSafeArea()
@@ -40,14 +59,16 @@ struct StudyPlanView: View {
                     VStack(spacing: theme.spacing.lg) {
                         CalendarView(
                             selectedDate: $selectedDate,
-                            slots: availabilitySlots
+                            slots: availabilitySlots,
+                            sessions: studySessions,
+                            deadlines: deadlines
                         )
                         .background(theme.colors.surface)
                         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
                         .padding(.horizontal, theme.spacing.lg)
 
-                        if !slotsForSelectedDate.isEmpty {
-                            slotListSection
+                        if !slotsForSelectedDate.isEmpty || !deadlinesForSelectedDate.isEmpty {
+                            selectedDaySection
                                 .padding(.horizontal, theme.spacing.lg)
                         } else if selectedDate != nil {
                             emptySlotSection
@@ -65,8 +86,53 @@ struct StudyPlanView: View {
             .environment(\.theme, theme)
         }
         .sheet(isPresented: $showCreateStudyPlan) {
-            CreateStudyPlanSheet(availabilitySlots: availabilitySlots)
-                .environment(\.theme, theme)
+            CreateStudyPlanSheet(
+                availabilitySlots: availabilitySlots,
+                onPlanCreated: { sessions in
+                    studySessions = sessions
+                }
+            )
+            .environment(\.theme, theme)
+        }
+        .sheet(item: $selectedDeadline) { deadline in
+            AddDeadlineSheet(
+                subjectID: deadline.subjectID,
+                existingDeadline: deadline,
+                onSave: { _ in },
+                onUpdate: { updated in
+                    if let idx = deadlines.firstIndex(where: { $0.id == updated.id }) {
+                        deadlines[idx] = updated
+                    }
+                }
+            )
+            .environment(\.theme, theme)
+        }
+        .sheet(item: $sessionSheetSlot) { slot in
+            AddStudySessionSheet(slot: slot) { newSession in
+                studySessions.append(newSession)
+            }
+            .environment(\.theme, theme)
+        }
+        .sheet(item: Binding(
+            get: { editingSession.map { EditSessionID(slot: $0.slot, session: $0.session) } },
+            set: { val in editingSession = val.map { (slot: $0.slot, session: $0.session) } }
+        )) { item in
+            AddStudySessionSheet(
+                slot: item.slot,
+                existingSession: item.session,
+                onSave: { updated in
+                    if let idx = studySessions.firstIndex(where: { $0.id == updated.id }) {
+                        studySessions[idx] = updated
+                    }
+                },
+                onDelete: {
+                    studySessions.removeAll { $0.id == item.session.id }
+                }
+            )
+            .environment(\.theme, theme)
+        }
+        .onAppear {
+            selectedDate = Calendar.current.dateComponents([.year, .month, .day], from: .now)
         }
     }
 
@@ -91,6 +157,241 @@ struct StudyPlanView: View {
         }
     }
 
+    private var selectedDaySection: some View {
+        VStack(alignment: .leading, spacing: theme.spacing.md) {
+
+            if !slotsForSelectedDate.isEmpty {
+                Text("Available Slots")
+                    .font(theme.typography.headingSmall)
+                    .fontWeight(.bold)
+                    .foregroundColor(theme.colors.textPrimary)
+
+                ForEach(slotsForSelectedDate) { slot in
+                    slotCard(slot)
+                }
+            }
+
+            if !deadlinesForSelectedDate.isEmpty {
+                Text("Deadlines")
+                    .font(theme.typography.headingSmall)
+                    .fontWeight(.bold)
+                    .foregroundColor(theme.colors.textPrimary)
+                    .padding(.top, slotsForSelectedDate.isEmpty ? 0 : theme.spacing.sm)
+
+                ForEach(deadlinesForSelectedDate) { deadline in
+                    deadlineCard(deadline)
+                }
+            }
+        }
+    }
+
+    private func sessions(for slot: AvailabilitySlot) -> [StudySession] {
+        guard let slotDate = slot.type == .date ? slot.date : {
+            guard let selected = selectedDate else { return nil }
+            return Calendar.current.date(from: selected)
+        }() else { return [] }
+
+        return studySessions.filter { session in
+            Calendar.current.isDate(session.startTime, inSameDayAs: slotDate) &&
+            session.startTime >= slot.startTime &&
+            session.endTime   <= slot.endTime
+        }
+    }
+
+    private func slotCard(_ slot: AvailabilitySlot) -> some View {
+        let slotSessions = sessions(for: slot)
+
+        return VStack(spacing: 0) {
+            HStack(spacing: theme.spacing.md) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(theme.colors.primary)
+                    .frame(width: 4, height: 44)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(slot.formattedTimeRange)
+                        .font(theme.typography.bodyMedium)
+                        .fontWeight(.semibold)
+                        .foregroundColor(theme.colors.textPrimary)
+
+                    Text(slot.type.rawValue)
+                        .font(theme.typography.bodySmall)
+                        .foregroundColor(theme.colors.textSecondary)
+                }
+
+                Spacer()
+
+                if !slotSessions.isEmpty {
+                    Text("\(slotSessions.count) session\(slotSessions.count > 1 ? "s" : "")")
+                        .font(theme.typography.bodySmall)
+                        .foregroundColor(theme.colors.primary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(theme.colors.primary.opacity(0.1))
+                        .clipShape(Capsule())
+                }
+
+                Button {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        availabilitySlots.removeAll { $0.id == slot.id }
+                    }
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 14))
+                        .foregroundColor(theme.colors.error)
+                }
+            }
+            .padding(theme.spacing.md)
+
+            if !slotSessions.isEmpty {
+                Divider()
+                    .background(theme.colors.border.opacity(0.3))
+                    .padding(.horizontal, theme.spacing.md)
+
+                VStack(spacing: theme.spacing.sm) {
+                    ForEach(slotSessions) { session in
+                        inlineSessionCard(session, slot: slot)
+                    }
+                }
+                .padding(.horizontal, theme.spacing.md)
+                .padding(.top, theme.spacing.sm)
+            }
+
+            Divider()
+                .background(theme.colors.border.opacity(0.2))
+                .padding(.horizontal, theme.spacing.md)
+
+            Button {
+                sessionSheetSlot = slot
+            } label: {
+                HStack(spacing: theme.spacing.sm) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(theme.colors.primary)
+                    Text("Add Session")
+                        .font(theme.typography.bodySmall)
+                        .fontWeight(.semibold)
+                        .foregroundColor(theme.colors.primary)
+                    Spacer()
+                }
+                .padding(.horizontal, theme.spacing.md)
+                .padding(.vertical, theme.spacing.sm)
+            }
+            .buttonStyle(.plain)
+        }
+        .background(theme.colors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
+    }
+
+    private func inlineSessionCard(_ session: StudySession, slot: AvailabilitySlot) -> some View {
+        Button {
+            editingSession = (slot: slot, session: session)
+        } label: {
+            HStack(spacing: theme.spacing.md) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(session.subjectColor)
+                    .frame(width: 3)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(session.subject)
+                        .font(theme.typography.bodySmall)
+                        .fontWeight(.semibold)
+                        .foregroundColor(session.subjectColor)
+
+                    Text(session.topic.isEmpty ? session.title : session.topic)
+                        .font(theme.typography.bodyMedium)
+                        .fontWeight(.bold)
+                        .foregroundColor(theme.colors.textPrimary)
+                        .lineLimit(2)
+
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 10))
+                            .foregroundColor(theme.colors.textSecondary)
+                        Text(session.timeRange)
+                            .font(theme.typography.bodySmall)
+                            .foregroundColor(theme.colors.textSecondary)
+                    }
+                }
+
+                Spacer()
+
+                Text(session.duration)
+                    .font(theme.typography.bodySmall)
+                    .fontWeight(.semibold)
+                    .foregroundColor(session.subjectColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(session.subjectColor.opacity(0.12))
+                    .clipShape(Capsule())
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(theme.colors.textSecondary.opacity(0.6))
+            }
+            .padding(theme.spacing.sm)
+            .background(session.subjectColor.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: theme.radius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: theme.radius.md)
+                    .stroke(session.subjectColor.opacity(0.2), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func deadlineCard(_ deadline: Deadline) -> some View {
+        Button {
+            selectedDeadline = deadline
+        } label: {
+            HStack(spacing: theme.spacing.md) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.red)
+                    .frame(width: 4, height: 44)
+
+                Image(systemName: deadline.icon)
+                    .font(.system(size: 16))
+                    .foregroundColor(.red)
+                    .frame(width: 28)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(deadline.name)
+                        .font(theme.typography.bodyMedium)
+                        .fontWeight(.bold)
+                        .foregroundColor(theme.colors.textPrimary)
+
+                    Text(deadline.tag.rawValue)
+                        .font(theme.typography.bodySmall)
+                        .foregroundColor(.red.opacity(0.8))
+                }
+
+                Spacer()
+
+                if deadline.isHighPriority {
+                    Text("High Priority")
+                        .font(theme.typography.bodySmall)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.red)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.red.opacity(0.1))
+                        .clipShape(Capsule())
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(theme.colors.textSecondary)
+            }
+            .padding(theme.spacing.md)
+            .background(theme.colors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: theme.radius.lg)
+                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
     private var slotListSection: some View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
             Text("Available Slots")
@@ -99,43 +400,9 @@ struct StudyPlanView: View {
                 .foregroundColor(theme.colors.textPrimary)
 
             ForEach(slotsForSelectedDate) { slot in
-                slotRow(slot)
+                slotCard(slot)
             }
         }
-    }
-
-    private func slotRow(_ slot: AvailabilitySlot) -> some View {
-        HStack(spacing: theme.spacing.md) {
-            RoundedRectangle(cornerRadius: 3)
-                .fill(theme.colors.primary)
-                .frame(width: 4, height: 44)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(slot.formattedTimeRange)
-                    .font(theme.typography.bodyMedium)
-                    .fontWeight(.semibold)
-                    .foregroundColor(theme.colors.textPrimary)
-
-                Text(slot.type.rawValue)
-                    .font(theme.typography.bodySmall)
-                    .foregroundColor(theme.colors.textSecondary)
-            }
-
-            Spacer()
-
-            Button {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                    availabilitySlots.removeAll { $0.id == slot.id }
-                }
-            } label: {
-                Image(systemName: "trash")
-                    .font(.system(size: 14))
-                    .foregroundColor(theme.colors.error)
-            }
-        }
-        .padding(theme.spacing.md)
-        .background(theme.colors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
     }
 
     private var emptySlotSection: some View {
@@ -149,6 +416,17 @@ struct StudyPlanView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, theme.spacing.xl)
+    }
+}
+
+private struct EditSessionID: Identifiable {
+    let id: UUID
+    let slot: AvailabilitySlot
+    let session: StudySession
+    init(slot: AvailabilitySlot, session: StudySession) {
+        self.id = session.id
+        self.slot = slot
+        self.session = session
     }
 }
 
