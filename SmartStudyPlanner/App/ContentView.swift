@@ -38,7 +38,7 @@ struct ContentView: View {
             .tag(AppTab.plan)
 
             NavigationStack {
-                Text("Progress")
+                ProgressView()
             }
             .tabItem {
                 Label(AppTab.progress.title, systemImage: AppTab.progress.icon)
