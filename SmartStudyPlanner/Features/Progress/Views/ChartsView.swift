@@ -228,12 +228,32 @@ struct ChartsView: View {
         )
     }
 
-    private var dailyActivityChart: some View {
+    private struct DailyTotal: Identifiable {
+        let id = UUID()
+        let day: String
+        let index: Int
+        let hours: Double
+    }
+
+    private var aggregatedActivity: [DailyTotal] {
         let data = activityData
-        let subjects = Array(Set(data.map(\.subject))).sorted()
-        let subjectColors: [String: Color] = data.reduce(into: [:]) { dict, item in
-            dict[item.subject] = item.color
+        let grouped = Dictionary(grouping: data, by: \.day)
+        let orderedDays: [String]
+        switch dateRange {
+        case .week:    orderedDays = ["MON","TUE","WED","THU","FRI","SAT","SUN"]
+        case .month:   orderedDays = (1...30).map { "\($0)" }
+        case .quarter: orderedDays = (1...13).map { "W\($0)" }
         }
+        return orderedDays.enumerated().compactMap { (i, day) in
+            guard let entries = grouped[day] else { return nil }
+            let total = entries.map(\.hours).reduce(0, +)
+            return DailyTotal(day: day, index: i, hours: total)
+        }
+    }
+
+    private var dailyActivityChart: some View {
+        let aggregated = aggregatedActivity
+        let accent = theme.colors.primary
 
         return VStack(alignment: .leading, spacing: theme.spacing.md) {
             VStack(alignment: .leading, spacing: 4) {
@@ -260,37 +280,45 @@ struct ChartsView: View {
             }
 
             Chart {
-                ForEach(data) { item in
-                    if item.hours > 0 {
-                        AreaMark(
-                            x: .value("Day", item.day),
-                            y: .value("Hours", item.hours)
+                ForEach(aggregated) { item in
+                    AreaMark(
+                        x: .value("Day", item.index),
+                        y: .value("Hours", item.hours)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [accent.opacity(0.35), accent.opacity(0.0)],
+                            startPoint: .top, endPoint: .bottom
                         )
-                        .opacity(0.25)
-                        .interpolationMethod(.catmullRom)
-                        .foregroundStyle(by: .value("Subject", item.subject))
+                    )
 
-                        LineMark(
-                            x: .value("Day", item.day),
-                            y: .value("Hours", item.hours)
-                        )
-                        .interpolationMethod(.catmullRom)
-                        .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                        .foregroundStyle(by: .value("Subject", item.subject))
-                        .symbol(Circle().strokeBorder(lineWidth: 2))
-                        .symbolSize(30)
-                    }
+                    LineMark(
+                        x: .value("Day", item.index),
+                        y: .value("Hours", item.hours)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                    .foregroundStyle(accent)
+
+                    PointMark(
+                        x: .value("Day", item.index),
+                        y: .value("Hours", item.hours)
+                    )
+                    .symbolSize(28)
+                    .foregroundStyle(accent)
                 }
             }
-            .chartForegroundStyleScale(
-                domain: subjects,
-                range: subjects.map { subjectColors[$0] ?? theme.colors.primary }
-            )
             .chartXAxis {
-                AxisMarks(values: .automatic) { _ in
-                    AxisValueLabel()
-                        .font(theme.typography.label)
-                        .foregroundStyle(theme.colors.textSecondary)
+                AxisMarks(values: aggregated.map(\.index)) { value in
+                    AxisValueLabel {
+                        if let i = value.as(Int.self),
+                           let item = aggregated.first(where: { $0.index == i }) {
+                            Text(item.day)
+                                .font(theme.typography.label)
+                                .foregroundStyle(theme.colors.textSecondary)
+                        }
+                    }
                 }
             }
             .chartYAxis {
@@ -306,8 +334,7 @@ struct ChartsView: View {
                     }
                 }
             }
-            .chartLegend(subjects.count > 1 ? .visible : .hidden)
-            .chartLegend(position: .bottom, alignment: .leading, spacing: 8)
+            .chartLegend(.hidden)
             .frame(maxHeight: .infinity)
         }
         .padding(theme.spacing.md)
