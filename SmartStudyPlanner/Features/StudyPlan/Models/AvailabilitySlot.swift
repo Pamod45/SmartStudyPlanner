@@ -44,17 +44,21 @@ struct AvailabilitySlot: Identifiable {
         return "\(f.string(from: startTime)) - \(f.string(from: endTime))"
     }
 
-    static let samples: [AvailabilitySlot] = [
-        AvailabilitySlot(
-            type: .date,
-            startTime: Calendar.current.date(bySettingHour: 17, minute: 30, second: 0, of: .now)!,
-            endTime: Calendar.current.date(bySettingHour: 21, minute: 30, second: 0, of: .now)!,
-            date: .now
-        ),
-        AvailabilitySlot(
-            type: .daily,
-            startTime: Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: .now)!,
-            endTime: Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: .now)!
-        )
-    ]
+    static let samples: [AvailabilitySlot] = {
+        let cal = Calendar.current
+        let days: [DateComponents] = [
+            DateComponents(year: 2026, month: 4, day: 9),
+            DateComponents(year: 2026, month: 4, day: 10),
+            DateComponents(year: 2026, month: 4, day: 11)
+        ]
+        return days.compactMap { comps -> AvailabilitySlot? in
+            guard let day = cal.date(from: comps) else { return nil }
+            return AvailabilitySlot(
+                type: .date,
+                startTime: cal.date(bySettingHour: 9, minute: 0, second: 0, of: day)!,
+                endTime:   cal.date(bySettingHour: 17, minute: 0, second: 0, of: day)!,
+                date: day
+            )
+        }
+    }()
 }
