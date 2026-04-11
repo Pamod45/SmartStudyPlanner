@@ -32,6 +32,7 @@ struct ThemeTypography {
     let displayLarge: Font
     let displayMedium: Font
     let headingLarge: Font
+    let headingMd: Font
     let headingMedium: Font
     let headingSmall: Font
     let bodyLarge: Font
@@ -79,6 +80,7 @@ extension AppTheme {
             displayLarge: .custom("SF Pro Display", size: 40, weight: .bold),
             displayMedium: .custom("SF Pro Display", size: 32, weight: .bold),
             headingLarge: .custom("SF Pro Display", size: 28, weight: .semibold),
+            headingMd: .custom("SF Pro Display", size: 24, weight: .medium),
             headingMedium: .custom("SF Pro Display", size: 22, weight: .semibold),
             headingSmall: .custom("SF Pro Display", size: 18, weight: .semibold),
             bodyLarge: .custom("SF Pro Text", size: 16, weight: .regular),
