@@ -36,6 +36,7 @@ struct SubjectWorkspaceView: View {
     @State private var studyPath: StudyPath? = nil
     @State private var showGeneratePath: Bool = false
     @State private var isRegeneratePath: Bool = false
+    @State private var quizAttempts: [QuizAttempt] = []
     private var filteredResources: [Resource] {
         if searchText.isEmpty { return resources }
         return resources.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
@@ -270,7 +271,12 @@ struct SubjectWorkspaceView: View {
                 }
             )
         case .quizzes:
-            QuizzesTabView()
+            QuizzesTabView(
+                subject: subject,
+                studyPath: studyPath,
+                resources: resources,
+                attempts: $quizAttempts
+            )
         case .aiAssistant:
             AIAssistantTabView()
         }
