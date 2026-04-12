@@ -33,6 +33,9 @@ struct SubjectWorkspaceView: View {
     @State private var selectedNote: Resource? = nil
     @State private var selectedLink: Resource? = nil
     @State private var selectedPDF: Resource? = nil
+    @State private var studyPath: StudyPath? = nil
+    @State private var showGeneratePath: Bool = false
+    @State private var isRegeneratePath: Bool = false
     private var filteredResources: [Resource] {
         if searchText.isEmpty { return resources }
         return resources.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
@@ -143,6 +146,16 @@ struct SubjectWorkspaceView: View {
             )
             .environment(\.theme, theme)
         }
+        .sheet(isPresented: $showGeneratePath) {
+            GenerateStudyPathSheet(
+                subject: subject,
+                resources: resources,
+                isRegenerate: isRegeneratePath
+            ) { newPath in
+                studyPath = newPath
+            }
+            .environment(\.theme, theme)
+        }
     }
 
     private var headerSection: some View {
@@ -243,7 +256,19 @@ struct SubjectWorkspaceView: View {
                 }
             )
         case .studyPath:
-            StudyPathTabView()
+            StudyPathTabView(
+                subject: subject,
+                resources: resources,
+                studyPath: $studyPath,
+                onRegenerate: {
+                    isRegeneratePath = true
+                    showGeneratePath = true
+                },
+                onGenerate: {
+                    isRegeneratePath = false
+                    showGeneratePath = true
+                }
+            )
         case .quizzes:
             QuizzesTabView()
         case .aiAssistant:
