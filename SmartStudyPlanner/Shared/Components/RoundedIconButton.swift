@@ -16,16 +16,10 @@ struct RoundedIconButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 22, height: 22)
+                .fontWeight(.semibold)
                 .foregroundColor(theme.colors.textPrimary)
-                .frame(width: 52, height: 52)
-                .clipShape(Circle())
-                .overlay(
-                    Circle()
-                        .stroke(theme.colors.border, lineWidth: 1)
-                )
+                .frame(width: 36, height: 36)
+                .glassEffect(.regular, in: Circle())
         }
     }
 }
