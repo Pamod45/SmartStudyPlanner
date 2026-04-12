@@ -54,28 +54,27 @@ struct QuizConfigSheet: View {
                         tabSection
                         sessionSettingsSection
                     }
-                    .padding(.horizontal, theme.spacing.sm)
-                    .padding(.top, theme.spacing.xl)
                     .padding(.bottom, 100)
                 }
                 startButton
             }
+            .padding(theme.spacing.lg)
+            .background(theme.colors.surface.opacity(0.2))
         }
     }
 
     private var titleSection: some View {
-        VStack(alignment: .leading, spacing: theme.spacing.sm) {
-            HStack(spacing: 0) {
-                Text("Configure your\n")
-                    .font(theme.typography.headingLarge ?? theme.typography.headingMedium)
-                    .fontWeight(.bold)
-                    .foregroundColor(theme.colors.textPrimary)
-            }
-            Text("Quiz Resources.")
-                .font(theme.typography.headingLarge ?? theme.typography.headingMedium)
+        VStack(alignment: .leading) {
+            Text("Configure your")
+                .font(theme.typography.headingLarge)
+                .fontWeight(.bold)
+                .foregroundColor(theme.colors.textPrimary)
+            
+            Text("Quiz Resources")
+                .font(theme.typography.headingLarge)
                 .fontWeight(.bold)
                 .foregroundColor(theme.colors.primary)
-                .offset(y: -theme.spacing.md)
+                .padding(.bottom, theme.spacing.md)
 
             Text("Select the materials you want to be quizzed on. Our AI will generate unique questions based on these specific files.")
                 .font(theme.typography.bodyMedium)
@@ -97,7 +96,7 @@ struct QuizConfigSheet: View {
                     .autocorrectionDisabled()
             }
             .padding(.horizontal, theme.spacing.md)
-            .padding(.vertical, theme.spacing.md)
+            .frame(height: 48)
             .background(theme.colors.surface)
             .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
             .overlay(RoundedRectangle(cornerRadius: theme.radius.xl).stroke(theme.colors.border.opacity(0.4), lineWidth: 1))
@@ -118,7 +117,7 @@ struct QuizConfigSheet: View {
                     .keyboardType(.numberPad)
             }
             .padding(.horizontal, theme.spacing.md)
-            .padding(.vertical, theme.spacing.md)
+            .frame(height: 48)
             .background(theme.colors.surface)
             .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
             .overlay(RoundedRectangle(cornerRadius: theme.radius.xl).stroke(theme.colors.border.opacity(0.4), lineWidth: 1))
@@ -127,11 +126,11 @@ struct QuizConfigSheet: View {
 
     private var tabSection: some View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
-            HStack(spacing: 4) {
+            HStack(spacing: theme.spacing.xs) {
                 tabButton(label: "Topics", tab: .topics)
                 tabButton(label: "Resources", tab: .resources)
             }
-            .padding(4)
+            .padding(theme.spacing.xs)
             .background(theme.colors.surface)
             .clipShape(Capsule())
 
@@ -144,7 +143,7 @@ struct QuizConfigSheet: View {
     }
 
     private func tabButton(label: String, tab: ConfigTab) -> some View {
-        Button { withAnimation(.easeInOut(duration: 0.2)) { configTab = tab } } label: {
+        Button { withAnimation(.easeInOut(duration: 0.4)) { configTab = tab } } label: {
             Text(label)
                 .font(theme.typography.bodyLarge.weight(.semibold))
                 .foregroundColor(configTab == tab ? theme.colors.textOnPrimary : theme.colors.textSecondary)
@@ -209,33 +208,50 @@ struct QuizConfigSheet: View {
                 }
                 Spacer()
                 ZStack {
-                    Circle()
-                        .fill(isSelected ? theme.colors.primary : Color.clear)
-                        .frame(width: 24, height: 24)
-                    Circle()
-                        .stroke(isSelected ? theme.colors.primary : theme.colors.border.opacity(0.6), lineWidth: 1.5)
-                        .frame(width: 24, height: 24)
-                    if isSelected {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(theme.colors.textOnPrimary)
-                    }
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(theme.typography.bodyLarge)
+                        .foregroundColor(isSelected ? theme.colors.primary : theme.colors.textSecondary)
                 }
             }
             .padding(theme.spacing.md)
             .background(theme.colors.surface)
             .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
-            .overlay(RoundedRectangle(cornerRadius: theme.radius.xl)
-                .stroke(isSelected ? theme.colors.primary.opacity(0.5) : theme.colors.border.opacity(0.4), lineWidth: 1))
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: isSelected)
     }
 
     private var resourcesContent: some View {
-        VStack(spacing: theme.spacing.sm) {
-            ForEach(resources) { resource in
-                resourceRow(resource)
+        
+        VStack(spacing: theme.spacing.md) {
+            HStack {
+                Text("RESOURCES")
+                    .font(theme.typography.caption.weight(.bold))
+                    .foregroundColor(theme.colors.textSecondary)
+                    .tracking(2)
+                Spacer()
+                Button {
+                    if selectedResourceIDs.count == resources.count {
+                        selectedResourceIDs = []
+                    } else {
+                        selectedResourceIDs = Set(resources.map { $0.id })
+                    }
+                } label: {
+                    Text(selectedResourceIDs.count == resources.count ? "Deselect All" : "Select All")
+                        .font(theme.typography.bodyMedium.weight(.semibold))
+                        .foregroundColor(theme.colors.primary)
+                }
+            }
+            if resources.isEmpty {
+                Text("Add resources in the workspace to get started.")
+                    .font(theme.typography.bodySmall)
+                    .foregroundColor(theme.colors.textSecondary)
+            } else {
+                VStack(spacing: theme.spacing.md) {
+                    ForEach(resources) { resource in
+                        resourceRow(resource)
+                    }
+                }
             }
         }
     }
@@ -248,15 +264,19 @@ struct QuizConfigSheet: View {
         } label: {
             HStack(spacing: theme.spacing.md) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: theme.radius.lg)
-                        .fill(resource.type.color.opacity(0.15))
-                        .frame(width: 44, height: 44)
-                        .overlay(RoundedRectangle(cornerRadius: theme.radius.lg)
-                            .stroke(resource.type.color.opacity(0.3), lineWidth: 1))
+                    Rectangle()
+                        .fill(resource.type.color.opacity(0.2))
+                        .frame(width: 48, height: 48)
+                        .cornerRadius(theme.radius.lg)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: theme.radius.lg)
+                                .stroke(resource.type.color.opacity(0.4), lineWidth: 1)
+                        )
                     Image(systemName: resource.type.icon)
-                        .font(theme.typography.bodyLarge.weight(.semibold))
+                        .font(theme.typography.headingSmall.weight(.semibold))
                         .foregroundColor(resource.type.color)
                 }
+                
                 VStack(alignment: .leading, spacing: theme.spacing.xs) {
                     Text(resource.name)
                         .font(theme.typography.bodyMedium.weight(.semibold))
@@ -267,25 +287,21 @@ struct QuizConfigSheet: View {
                 }
                 Spacer()
                 ZStack {
-                    Circle().fill(isSelected ? theme.colors.primary : Color.clear).frame(width: 24, height: 24)
-                    Circle().stroke(isSelected ? theme.colors.primary : theme.colors.border.opacity(0.6), lineWidth: 1.5).frame(width: 24, height: 24)
-                    if isSelected {
-                        Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundColor(theme.colors.textOnPrimary)
-                    }
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(theme.typography.bodyLarge)
+                        .foregroundColor(isSelected ? theme.colors.primary : theme.colors.textSecondary)
                 }
             }
             .padding(theme.spacing.md)
             .background(theme.colors.surface)
             .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
-            .overlay(RoundedRectangle(cornerRadius: theme.radius.xl)
-                .stroke(isSelected ? theme.colors.primary.opacity(0.5) : theme.colors.border.opacity(0.4), lineWidth: 1))
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: isSelected)
     }
 
     private var sessionSettingsSection: some View {
-        HStack(alignment: .top, spacing: theme.spacing.md) {
+        HStack(alignment: .top, spacing: theme.spacing.sm) {
             Image(systemName: "info.circle.fill")
                 .font(theme.typography.headingSmall)
                 .foregroundColor(theme.colors.primary)
@@ -298,7 +314,8 @@ struct QuizConfigSheet: View {
                     .foregroundColor(theme.colors.textSecondary)
             }
         }
-        .padding(theme.spacing.md)
+        .padding(.all, theme.spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(theme.colors.primary.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
         .overlay(RoundedRectangle(cornerRadius: theme.radius.xl).stroke(theme.colors.primary.opacity(0.2), lineWidth: 1))
@@ -306,7 +323,6 @@ struct QuizConfigSheet: View {
 
     private var startButton: some View {
         VStack(spacing: 0) {
-            Divider().background(theme.colors.border.opacity(0.3))
             PrimaryButton(title: "Start Quiz", icon: "play.fill") {
                 let selTopics = topics.filter { selectedTopicIDs.contains($0.id) }
                 let selResources = resources.filter { selectedResourceIDs.contains($0.id) }
@@ -331,3 +347,4 @@ struct QuizConfigSheet: View {
         }
     }
 }
+

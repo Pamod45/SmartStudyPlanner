@@ -30,13 +30,12 @@ struct QuizzesTabView: View {
 
     var body: some View {
         VStack(spacing: theme.spacing.md) {
-            startButton
-
             if !attempts.isEmpty {
+                startButton
                 statsRow
                 previousAttemptsSection
             } else {
-                emptyState
+                emptyView
             }
         }
         .padding(.bottom, theme.spacing.xl)
@@ -174,22 +173,25 @@ struct QuizzesTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
         .overlay(RoundedRectangle(cornerRadius: theme.radius.xl).stroke(theme.colors.border.opacity(0.35), lineWidth: 1))
     }
-
-    private var emptyState: some View {
-        VStack(spacing: theme.spacing.md) {
-            Spacer(minLength: 20)
+    
+    private var emptyView: some View {
+        VStack(spacing: theme.spacing.lg) {
+            Spacer(minLength: 40)
             Image(systemName: "checkmark.circle")
-                .font(.system(size: 40))
+                .font(.system(size: 48))
                 .foregroundColor(theme.colors.textSecondary)
             Text("No quizzes yet")
+                .font(theme.typography.headingSmall)
+                .foregroundColor(theme.colors.textPrimary)
+            Text("Start your first quiz to track your progress.")
                 .font(theme.typography.bodyMedium)
                 .foregroundColor(theme.colors.textSecondary)
-            Text("Start your first quiz to track your progress.")
-                .font(theme.typography.bodySmall)
-                .foregroundColor(theme.colors.textSecondary)
                 .multilineTextAlignment(.center)
+            startButton
+                .padding(.horizontal, theme.spacing.md)
+            Spacer()
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 20)
+        .padding(.bottom, theme.spacing.xl)
     }
 }

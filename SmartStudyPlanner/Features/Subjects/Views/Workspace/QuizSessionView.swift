@@ -18,6 +18,7 @@ struct QuizSessionView: View {
     @State private var selectedOptionIndex: Int? = nil
     @State private var startTime: Date = Date()
     @State private var showResults: Bool = false
+    @State private var showQuitAlert: Bool = false
 
     init(attempt: QuizAttempt, onComplete: @escaping (QuizAttempt) -> Void) {
         _attempt = State(initialValue: attempt)
@@ -48,18 +49,16 @@ struct QuizSessionView: View {
             } else {
                 questionScreen
             }
-        }
+        }.background(theme.colors.surface.opacity(0.2))
     }
 
     private var questionScreen: some View {
         VStack(spacing: 0) {
             header
-                .padding(.horizontal, theme.spacing.sm)
                 .padding(.vertical, theme.spacing.md)
                 .background(theme.colors.background)
 
             progressBar
-                .padding(.horizontal, theme.spacing.sm)
                 .padding(.bottom, theme.spacing.md)
 
             ScrollView(showsIndicators: false) {
@@ -69,44 +68,59 @@ struct QuizSessionView: View {
                         optionsList(q)
                     }
                 }
-                .padding(.horizontal, theme.spacing.sm)
                 .padding(.bottom, 120)
             }
 
             bottomBar
-        }
+        }.padding(.horizontal, theme.spacing.lg)
     }
 
     private var header: some View {
-        HStack {
-            Button { dismiss() } label: {
-                Image(systemName: "chevron.left")
-                    .font(theme.typography.bodyLarge.weight(.semibold))
-                    .foregroundColor(theme.colors.textPrimary)
-                    .frame(width: 36, height: 36)
-                    .background(theme.colors.surface)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(theme.colors.border.opacity(0.4), lineWidth: 1))
+        HStack(spacing: 0) {
+            TextButton(title: "", icon: "arrow.left", style: .bold) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    currentIndex -= 1
+                    selectedOptionIndex = attempt.selectedAnswers[attempt.questions[currentIndex].id]
+                }
             }
-            .buttonStyle(.plain)
-
-            Spacer()
+            .disabled(currentIndex == 0)
+            .opacity(currentIndex == 0 ? 0.3 : 1)
+            .padding(.trailing,theme.spacing.sm)
 
             Text(attempt.quizName)
                 .font(theme.typography.headingSmall)
                 .foregroundColor(theme.colors.textPrimary)
-
-            Spacer()
+                .lineLimit(1)
+                .padding(.trailing, theme.spacing.sm)
 
             Text("QUESTION \(currentIndex + 1)/\(attempt.questions.count)")
                 .font(.system(size: 11, weight: .bold))
-                .foregroundColor(theme.colors.textSecondary)
+                .foregroundColor(theme.colors.primary)
                 .tracking(0.5)
                 .padding(.horizontal, theme.spacing.sm)
-                .padding(.vertical, 6)
+                .padding(.vertical, 4)
                 .background(theme.colors.surface)
                 .clipShape(Capsule())
                 .overlay(Capsule().stroke(theme.colors.border.opacity(0.4), lineWidth: 1))
+            
+            Spacer()
+            
+            Button {
+                showQuitAlert = true
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(theme.colors.textPrimary)
+                    .frame(width: 36, height: 36)
+                    .glassEffect(.regular, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .alert("Quit Quiz?", isPresented: $showQuitAlert) {
+                Button("Quit", role: .destructive) { dismiss() }
+                Button("Keep Going", role: .cancel) { }
+            } message: {
+                Text("Your progress will be lost. Are you sure you want to leave?")
+            }
         }
     }
 
@@ -128,11 +142,11 @@ struct QuizSessionView: View {
     private func questionBody(_ q: QuizQuestion) -> some View {
         VStack(alignment: .leading, spacing: theme.spacing.sm) {
             Text(q.category.uppercased())
-                .font(.system(size: 11, weight: .bold))
+                .font(theme.typography.caption)
                 .foregroundColor(theme.colors.textSecondary)
                 .tracking(1.5)
             Text(q.questionText)
-                .font(theme.typography.headingMedium)
+                .font(theme.typography.headingLarge)
                 .fontWeight(.bold)
                 .foregroundColor(theme.colors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -142,7 +156,7 @@ struct QuizSessionView: View {
 
     private func optionsList(_ q: QuizQuestion) -> some View {
         let letters = ["A", "B", "C", "D", "E", "F"]
-        return VStack(spacing: theme.spacing.sm) {
+        return VStack(spacing: theme.spacing.md) {
             ForEach(Array(q.options.enumerated()), id: \.offset) { i, option in
                 let isSelected = selectedOptionIndex == i
                 Button { selectedOptionIndex = i } label: {
@@ -184,11 +198,13 @@ struct QuizSessionView: View {
         VStack(spacing: 0) {
             if let q = currentQuestion, !q.expertTip.isEmpty {
                 expertTipCard(q.expertTip)
-                    .padding(.horizontal, theme.spacing.sm)
-                    .padding(.bottom, theme.spacing.sm)
+                    .padding(.bottom, theme.spacing.md)
             }
-            Divider().background(theme.colors.border.opacity(0.3))
-            Button {
+            
+            PrimaryButton(
+                title: isLastQuestion ? "Submit Quiz" : "Next Question"
+            )
+            {
                 guard let opt = selectedOptionIndex,
                       let q = currentQuestion else { return }
                 attempt.selectedAnswers[q.id] = opt
@@ -212,41 +228,27 @@ struct QuizSessionView: View {
                         selectedOptionIndex = nil
                     }
                 }
-            } label: {
-                HStack(spacing: theme.spacing.sm) {
-                    Text(isLastQuestion ? "Submit Quiz" : "Next Question")
-                        .font(theme.typography.bodyLarge.weight(.semibold))
-                    if !isLastQuestion {
-                        Image(systemName: "arrow.right")
-                            .font(theme.typography.bodyLarge.weight(.semibold))
-                    }
-                }
-                .foregroundColor(theme.colors.textOnPrimary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, theme.spacing.md)
-                .background(selectedOptionIndex != nil ? theme.colors.primary : theme.colors.primary.opacity(0.4))
-                .clipShape(Capsule())
             }
-            .buttonStyle(.plain)
-            .disabled(selectedOptionIndex == nil)
-            .padding(.horizontal, theme.spacing.sm)
-            .padding(.vertical, theme.spacing.md)
-            .background(theme.colors.background)
+            .opacity(selectedOptionIndex != nil ? 1 : 0.5)
         }
     }
 
     private func expertTipCard(_ tip: String) -> some View {
-        HStack(alignment: .top, spacing: theme.spacing.sm) {
-            Image(systemName: "lightbulb.fill")
-                .font(theme.typography.bodyMedium)
+        HStack(alignment: .center, spacing: theme.spacing.sm) {
+            Image(systemName: "lightbulb")
+                .font(theme.typography.bodyLarge.weight(.bold))
                 .foregroundColor(theme.colors.primary)
-            Text(tip)
-                .font(theme.typography.bodySmall)
+            (
+                Text("EXPERT TIP: ").foregroundColor(theme.colors.primary).bold() +
+                Text(tip)
+            )
+                .font(theme.typography.bodyLarge)
                 .foregroundColor(theme.colors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(theme.spacing.md)
-        .background(theme.colors.surface)
+        .padding(.all, theme.spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.colors.primary.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
         .overlay(RoundedRectangle(cornerRadius: theme.radius.xl).stroke(theme.colors.primary.opacity(0.2), lineWidth: 1))
     }

@@ -25,7 +25,7 @@ struct QuizResultsView: View {
                         statsSection
                         questionReviewSection
                     }
-                    .padding(.horizontal, theme.spacing.sm)
+                    .padding(.horizontal, theme.spacing.lg)
                     .padding(.top, theme.spacing.xl)
                     .padding(.bottom, 100)
                 }
@@ -192,12 +192,8 @@ struct QuizResultsView: View {
     }
 
     private var doneBar: some View {
-        VStack(spacing: 0) {
-            Divider().background(theme.colors.border.opacity(0.3))
-            PrimaryButton(title: "Done") { onDone() }
-                .padding(.horizontal, theme.spacing.sm)
+        PrimaryButton(title: "Done") { onDone() }
+                .padding(.horizontal, theme.spacing.lg)
                 .padding(.vertical, theme.spacing.md)
-                .background(theme.colors.background)
-        }
     }
 }

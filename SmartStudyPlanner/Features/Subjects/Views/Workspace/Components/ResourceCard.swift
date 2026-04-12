@@ -20,7 +20,7 @@ struct ResourceCard: View {
                             .stroke(resource.type.color.opacity(0.4), lineWidth: 1)
                     )
                 Image(systemName: resource.type.icon)
-                    .font(theme.typography.headingMedium.weight(.semibold))
+                    .font(theme.typography.headingSmall.weight(.semibold))
                     .foregroundColor(resource.type.color)
             }
 

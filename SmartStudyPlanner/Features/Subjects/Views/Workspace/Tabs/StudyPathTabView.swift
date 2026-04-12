@@ -48,7 +48,7 @@ struct StudyPathTabView: View {
                 .foregroundColor(theme.colors.textSecondary)
                 .multilineTextAlignment(.center)
             PrimaryButton(title: "Generate Study Path") { onGenerate() }
-                .padding(.horizontal, theme.spacing.xl)
+                .padding(.horizontal, theme.spacing.md)
             Spacer()
         }
         .frame(maxWidth: .infinity)
