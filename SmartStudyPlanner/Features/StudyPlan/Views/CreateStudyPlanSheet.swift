@@ -53,6 +53,7 @@ struct CreateStudyPlanSheet: View {
                     .padding(.bottom, theme.spacing.xxl)
                 }
             }
+            .background(theme.colors.surface.opacity(0.2))
         }
     }
 

@@ -55,6 +55,7 @@ struct ManageAvailabilitySheet: View {
                     .padding(theme.spacing.lg)
                 }
             }
+            .background(theme.colors.surface.opacity(0.2))
         }
     }
 

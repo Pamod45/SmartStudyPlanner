@@ -14,12 +14,14 @@ struct PrimaryButton: View {
     var icon: String? = nil
     let action: () -> Void
     var isLoading: Bool = false
+    var font: Font?
     
-    init(title: String, icon: String? = nil, isLoading: Bool = false, action: @escaping () -> Void) {
+    init(title: String, icon: String? = nil, isLoading: Bool = false, action: @escaping () -> Void,font :Font? = nil) {
         self.title = title
         self.icon = icon
         self.isLoading = isLoading
         self.action = action
+        self.font = font
     }
 
     var body: some View {
@@ -31,7 +33,7 @@ struct PrimaryButton: View {
                     }
                     Text(title)
                 }
-                .font(theme.typography.headingSmall)
+                .font(font ?? theme.typography.headingSmall)
                 .foregroundColor(theme.colors.textOnPrimary)
                 .opacity(isLoading ? 0 : 1)
 
