@@ -20,8 +20,16 @@ struct SettingsView: View {
     @State private var showTerms: Bool = false
     @State private var showGeneralNotifications: Bool = false
     @State private var showLogOutConfirm: Bool = false
+    @State private var showProfile: Bool = false
 
-    private let user = SettingsUser(name: "Pubudu Perera", degree: "Software Engineering")
+    @State private var user = SettingsUser(
+        name: "Pubudu Perera",
+        email: "pubudu@gmail.com",
+        domain: "Software Engineering",
+        institute: "NIBM",
+        username: "Pubudu@45"
+    )
+
 
     var body: some View {
         ZStack {
@@ -31,15 +39,9 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 headerSection
                     .padding(.horizontal, theme.spacing.sm)
-                    .padding(.vertical, theme.spacing.md)
-                    .background(theme.colors.background)
-                    .overlay(
-                        Rectangle()
-                            .fill(theme.colors.border.opacity(0.3))
-                            .frame(height: 1),
-                        alignment: .bottom
-                    )
-
+                    .padding(.top, theme.spacing.md)
+                    .padding(.bottom, theme.spacing.lg)
+                
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: theme.spacing.md) {
                         profileCard
@@ -49,13 +51,23 @@ struct SettingsView: View {
                         logOutButton
                     }
                     .padding(.horizontal, theme.spacing.sm)
-                    .padding(.top, theme.spacing.lg)
                     .padding(.bottom, theme.spacing.xl)
                 }
             }
         }
         .navigationBarHidden(true)
-        .confirmationDialog("Log Out", isPresented: $showLogOutConfirm, titleVisibility: .visible) {
+        .background(
+            Group {
+                NavigationLink(destination: ProfileEditView(user: $user), isActive: $showProfile) { EmptyView() }
+                NavigationLink(destination: StudyGoalsView(), isActive: $showStudyGoals) { EmptyView() }
+                NavigationLink(destination: NotificationsSettingsView(), isActive: $showGeneralNotifications) { EmptyView() }
+                NavigationLink(destination: IntegrationsView(), isActive: $showIntegrations) { EmptyView() }
+                NavigationLink(destination: SecurityView(), isActive: $showSecurity) { EmptyView() }
+                NavigationLink(destination: AccessibilityView(), isActive: $showAccessibility) { EmptyView() }
+            }
+            .hidden()
+        )
+        .alert("Log Out", isPresented: $showLogOutConfirm) {
             Button("Log Out", role: .destructive) { }
             Button("Cancel", role: .cancel) { }
         } message: {
@@ -65,31 +77,48 @@ struct SettingsView: View {
 
     private var headerSection: some View {
         HStack {
+            EmptyView()
+            Spacer()
             Text("Settings")
-                .font(theme.typography.headingMedium)
+                .font(theme.typography.headingMedium.weight(.bold))
                 .foregroundColor(theme.colors.textPrimary)
             Spacer()
+            EmptyView()
         }
     }
 
     private var profileCard: some View {
         Button {
+            showProfile = true
         } label: {
             HStack(spacing: theme.spacing.md) {
                 ZStack {
-                    Circle()
-                        .fill(theme.colors.onSurface)
-                        .frame(width: 56, height: 56)
-                    Image(systemName: user.avatarSystemImage)
-                        .font(.system(size: 28))
-                        .foregroundColor(theme.colors.textSecondary)
+                    if let img = user.avatarImage {
+                        Image(uiImage: img)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 56, height: 56)
+                            .clipShape(Circle())
+                    } else {
+                        Circle()
+                            .fill(theme.colors.onSurface)
+                            .frame(width: 56, height: 56)
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 26))
+                            .foregroundColor(theme.colors.textSecondary)
+                    }
                 }
+                .overlay(
+                    Circle()
+                        .stroke(theme.colors.border.opacity(0.4), lineWidth: 1)
+                        .frame(width: 56, height: 56)
+                )
 
                 VStack(alignment: .leading, spacing: theme.spacing.xs) {
                     Text(user.name)
                         .font(theme.typography.headingSmall)
                         .foregroundColor(theme.colors.textPrimary)
-                    Text(user.degree)
+                    Text(user.domain)
                         .font(theme.typography.bodyMedium)
                         .foregroundColor(theme.colors.textSecondary)
                 }
@@ -201,12 +230,8 @@ struct SettingsView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, theme.spacing.md)
-            .background(theme.colors.error.opacity(0.08))
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(theme.colors.error.opacity(0.25), lineWidth: 1)
-            )
+            .background(theme.colors.surface)
+            .cornerRadius(theme.radius.xl)
         }
         .buttonStyle(.plain)
     }
@@ -282,12 +307,6 @@ struct SettingsView: View {
 
     private func iconBadge(icon: String, color: Color) -> some View {
         ZStack {
-//            RoundedRectangle(cornerRadius: theme.radius.sm)
-//                .fill(color.opacity(0.15))
-//                .frame(width: 34, height: 34)
-//            RoundedRectangle(cornerRadius: theme.radius.sm)
-//                .stroke(color.opacity(0.3), lineWidth: 1)
-//                .frame(width: 34, height: 34)
             Image(systemName: icon)
                 .frame(width: 40, height: 30)
                 .font(theme.typography.headingSmall)

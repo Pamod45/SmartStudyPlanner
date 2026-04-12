@@ -12,16 +12,10 @@ struct RoundNavButton: View {
     var body: some View{
         Button(action: action){
             Image(systemName: "chevron.right")
-                .font(theme.typography.bodyMedium)
                 .fontWeight(.semibold)
-                .foregroundColor(theme.colors.textSecondary)
-                .frame(width: 40, height: 40)
-                .background(theme.colors.surface)
-                .clipShape(Circle())
-                .overlay(
-                    Circle()
-                        .stroke(theme.colors.border.opacity(0.6), lineWidth: 1)
-                )
+                .foregroundColor(theme.colors.textPrimary)
+                .frame(width: 36, height: 36)
+                .glassEffect(.regular, in: Circle())
         }
     }
 }

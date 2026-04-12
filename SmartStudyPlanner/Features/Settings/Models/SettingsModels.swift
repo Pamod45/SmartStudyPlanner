@@ -9,8 +9,11 @@ import SwiftUI
 
 struct SettingsUser {
     var name: String
-    var degree: String
-    var avatarSystemImage: String = "person.crop.circle.fill"
+    var email: String
+    var domain: String
+    var institute: String
+    var username: String
+    var avatarImage: UIImage? = nil
 }
 
 enum SettingsRowType {
