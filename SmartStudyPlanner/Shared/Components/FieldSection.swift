@@ -19,13 +19,16 @@ struct FieldSection<Content: View>: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: theme.spacing.m) {
+        VStack(alignment: .leading, spacing: theme.spacing.md) {
             Text(title)
                 .font(theme.typography.caption.weight(.bold))
                 .foregroundColor(theme.colors.textPrimary)
                 .tracking(2)
             
             content
+//                .frame(maxWidth: .infinity)
+//                .frame(height: 48)
+               // .background(Color.red)
         }
     }
 }
