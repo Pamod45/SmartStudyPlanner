@@ -6,8 +6,16 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AD53B3DB2F8CCADB0002309F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = AD53B3DA2F8CCADB0002309F /* GoogleService-Info.plist */; };
+		AD53B3DE2F8CCC570002309F /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = AD53B3DD2F8CCC570002309F /* FirebaseAuth */; };
+		AD53B3E02F8CCC570002309F /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = AD53B3DF2F8CCC570002309F /* FirebaseCore */; };
+		AD53B3E22F8CCC570002309F /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = AD53B3E12F8CCC570002309F /* FirebaseFirestore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		AD060C662F718F47001254E6 /* SmartStudyPlanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartStudyPlanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD53B3DA2F8CCADB0002309F /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -23,6 +31,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AD53B3E02F8CCC570002309F /* FirebaseCore in Frameworks */,
+				AD53B3DE2F8CCC570002309F /* FirebaseAuth in Frameworks */,
+				AD53B3E22F8CCC570002309F /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -32,6 +43,7 @@
 		AD060C5D2F718F47001254E6 = {
 			isa = PBXGroup;
 			children = (
+				AD53B3DA2F8CCADB0002309F /* GoogleService-Info.plist */,
 				AD060C682F718F47001254E6 /* SmartStudyPlanner */,
 				AD060C672F718F47001254E6 /* Products */,
 			);
@@ -65,6 +77,9 @@
 			);
 			name = SmartStudyPlanner;
 			packageProductDependencies = (
+				AD53B3DD2F8CCC570002309F /* FirebaseAuth */,
+				AD53B3DF2F8CCC570002309F /* FirebaseCore */,
+				AD53B3E12F8CCC570002309F /* FirebaseFirestore */,
 			);
 			productName = SmartStudyPlanner;
 			productReference = AD060C662F718F47001254E6 /* SmartStudyPlanner.app */;
@@ -94,6 +109,9 @@
 			);
 			mainGroup = AD060C5D2F718F47001254E6;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AD53B3DC2F8CCC570002309F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AD060C672F718F47001254E6 /* Products */;
 			projectDirPath = "";
@@ -109,6 +127,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AD53B3DB2F8CCADB0002309F /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -256,6 +275,8 @@
 				DEVELOPMENT_TEAM = 2BCJ5647BL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SmartStudyPlanner;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -288,6 +309,8 @@
 				DEVELOPMENT_TEAM = 2BCJ5647BL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SmartStudyPlanner;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -332,6 +355,35 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AD53B3DC2F8CCC570002309F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AD53B3DD2F8CCC570002309F /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD53B3DC2F8CCC570002309F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		AD53B3DF2F8CCC570002309F /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD53B3DC2F8CCC570002309F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		AD53B3E12F8CCC570002309F /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD53B3DC2F8CCC570002309F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AD060C5E2F718F47001254E6 /* Project object */;
 }
