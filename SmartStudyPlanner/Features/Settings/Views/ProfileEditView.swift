@@ -182,12 +182,17 @@ struct ProfileEditView: View {
 
     private var saveButton: some View {
         PrimaryButton(title: "Save Changes") {
-            user.name = name
-            user.email = email
-            user.domain = domain
-            user.institute = institute
-            user.username = username
-            user.avatarImage = avatarImage
+            var updatedUser = user
+            updatedUser.name = name
+            updatedUser.email = email
+            updatedUser.domain = domain
+            updatedUser.institute = institute
+            updatedUser.username = username
+            updatedUser.avatarImage = avatarImage
+            
+            user = updatedUser
+            
+            dismiss()
         }
     }
 

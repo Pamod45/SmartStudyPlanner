@@ -2,47 +2,30 @@ import SwiftUI
 
 struct StudyPlanView: View {
     @Environment(\.theme) var theme
+    @StateObject private var vm = StudyPlanViewModel()
     @State private var selectedDate: DateComponents? = nil
-    @State private var availabilitySlots: [AvailabilitySlot] = AvailabilitySlot.samples
     @State private var showManageAvailability: Bool = false
     @State private var showCreateStudyPlan: Bool = false
     @State private var selectedDeadline: Deadline? = nil
     @State private var sessionSheetSlot: AvailabilitySlot? = nil
     @State private var editingSession: (slot: AvailabilitySlot, session: StudySession)? = nil
-    @State private var studySessions: [StudySession] = StudySession.planSamples
-    @State private var deadlines: [Deadline] = Subject.samples.flatMap {
-        Deadline.samples(for: $0.id, color: $0.color)
-    }
 
     var slotsForSelectedDate: [AvailabilitySlot] {
         guard let selected = selectedDate,
               let date = Calendar.current.date(from: selected) else { return [] }
-        return availabilitySlots.filter { slot in
-            switch slot.type {
-            case .date:
-                return slot.date.map { Calendar.current.isDate($0, inSameDayAs: date) } ?? false
-            case .daily:
-                return true
-            case .weekly:
-                let weekday = Calendar.current.component(.weekday, from: date)
-                return slot.weekday == weekday
-            case .range:
-                guard let start = slot.rangeStart, let end = slot.rangeEnd else { return false }
-                return date >= start && date <= end
-            }
-        }
+        return vm.slotsForDate(date)
     }
 
     var sessionsForSelectedDate: [StudySession] {
         guard let selected = selectedDate,
               let date = Calendar.current.date(from: selected) else { return [] }
-        return studySessions.filter { Calendar.current.isDate($0.startTime, inSameDayAs: date) }
+        return vm.sessionsForDate(date)
     }
 
     var deadlinesForSelectedDate: [Deadline] {
         guard let selected = selectedDate,
               let date = Calendar.current.date(from: selected) else { return [] }
-        return deadlines.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }
+        return vm.deadlinesForDate(date)
     }
 
     var body: some View {
@@ -59,9 +42,9 @@ struct StudyPlanView: View {
                     VStack(spacing: theme.spacing.lg) {
                         CalendarView(
                             selectedDate: $selectedDate,
-                            slots: availabilitySlots,
-                            sessions: studySessions,
-                            deadlines: deadlines
+                            slots: vm.availabilitySlots,
+                            sessions: vm.studySessions,
+                            deadlines: vm.deadlines
                         )
                         .background(theme.colors.surface)
                         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
@@ -81,35 +64,31 @@ struct StudyPlanView: View {
         }
         .sheet(isPresented: $showManageAvailability) {
             ManageAvailabilitySheet { newSlot in
-                availabilitySlots.append(newSlot)
+                vm.addAvailabilitySlot(newSlot)
             }
             .environment(\.theme, theme)
         }
         .sheet(isPresented: $showCreateStudyPlan) {
             CreateStudyPlanSheet(
-                availabilitySlots: availabilitySlots,
+                availabilitySlots: vm.availabilitySlots,
                 onPlanCreated: { sessions in
-                    studySessions = sessions
+                    sessions.forEach { vm.addSession($0) }
                 }
             )
             .environment(\.theme, theme)
         }
         .sheet(item: $selectedDeadline) { deadline in
             AddDeadlineSheet(
-                subjectID: deadline.subjectID,
+                subjectId: deadline.subjectId,
                 existingDeadline: deadline,
                 onSave: { _ in },
-                onUpdate: { updated in
-                    if let idx = deadlines.firstIndex(where: { $0.id == updated.id }) {
-                        deadlines[idx] = updated
-                    }
-                }
+                onUpdate: { _ in }
             )
             .environment(\.theme, theme)
         }
         .sheet(item: $sessionSheetSlot) { slot in
             AddStudySessionSheet(slot: slot) { newSession in
-                studySessions.append(newSession)
+                vm.addSession(newSession)
             }
             .environment(\.theme, theme)
         }
@@ -120,14 +99,8 @@ struct StudyPlanView: View {
             AddStudySessionSheet(
                 slot: item.slot,
                 existingSession: item.session,
-                onSave: { updated in
-                    if let idx = studySessions.firstIndex(where: { $0.id == updated.id }) {
-                        studySessions[idx] = updated
-                    }
-                },
-                onDelete: {
-                    studySessions.removeAll { $0.id == item.session.id }
-                }
+                onSave: { updated in vm.updateSession(updated) },
+                onDelete: { vm.removeSession(id: item.session.id) }
             )
             .environment(\.theme, theme)
         }
@@ -191,7 +164,7 @@ struct StudyPlanView: View {
             return Calendar.current.date(from: selected)
         }() else { return [] }
 
-        return studySessions.filter { session in
+        return vm.studySessions.filter { session in
             Calendar.current.isDate(session.startTime, inSameDayAs: slotDate) &&
             session.startTime >= slot.startTime &&
             session.endTime   <= slot.endTime
@@ -232,7 +205,7 @@ struct StudyPlanView: View {
 
                 Button {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        availabilitySlots.removeAll { $0.id == slot.id }
+                        vm.removeAvailabilitySlot(id: slot.id)
                     }
                 } label: {
                     Image(systemName: "trash")
@@ -292,7 +265,7 @@ struct StudyPlanView: View {
                     .frame(width: 3)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(session.subject)
+                    Text(session.subjectName)
                         .font(theme.typography.bodySmall)
                         .fontWeight(.semibold)
                         .foregroundColor(session.subjectColor)
@@ -420,7 +393,7 @@ struct StudyPlanView: View {
 }
 
 private struct EditSessionID: Identifiable {
-    let id: UUID
+    let id: String
     let slot: AvailabilitySlot
     let session: StudySession
     init(slot: AvailabilitySlot, session: StudySession) {

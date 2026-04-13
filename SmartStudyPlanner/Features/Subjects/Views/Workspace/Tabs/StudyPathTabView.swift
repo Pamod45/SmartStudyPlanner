@@ -16,7 +16,7 @@ struct StudyPathTabView: View {
     var onRegenerate: () -> Void
     var onGenerate: () -> Void
 
-    @State private var expandedTopicID: UUID? = nil
+    @State private var expandedTopicID: String? = nil
 
     private var overallCompletion: Int {
         guard let path = studyPath, !path.topics.isEmpty else { return 0 }
@@ -246,7 +246,7 @@ struct StudyPathTabView: View {
                 .padding(.horizontal, theme.spacing.md)
             }
 
-            if !topic.resources.isEmpty {
+            if !topic.resourceIds.isEmpty {
                 VStack(alignment: .leading, spacing: theme.spacing.sm) {
                     Text("TOPIC RESOURCES")
                         .font(.system(size: 10, weight: .bold))
@@ -254,8 +254,9 @@ struct StudyPathTabView: View {
                         .tracking(1.5)
                         .padding(.horizontal, theme.spacing.md)
 
+                    let topicResources = resources.filter { topic.resourceIds.contains($0.id) }
                     VStack(spacing: theme.spacing.xs) {
-                        ForEach(topic.resources) { resource in
+                        ForEach(topicResources) { resource in
                             topicResourceRow(resource)
                         }
                     }

@@ -8,36 +8,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @Environment(\.theme) var theme
-
-    private let sessions: [StudySession] = {
-        let cal = Calendar.current
-        let today = Date()
-        return [
-            StudySession(
-                subject: "iOS",
-                title: "SwiftUI Layout",
-                startTime: cal.date(bySettingHour: 19, minute: 30, second: 0, of: today)!,
-                endTime: cal.date(bySettingHour: 20, minute: 15, second: 0, of: today)!,
-                subjectColor: Color(hex: "#93C5FF")
-            ),
-            StudySession(
-                subject: "Web API",
-                title: "REST API",
-                startTime: cal.date(bySettingHour: 20, minute: 30, second: 0, of: today)!,
-                endTime: cal.date(bySettingHour: 21, minute: 0, second: 0, of: today)!,
-                subjectColor: Color(hex: "#F9ABFF")
-            )
-        ]
-    }()
-
-    private let deadlines: [Deadline] = Deadline.dashboardSamples
-
-    private let shortcuts: [Shortcut] = [
-        Shortcut(title: "SCAN NOTES", icon: "doc.viewfinder", color: .blue),
-        Shortcut(title: "IMPORT DOC", icon: "doc.badge.arrow.up", color: .brown),
-        Shortcut(title: "RECORD LECTURES", icon: "mic.fill", color: .green),
-        Shortcut(title: "TAKE NOTES", icon: "signature", color: .purple)
-    ]
+    @StateObject private var vm = DashboardViewModel()
 
     var body: some View {
         ZStack {
@@ -49,11 +20,11 @@ struct DashboardView: View {
                     .padding(.vertical, theme.spacing.md)
                     .background(theme.colors.background)
                     .overlay(
-                            Rectangle()
-                                .fill(theme.colors.border.opacity(0.3))
-                                .frame(height: 1),
-                            alignment: .bottom
-                        )
+                        Rectangle()
+                            .fill(theme.colors.border.opacity(0.3))
+                            .frame(height: 1),
+                        alignment: .bottom
+                    )
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: theme.spacing.xl) {
@@ -77,14 +48,14 @@ struct DashboardView: View {
                     .fill(theme.colors.surface)
                     .frame(width: 44, height: 44)
 
-                Text("Good Evening, Pubudu")
+                Text("Good Evening")
                     .font(theme.typography.headingSmall)
                     .fontWeight(.bold)
                     .foregroundColor(theme.colors.textPrimary)
             }
 
             Spacer()
-            
+
             NavigationLink {
                 NotificationListView()
                     .environment(\.theme, theme)
@@ -100,10 +71,17 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
             SectionHeader(title: "Today's Study Sessions", actionTitle: "ACTIVE")
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: theme.spacing.md) {
-                    ForEach(sessions) { session in
-                        StudySessionCard(session: session) {
+            if vm.todaySessions.isEmpty {
+                Text("No sessions scheduled for today")
+                    .font(theme.typography.bodyMedium)
+                    .foregroundColor(theme.colors.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, theme.spacing.sm)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: theme.spacing.md) {
+                        ForEach(vm.todaySessions) { session in
+                            StudySessionCard(session: session) {}
                         }
                     }
                 }
@@ -113,12 +91,19 @@ struct DashboardView: View {
 
     private var upcomingDeadlines: some View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
-            SectionHeader(title: "Upcoming Exams", actionTitle: "View Calendar") {
-            }
+            SectionHeader(title: "Upcoming Deadlines", actionTitle: "View Calendar") {}
 
-            VStack(spacing: theme.spacing.md) {
-                ForEach(deadlines) { deadline in
-                    DeadlineCard(deadline: deadline,action: {})
+            if vm.upcomingDeadlines.isEmpty {
+                Text("No upcoming deadlines")
+                    .font(theme.typography.bodyMedium)
+                    .foregroundColor(theme.colors.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, theme.spacing.sm)
+            } else {
+                VStack(spacing: theme.spacing.md) {
+                    ForEach(vm.upcomingDeadlines) { deadline in
+                        DeadlineCard(deadline: deadline, action: {})
+                    }
                 }
             }
         }
@@ -128,10 +113,9 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
             SectionHeader(title: "Smart Shortcuts")
 
-            LazyVGrid(columns: [GridItem(.flexible(),spacing: theme.spacing.md), GridItem(.flexible())], spacing: theme.spacing.md) {
-                ForEach(shortcuts) { shortcut in
-                    ShortcutCard(shortcut: shortcut) {
-                    }
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: theme.spacing.md), GridItem(.flexible())], spacing: theme.spacing.md) {
+                ForEach(vm.shortcuts) { shortcut in
+                    ShortcutCard(shortcut: shortcut) {}
                 }
             }
         }

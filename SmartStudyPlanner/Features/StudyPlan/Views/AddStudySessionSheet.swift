@@ -14,11 +14,12 @@ struct AddStudySessionSheet: View {
     @State private var customTopic: String = ""
     @State private var useCustomTopic: Bool = false
     @State private var availableResources: [Resource] = []
-    @State private var selectedResourceIDs: Set<UUID> = []
+    @State private var selectedResourceIDs: Set<String> = []
     @State private var startTime: Date = .now
     @State private var endTime: Date = .now
     @State private var notes: String = ""
     @State private var hasReminder: Bool = false
+    var availableSubjects: [Subject] = []
 
     private var isEditing: Bool { existingSession != nil }
 
@@ -30,10 +31,7 @@ struct AddStudySessionSheet: View {
         selectedSubject != nil && !topicName.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
-    private var systemTopics: [StudyTopic] {
-        guard let subject = selectedSubject else { return [] }
-        return StudyTopic.samples(for: subject)
-    }
+    private var systemTopics: [StudyTopic] { [] }
 
     var body: some View {
         ZStack {
@@ -53,8 +51,14 @@ struct AddStudySessionSheet: View {
                         FieldSection(title: "SUBJECT") {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: theme.spacing.sm) {
-                                    ForEach(Subject.samples) { subject in
-                                        subjectChip(subject)
+                                    if availableSubjects.isEmpty {
+                                        Text("No subjects yet — add one first")
+                                            .font(theme.typography.bodySmall)
+                                            .foregroundColor(theme.colors.textSecondary)
+                                    } else {
+                                        ForEach(availableSubjects) { subject in
+                                            subjectChip(subject)
+                                        }
                                     }
                                 }
                             }
@@ -212,10 +216,10 @@ struct AddStudySessionSheet: View {
             selectedResourceIDs = []
             reloadResources()
         }
-        .onChange(of: selectedTopic) { _, topic in
+        .onChange(of: selectedTopic) { topic in
             guard !useCustomTopic else { return }
             if let topic {
-                selectedResourceIDs = Set(availableResources.prefix(topic.resources).map(\.id))
+                selectedResourceIDs = Set(availableResources.prefix(topic.resourceCount).map(\.id))
             } else {
                 selectedResourceIDs = []
             }
@@ -292,7 +296,7 @@ struct AddStudySessionSheet: View {
                         .font(theme.typography.bodyMedium)
                         .fontWeight(.semibold)
                         .foregroundColor(theme.colors.textPrimary)
-                    Text("\(topic.resources) resources · Est. \(topic.estimatedHours) hrs")
+                    Text("\(topic.resourceCount) resources · Est. \(topic.estimatedHours) hrs")
                         .font(theme.typography.bodySmall)
                         .foregroundColor(theme.colors.textSecondary)
                 }
@@ -381,11 +385,8 @@ struct AddStudySessionSheet: View {
     }
 
     private func reloadResources() {
-        guard let subject = selectedSubject else {
-            availableResources = []
-            return
-        }
-        availableResources = Resource.samples(for: subject.id)
+        availableResources = []
+        selectedResourceIDs = []
     }
 
     private func prefill() {
@@ -403,28 +404,20 @@ struct AddStudySessionSheet: View {
 
         guard let session = existingSession else { return }
 
-        selectedSubject = Subject.samples.first { $0.id == session.subjectID }
+        selectedSubject = availableSubjects.first { $0.id == session.subjectId }
         reloadResources()
 
-        if let subject = selectedSubject {
-            let sysTopics = StudyTopic.samples(for: subject)
-            if let match = sysTopics.first(where: { $0.name == session.topic }) {
-                selectedTopic = match
-                useCustomTopic = false
-            } else {
-                customTopic = session.topic
-                useCustomTopic = true
-            }
-        }
+        customTopic = session.topic
+        useCustomTopic = true
 
-        selectedResourceIDs = Set(session.resourceIDs)
+        selectedResourceIDs = Set(session.resourceIds)
         startTime = session.startTime
         endTime = session.endTime
         hasReminder = session.hasReminder
     }
 
     private func saveSession() {
-        let subject = selectedSubject ?? Subject.samples[0]
+        guard let subject = selectedSubject else { return }
         let name = topicName.trimmingCharacters(in: .whitespaces)
 
         let slotDay = slot.date ?? Date()
@@ -441,16 +434,17 @@ struct AddStudySessionSheet: View {
         ) ?? endTime
 
         let session = StudySession(
-            id: existingSession?.id ?? UUID(),
-            subjectID: subject.id,
-            subject: subject.name,
-            topic: name,
+            id: existingSession?.id ?? UUID().uuidString,
+            subjectId: subject.id,
+            subjectName: subject.name,
+            subjectColorHex: subject.colorHex,
             title: name,
+            topic: name,
+            scheduledDate: slotDay,
             startTime: s,
             endTime: e,
-            subjectColor: subject.color,
             hasReminder: hasReminder,
-            resourceIDs: Array(selectedResourceIDs)
+            resourceIds: Array(selectedResourceIDs)
         )
         onSave(session)
         dismiss()
@@ -462,7 +456,7 @@ private extension Optional {
 }
 
 #Preview {
-    let slot = AvailabilitySlot.samples.first!
+    let slot = AvailabilitySlot()
     return AddStudySessionSheet(slot: slot) { _ in }
         .environment(\.theme, AppTheme.defaultTheme)
 }

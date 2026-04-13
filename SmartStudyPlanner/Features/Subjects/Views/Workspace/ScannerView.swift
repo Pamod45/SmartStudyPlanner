@@ -202,7 +202,7 @@ struct ScannerView: View {
                 if capturedCount > 0 {
                     let resource = Resource(
                         name: "Scan \(Date().formatted(date: .abbreviated, time: .shortened))",
-                        type: .scan,
+                        resourceType: .scan,
                         size: "\(capturedCount) page\(capturedCount > 1 ? "s" : "")"
                     )
                     onSave(resource)

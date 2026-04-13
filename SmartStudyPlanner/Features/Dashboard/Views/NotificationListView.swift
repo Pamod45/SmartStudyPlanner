@@ -16,11 +16,13 @@ struct NotificationListView: View {
     @State private var editMode: EditMode = .inactive
     @State private var selectedNotifications = Set<AppNotification.ID>()
 
+    @State private var notifications: [AppNotification] = []
+
     private var filteredNotifications: [AppNotification] {
         if selectedType == .all {
-            return AppNotification.samples
+            return notifications
         } else {
-            return AppNotification.samples.filter { $0.notificationType == selectedType }
+            return notifications.filter { $0.notificationType == selectedType }
         }
     }
 
@@ -60,7 +62,7 @@ struct NotificationListView: View {
                             ))
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
-                                    AppNotification.samples.removeAll { $0.id == notification.id }
+                                    notifications.removeAll { $0.id == notification.id }
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }.tint(Color.red)
@@ -116,7 +118,7 @@ struct NotificationListView: View {
                 .glassEffect(.regular, in: Circle())
             } else {
                 Button {
-                    AppNotification.samples.removeAll { selectedNotifications.contains($0.id) }
+                    notifications.removeAll { selectedNotifications.contains($0.id) }
                     selectedNotifications.removeAll()
                     editMode = .inactive
                 } label: {

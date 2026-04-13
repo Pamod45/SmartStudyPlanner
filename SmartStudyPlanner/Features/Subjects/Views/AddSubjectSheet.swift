@@ -43,10 +43,7 @@ struct AddSubjectSheet: View {
                         guard !subjectName.isEmpty else { return }
                         let newSubject = Subject(
                             name: subjectName,
-                            color: selectedColor,
-                            resources: 0,
-                            topics: 0,
-                            lastUpdated: "Just now"
+                            colorHex: selectedColor.toHex() ?? "#3B82F6"
                         )
                         onSave(newSubject)
                         dismiss()

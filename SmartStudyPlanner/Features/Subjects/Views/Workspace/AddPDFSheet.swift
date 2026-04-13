@@ -129,7 +129,7 @@ struct AddPDFSheet: View {
         }
         .sheet(isPresented: $showFilePicker) {
             FilePickerView { resource in
-                filePath = resource.filePath ?? ""
+                filePath = resource.localFilePath ?? ""
                 fileSize = resource.size
                 if name.isEmpty { name = resource.name }
             }
@@ -138,7 +138,7 @@ struct AddPDFSheet: View {
         .onAppear {
             if let existing = existingResource {
                 name = existing.name
-                filePath = existing.filePath ?? ""
+                filePath = existing.localFilePath ?? ""
                 fileSize = existing.size
             }
         }
@@ -146,12 +146,12 @@ struct AddPDFSheet: View {
 
     private func save() {
         let resource = Resource(
-            id: existingResource?.id ?? UUID(),
+            id: existingResource?.id ?? UUID().uuidString,
+            subjectId: existingResource?.subjectId ?? "",
             name: name,
-            type: .pdf,
+            resourceType: .pdf,
             size: fileSize,
-            subjectID: existingResource?.subjectID ?? UUID(),
-            filePath: filePath
+            localFilePath: filePath
         )
         if isEditing {
             onUpdate?(resource)

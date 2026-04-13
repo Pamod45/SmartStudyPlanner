@@ -12,7 +12,7 @@ struct AddDeadlineSheet: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
 
-    let subjectID: UUID
+    let subjectId: String
     var existingDeadline: Deadline? = nil
     var onSave: (Deadline) -> Void
     var onUpdate: ((Deadline) -> Void)? = nil
@@ -165,8 +165,8 @@ struct AddDeadlineSheet: View {
         .onAppear {
             guard let d = existingDeadline else { return }
             name = d.name
-            date = d.date
-            time = d.date
+            date = d.dueDate
+            time = d.dueDate
             hasReminder = d.hasReminder
             isHighPriority = d.isHighPriority
             notes = d.notes
@@ -205,14 +205,14 @@ struct AddDeadlineSheet: View {
         ) ?? date
 
         let deadline = Deadline(
-            id: existingDeadline?.id ?? UUID(),
+            id: existingDeadline?.id ?? UUID().uuidString,
+            subjectId: subjectId,
             name: name,
-            date: combined,
+            dueDate: combined,
             hasReminder: hasReminder,
             isHighPriority: isHighPriority,
             notes: notes,
-            tag: selectedTag,
-            subjectID: subjectID
+            tag: selectedTag
         )
 
         if isEditing {
@@ -225,6 +225,6 @@ struct AddDeadlineSheet: View {
 }
 
 #Preview {
-    AddDeadlineSheet(subjectID: UUID()) { _ in }
+    AddDeadlineSheet(subjectId: UUID().uuidString) { _ in }
         .environment(\.theme, AppTheme.defaultTheme)
 }

@@ -16,7 +16,7 @@ struct GenerateStudyPathSheet: View {
     let isRegenerate: Bool
     var onGenerate: (StudyPath) -> Void
 
-    @State private var selectedResourceIDs: Set<UUID> = []
+    @State private var selectedResourceIDs: Set<String> = []
 
     init(
         subject: Subject,
@@ -166,7 +166,11 @@ struct GenerateStudyPathSheet: View {
                 title: isRegenerate ? "Regenerate Study Path" : "Generate Study Path",
                 icon: isRegenerate ? "arrow.clockwise" : nil
             ) {
-                let path = StudyPath.generate(for: subject, using: selectedResources)
+                let path = StudyPath(
+                    subjectId: subject.id,
+                    title: "\(subject.name) Study Path",
+                    generatedFromResourceIds: Array(selectedResourceIDs)
+                )
                 onGenerate(path)
                 dismiss()
             }
@@ -191,8 +195,8 @@ struct GenerateStudyPathSheet: View {
 
 #Preview {
     GenerateStudyPathSheet(
-        subject: Subject.samples.first!,
-        resources: Resource.samples(for: Subject.samples.first!.id),
+        subject: Subject(name: "iOS Development", colorHex: "#3B82F6"),
+        resources: [],
         isRegenerate: false
     ) { _ in }
     .environmentObject(ThemeManager())

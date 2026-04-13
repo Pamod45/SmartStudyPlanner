@@ -7,6 +7,7 @@ enum ProgressTab: String, CaseIterable {
 
 struct ProgressView: View {
     @Environment(\.theme) var theme
+    @StateObject private var vm = ProgressViewModel()
     @State private var selectedTab: ProgressTab = .summary
 
     var body: some View {
@@ -22,11 +23,12 @@ struct ProgressView: View {
                 tabPicker
                     .padding(.horizontal, theme.spacing.lg)
                     .padding(.bottom, theme.spacing.md)
+
                 ZStack {
                     if selectedTab == .summary {
-                        SummaryView()
+                        SummaryView(vm: vm)
                     } else {
-                        ChartsView()
+                        ChartsView(vm: vm)
                     }
                 }
             }

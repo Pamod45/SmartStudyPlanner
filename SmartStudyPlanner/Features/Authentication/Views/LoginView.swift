@@ -9,6 +9,8 @@ import SwiftUI
 
 struct LoginView: View {
     @Environment(\.theme) var theme
+    @EnvironmentObject var sessionViewModel: SessionViewModel
+    @StateObject private var vm = AuthViewModel()
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var showSignUp = false
@@ -26,6 +28,14 @@ struct LoginView: View {
                 Spacer().frame(height: theme.spacing.xxl)
 
                 inputSection
+
+                if let err = vm.errorMessage {
+                    Text(err)
+                        .font(theme.typography.bodySmall)
+                        .foregroundColor(theme.colors.error)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, theme.spacing.sm)
+                }
 
                 Spacer().frame(height: theme.spacing.md)
 
@@ -98,9 +108,20 @@ struct LoginView: View {
     }
 
     private var loginButton: some View {
-        PrimaryButton(title: "Login") {
-            
+        PrimaryButton(title: vm.isLoading ? "Logging in..." : "Login") {
+            guard !email.isEmpty, !password.isEmpty else {
+                vm.errorMessage = "Please enter email and password."
+                return
+            }
+            Task {
+                await vm.signIn(email: email, password: password) { user in
+                    if let user = user {
+                        sessionViewModel.signIn(user: user)
+                    }
+                }
+            }
         }
+        .disabled(vm.isLoading)
     }
 
     private var socialButtons: some View {
@@ -112,7 +133,9 @@ struct LoginView: View {
     }
 
     private var continueAsGuestButton: some View {
-        TextButton(title:"Continue as Guest"){}
+        TextButton(title:"Continue as Guest") {
+            sessionViewModel.continueAsGuest()
+        }
     }
 
     private var signupPrompt: some View {
@@ -129,7 +152,9 @@ struct LoginView: View {
 }
 
 #Preview {
-    LoginView()
-        .environment(\.theme, AppTheme.defaultTheme)
+    NavigationStack {
+        LoginView()
+            .environment(\.theme, AppTheme.defaultTheme)
+            .environmentObject(SessionViewModel())
+    }
 }
-

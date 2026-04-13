@@ -1,10 +1,3 @@
-//
-//  AppTab.swift
-//  SmartStudyPlanner
-//
-//  Created by Pubudu Perera on 2026-04-01.
-//
-
 import Foundation
 
 enum AppTab: Int, CaseIterable {
@@ -34,4 +27,3 @@ enum AppTab: Int, CaseIterable {
         }
     }
 }
-

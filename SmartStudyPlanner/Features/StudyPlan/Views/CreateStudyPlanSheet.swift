@@ -9,11 +9,11 @@ struct CreateStudyPlanSheet: View {
 
     @State private var startDate: Date = .now
     @State private var endDate: Date = Calendar.current.date(byAdding: .month, value: 1, to: .now) ?? .now
-    @State private var expandedSubjectID: UUID? = nil
-    @State private var selectedSubjectIDs: Set<UUID> = []
+    @State private var expandedSubjectID: String? = nil
+    @State private var selectedSubjectIDs: Set<String> = []
     @State private var selectedTopicIDs: Set<String> = []
 
-    let subjects: [Subject] = Subject.samples
+    var subjects: [Subject] = []
 
     var body: some View {
         ZStack {
@@ -144,7 +144,7 @@ struct CreateStudyPlanSheet: View {
                         .font(theme.typography.bodyLarge)
                         .fontWeight(.bold)
                         .foregroundColor(theme.colors.textPrimary)
-                    Text("\(topics.count) Topics • \(subject.resources) Resources")
+                    Text("\(topics.count) Topics • \(subject.resourceCount) Resources")
                         .font(theme.typography.bodySmall)
                         .foregroundColor(theme.colors.textSecondary)
                 }
@@ -220,7 +220,7 @@ struct CreateStudyPlanSheet: View {
     }
 
     private func sampleTopics(for subject: Subject) -> [StudyTopic] {
-        StudyTopic.samples(for: subject)
+        return []
     }
     
     private func generateSessions() -> [StudySession] {
@@ -278,12 +278,14 @@ struct CreateStudyPlanSheet: View {
             else { continue }
 
             let session = StudySession(
-                subject: pair.subject.name,
-                topic: pair.topic.name,
+                subjectId: pair.subject.id,
+                subjectName: pair.subject.name,
+                subjectColorHex: pair.subject.colorHex,
                 title: pair.topic.name,
+                topic: pair.topic.name,
+                scheduledDate: day,
                 startTime: start,
                 endTime: end,
-                subjectColor: pair.subject.color,
                 hasReminder: false
             )
             sessions.append(session)
@@ -317,7 +319,7 @@ private struct TopicRowView: View {
                         .font(theme.typography.bodyMedium)
                         .fontWeight(.semibold)
                         .foregroundColor(theme.colors.textPrimary)
-                    Text("\(topic.resources) Resources")
+                    Text("\(topic.resourceCount) Resources")
                         .font(theme.typography.bodySmall)
                         .foregroundColor(theme.colors.textSecondary)
                 }

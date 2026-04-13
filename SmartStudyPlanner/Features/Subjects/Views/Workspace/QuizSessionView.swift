@@ -209,16 +209,7 @@ struct QuizSessionView: View {
                       let q = currentQuestion else { return }
                 attempt.selectedAnswers[q.id] = opt
                 if isLastQuestion {
-                    let completed = QuizAttempt(
-                        id: attempt.id,
-                        quizName: attempt.quizName,
-                        topicName: attempt.topicName,
-                        questions: attempt.questions,
-                        selectedAnswers: attempt.selectedAnswers,
-                        completedAt: Date(),
-                        timeSpentSeconds: Int(Date().timeIntervalSince(startTime)),
-                        subjectColor: attempt.subjectColor
-                    )
+                    let completed = QuizAttempt(id: attempt.id, quizName: attempt.quizName, topicName: attempt.topicName, subjectId: attempt.subjectId, subjectColorHex: attempt.subjectColorHex, questions: attempt.questions, selectedAnswers: attempt.selectedAnswers, timeSpentSeconds: Int(Date().timeIntervalSince(startTime)), completedAt: Date())
                     attempt = completed
                     onComplete(completed)
                     withAnimation(.easeInOut(duration: 0.3)) { showResults = true }

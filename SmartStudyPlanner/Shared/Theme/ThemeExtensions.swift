@@ -27,6 +27,13 @@ extension Color {
                   blue: Double(b) / 255,
                   opacity: Double(a) / 255)
     }
+
+    func toHex() -> String? {
+        let uiColor = UIColor(self)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
+        return String(format: "#%02X%02X%02X", Int(r * 255), Int(g * 255), Int(b * 255))
+    }
 }
 
 extension Font {

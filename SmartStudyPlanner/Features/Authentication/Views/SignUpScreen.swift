@@ -10,6 +10,8 @@ import SwiftUI
 struct SignUpView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var sessionViewModel: SessionViewModel
+    @StateObject private var vm = AuthViewModel()
 
     @State private var name: String = ""
     @State private var email: String = ""
@@ -56,9 +58,34 @@ struct SignUpView: View {
                     )
                 }
 
+                if let err = vm.errorMessage {
+                    Text(err)
+                        .font(theme.typography.bodySmall)
+                        .foregroundColor(theme.colors.error)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, theme.spacing.sm)
+                }
+
                 Spacer().frame(height: theme.spacing.lg)
 
-                PrimaryButton(title: "Sign Up") {}
+                PrimaryButton(title: vm.isLoading ? "Signing Up..." : "Sign Up") {
+                    guard password == confirmPassword else {
+                        vm.errorMessage = "Passwords do not match."
+                        return
+                    }
+                    guard !name.isEmpty, !email.isEmpty, !password.isEmpty else {
+                        vm.errorMessage = "All fields are required."
+                        return
+                    }
+                    Task {
+                        await vm.signUp(name: name, email: email, password: password) { user in
+                            if let user = user {
+                                sessionViewModel.signIn(user: user)
+                            }
+                        }
+                    }
+                }
+                .disabled(vm.isLoading)
 
                 Spacer().frame(height: theme.spacing.lg)
 
@@ -74,7 +101,9 @@ struct SignUpView: View {
 
                 Spacer().frame(height: theme.spacing.lg)
 
-                TextButton(title: "Continue as Guest") {}
+                TextButton(title: "Continue as Guest") {
+                    sessionViewModel.continueAsGuest()
+                }
 
                 Spacer()
             }
@@ -106,4 +135,5 @@ struct SignUpView: View {
 #Preview {
     SignUpView()
         .environment(\.theme, AppTheme.defaultTheme)
+        .environmentObject(SessionViewModel())
 }

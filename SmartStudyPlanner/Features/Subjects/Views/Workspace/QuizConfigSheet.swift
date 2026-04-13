@@ -19,8 +19,8 @@ struct QuizConfigSheet: View {
     @State private var quizName: String = ""
     @State private var questionCountText: String = ""
     @State private var configTab: ConfigTab = .topics
-    @State private var selectedTopicIDs: Set<UUID> = []
-    @State private var selectedResourceIDs: Set<UUID> = []
+    @State private var selectedTopicIDs: Set<String> = []
+    @State private var selectedResourceIDs: Set<String> = []
 
     enum ConfigTab { case topics, resources }
 
@@ -325,16 +325,15 @@ struct QuizConfigSheet: View {
         VStack(spacing: 0) {
             PrimaryButton(title: "Start Quiz", icon: "play.fill") {
                 let selTopics = topics.filter { selectedTopicIDs.contains($0.id) }
-                let selResources = resources.filter { selectedResourceIDs.contains($0.id) }
                 let count = max(3, questionCount)
-                let questions = QuizAttempt.generateQuestions(from: selTopics, resources: selResources, count: count)
                 let name = quizName.isEmpty ? (selTopics.first?.title ?? "Custom Quiz") : quizName
                 let attempt = QuizAttempt(
                     quizName: name,
                     topicName: selTopics.first?.title ?? "Custom",
-                    questions: questions,
-                    timeSpentSeconds: 0,
-                    subjectColor: subject.color
+                    subjectId: subject.id,
+                    subjectColorHex: subject.colorHex,
+                    questions: [],
+                    timeSpentSeconds: 0
                 )
                 onStart(attempt)
                 dismiss()

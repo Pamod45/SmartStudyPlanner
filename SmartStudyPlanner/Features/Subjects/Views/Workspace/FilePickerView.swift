@@ -46,9 +46,9 @@ struct FilePickerView: UIViewControllerRepresentable {
 
             let resource = Resource(
                 name: fileName,
-                type: .pdf,
+                resourceType: .pdf,
                 size: sizeMB,
-                filePath: url.absoluteString
+                localFilePath: url.absoluteString
             )
             onSave(resource)
         }

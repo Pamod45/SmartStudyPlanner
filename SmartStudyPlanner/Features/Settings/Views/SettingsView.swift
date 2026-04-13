@@ -9,6 +9,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.theme) var theme
+    @EnvironmentObject var sessionViewModel: SessionViewModel
+    @StateObject private var vm = SettingsViewModel()
 
     @State private var notificationsEnabled: Bool = true
     @State private var darkModeEnabled: Bool = true
@@ -22,13 +24,7 @@ struct SettingsView: View {
     @State private var showLogOutConfirm: Bool = false
     @State private var showProfile: Bool = false
 
-    @State private var user = SettingsUser(
-        name: "Pubudu Perera",
-        email: "pubudu@gmail.com",
-        domain: "Software Engineering",
-        institute: "NIBM",
-        username: "Pubudu@45"
-    )
+    private var user: SettingsUser { vm.settingsUser }
 
 
     var body: some View {
@@ -55,10 +51,13 @@ struct SettingsView: View {
                 }
             }
         }
+        .task(id: sessionViewModel.activeUserId) {
+            await vm.load(userId: sessionViewModel.activeUserId)
+        }
         .navigationBarHidden(true)
         .background(
             Group {
-                NavigationLink(destination: ProfileEditView(user: $user), isActive: $showProfile) { EmptyView() }
+                NavigationLink(destination: ProfileEditView(user: Binding(get: { vm.settingsUser }, set: { vm.updateUser($0) })), isActive: $showProfile) { EmptyView() }
                 NavigationLink(destination: StudyGoalsView(), isActive: $showStudyGoals) { EmptyView() }
                 NavigationLink(destination: NotificationsSettingsView(), isActive: $showGeneralNotifications) { EmptyView() }
                 NavigationLink(destination: IntegrationsView(), isActive: $showIntegrations) { EmptyView() }
@@ -68,7 +67,9 @@ struct SettingsView: View {
             .hidden()
         )
         .alert("Log Out", isPresented: $showLogOutConfirm) {
-            Button("Log Out", role: .destructive) { }
+            Button("Log Out", role: .destructive) {
+                sessionViewModel.signOut()
+            }
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Are you sure you want to log out?")

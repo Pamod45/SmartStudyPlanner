@@ -34,7 +34,7 @@ struct SubjectCard: View {
                     Text("RESOURCES")
                         .font(theme.typography.label.weight(.semibold))
                         .foregroundColor(theme.colors.textSecondary)
-                    Text("\(subject.resources)")
+                    Text("\(subject.resourceCount)")
                         .font(theme.typography.headingSmall)
                         .fontWeight(.bold)
                         .foregroundColor(theme.colors.textPrimary)
@@ -46,7 +46,7 @@ struct SubjectCard: View {
                     Text("TOPICS")
                         .font(theme.typography.label.weight(.semibold))
                         .foregroundColor(theme.colors.textSecondary)
-                    Text("\(subject.topics)")
+                    Text("\(subject.topicCount)")
                         .font(theme.typography.headingSmall)
                         .fontWeight(.bold)
                         .foregroundColor(theme.colors.textPrimary)
@@ -54,7 +54,7 @@ struct SubjectCard: View {
 
                 Spacer()
 
-                Text("Last Updated: \(subject.lastUpdated)")
+                Text("Updated: \(subject.updatedAt.formatted(date: .abbreviated, time: .omitted))")
                     .font(theme.typography.label)
                     .foregroundColor(theme.colors.textSecondary)
             }

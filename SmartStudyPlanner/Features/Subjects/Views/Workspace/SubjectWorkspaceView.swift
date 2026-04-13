@@ -20,10 +20,11 @@ struct SubjectWorkspaceView: View {
     @Environment(\.dismiss) private var dismiss
 
     let subject: Subject
+    var subjectsVM: SubjectsViewModel? = nil
 
     @State private var selectedTab: WorkspaceTab = .resources
-    @State private var deadlines: [Deadline]
-    @State private var resources: [Resource]
+    @State private var deadlines: [Deadline] = []
+    @State private var resources: [Resource] = []
     @State private var isDeadlinesExpanded: Bool = false
     @State private var showAddDeadline: Bool = false
     @State private var selectedDeadline: Deadline? = nil
@@ -37,15 +38,10 @@ struct SubjectWorkspaceView: View {
     @State private var showGeneratePath: Bool = false
     @State private var isRegeneratePath: Bool = false
     @State private var quizAttempts: [QuizAttempt] = []
+
     private var filteredResources: [Resource] {
         if searchText.isEmpty { return resources }
         return resources.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-    }
-
-    init(subject: Subject) {
-        self.subject = subject
-        _deadlines = State(initialValue: Deadline.samples(for: subject.id, color: subject.color))
-        _resources = State(initialValue: Resource.samples(for: subject.id))
     }
 
     var body: some View {
@@ -91,14 +87,14 @@ struct SubjectWorkspaceView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showAddDeadline) {
-            AddDeadlineSheet(subjectID: subject.id) { newDeadline in
+            AddDeadlineSheet(subjectId: subject.id) { newDeadline in
                 deadlines.append(newDeadline)
             }
             .environment(\.theme, theme)
         }
         .sheet(item: $selectedDeadline) { deadline in
             AddDeadlineSheet(
-                subjectID: subject.id,
+                subjectId: subject.id,
                 existingDeadline: deadline,
                 onSave: { _ in },
                 onUpdate: { updated in
@@ -283,6 +279,6 @@ struct SubjectWorkspaceView: View {
     }
 }
 #Preview {
-    SubjectWorkspaceView(subject: Subject.samples.first!)
+    SubjectWorkspaceView(subject: Subject(name: "iOS Development", colorHex: "#3B82F6"))
         .environment(\.theme, AppTheme.defaultTheme)
 }

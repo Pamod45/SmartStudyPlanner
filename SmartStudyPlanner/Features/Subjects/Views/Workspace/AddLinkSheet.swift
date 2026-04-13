@@ -119,7 +119,7 @@ struct AddLinkSheet: View {
         .onAppear {
             if let existing = existingResource {
                 name = existing.name
-                url = existing.url ?? ""
+                url = existing.remoteURL ?? ""
             }
         }
     }
@@ -127,11 +127,11 @@ struct AddLinkSheet: View {
     private func save() {
         let finalURL = url.hasPrefix("http") ? url : "https://\(url)"
         let resource = Resource(
-            id: existingResource?.id ?? UUID(),
+            id: existingResource?.id ?? UUID().uuidString,
+            subjectId: existingResource?.subjectId ?? "",
             name: name,
-            type: .link,
-            subjectID: existingResource?.subjectID ?? UUID(),
-            url: finalURL
+            resourceType: .link,
+            remoteURL: finalURL
         )
         if isEditing {
             onUpdate?(resource)

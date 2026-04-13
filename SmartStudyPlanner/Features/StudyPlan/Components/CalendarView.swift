@@ -68,7 +68,7 @@ struct CalendarView: UIViewRepresentable {
         }
 
         for deadline in deadlines {
-            let comps = calendar.dateComponents([.year, .month, .day], from: deadline.date)
+            let comps = calendar.dateComponents([.year, .month, .day], from: deadline.dueDate)
             dates.insert(comps)
         }
 
@@ -102,7 +102,7 @@ struct CalendarView: UIViewRepresentable {
             }
 
             let hasSession = parent.sessions.contains { cal.isDate($0.startTime, inSameDayAs: date) }
-            let hasDeadline = parent.deadlines.contains { cal.isDate($0.date, inSameDayAs: date) }
+            let hasDeadline = parent.deadlines.contains { cal.isDate($0.dueDate, inSameDayAs: date) }
 
             guard hasSlot || hasSession || hasDeadline else { return nil }
 

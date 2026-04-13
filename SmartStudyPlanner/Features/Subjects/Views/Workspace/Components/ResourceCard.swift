@@ -53,7 +53,7 @@ struct ResourceCard: View {
 
                 if resource.type == .pdf {
                     Button {
-                        if let path = resource.filePath,
+                        if let path = resource.localFilePath,
                            let url = URL(string: path) {
                             UIApplication.shared.open(url)
                         }
@@ -76,7 +76,7 @@ struct ResourceCard: View {
 
                 if resource.type == .link {
                     Button {
-                        if let urlString = resource.url, let url = URL(string: urlString) {
+                        if let urlString = resource.remoteURL, let url = URL(string: urlString) {
                             UIApplication.shared.open(url)
                         }
                     } label: {

@@ -31,9 +31,10 @@ enum ResourceTypeFilter: String, CaseIterable {
 
 struct ChartsView: View {
     @Environment(\.theme) var theme
+    @ObservedObject var vm: ProgressViewModel
     @State private var selectedChart: ChartType = .dailyActivity
 
-    let allSubjectNames: [String] = Subject.samples.map(\.name)
+    var allSubjectNames: [String] { vm.subjectNames }
 
     @State private var dateRange: DateRangeFilter = .week
     @State private var timePeriod: TimePeriodFilter = .week
@@ -41,11 +42,11 @@ struct ChartsView: View {
     @State private var selectedSubjects: Set<String> = []
     @State private var activeFilterSheet: Int? = nil
 
-    let allActivity: [DailyActivity]            = DailyActivity.allSamples
-    let monthActivity: [DailyActivity]          = DailyActivity.monthSamples
-    let quarterActivity: [DailyActivity]        = DailyActivity.quarterSamples
-    let distribution: [SubjectDistribution]     = SubjectDistribution.samples
-    let utilization: [ResourceUtilization]      = ResourceUtilization.samples
+    var allActivity: [DailyActivity]        { vm.dailyActivity }
+    var monthActivity: [DailyActivity]      { vm.monthActivity }
+    var quarterActivity: [DailyActivity]    { vm.quarterActivity }
+    var distribution: [SubjectDistribution] { vm.subjectDistribution }
+    var utilization: [ResourceUtilization]  { vm.resourceUtilization }
 
     var activityData: [DailyActivity] {
         let base: [DailyActivity]
@@ -583,7 +584,7 @@ struct FilterSheetView: View {
                     } label: {
                         HStack(spacing: theme.spacing.md) {
                             Circle()
-                                .fill(Subject.samples.first(where: { $0.name == name })?.color ?? theme.colors.primary)
+                                .fill(theme.colors.primary)
                                 .frame(width: 10, height: 10)
                             Text(name)
                                 .font(theme.typography.bodyMedium)

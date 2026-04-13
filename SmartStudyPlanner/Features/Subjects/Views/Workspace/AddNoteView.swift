@@ -26,10 +26,7 @@ struct AddNoteView: View {
         .onAppear {
             if let existing = existingResource {
                 title = existing.name
-                if let data = existing.noteData,
-                   let attributed = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSAttributedString.self, from: data) {
-                    storage = attributed
-                } else if let content = existing.noteContent {
+                if let content = existing.content {
                     storage = NSAttributedString(string: content)
                 }
             }
@@ -74,14 +71,12 @@ struct AddNoteView: View {
     }
 
     private func save() {
-        let data = try? NSKeyedArchiver.archivedData(withRootObject: storage, requiringSecureCoding: true)
         let resource = Resource(
-            id: existingResource?.id ?? UUID(),
+            id: existingResource?.id ?? UUID().uuidString,
+            subjectId: existingResource?.subjectId ?? "",
             name: title.isEmpty ? (existingResource?.name ?? "Untitled") : title,
-            type: .note,
-            subjectID: existingResource?.subjectID ?? UUID(),
-            noteContent: storage.string,
-            noteData: data
+            resourceType: .note,
+            content: storage.string
         )
         onSave(resource)
         dismiss()

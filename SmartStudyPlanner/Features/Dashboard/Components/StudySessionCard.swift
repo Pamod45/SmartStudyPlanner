@@ -14,7 +14,7 @@ struct StudySessionCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
-            Text(session.subject)
+            Text(session.subjectName)
                 .font(theme.typography.bodySmall)
                 .fontWeight(.semibold)
                 .foregroundColor(session.subjectColor)

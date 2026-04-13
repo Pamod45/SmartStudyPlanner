@@ -240,7 +240,7 @@ struct LiveRecordingView: View {
         stopTimers()
         let resource = Resource(
             name: "Recording \(Date().formatted(date: .abbreviated, time: .shortened))",
-            type: .recording,
+            resourceType: .recording,
             size: formattedTime
         )
         onSave(resource)
