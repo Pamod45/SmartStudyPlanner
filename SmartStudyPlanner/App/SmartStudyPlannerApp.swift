@@ -21,12 +21,14 @@ struct SmartStudyPlannerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var themeManager = ThemeManager()
     @StateObject private var sessionViewModel = SessionViewModel()
+    @StateObject private var localSettings = LocalSettingsManager()
     
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(themeManager)
                 .environmentObject(sessionViewModel)
+                .environmentObject(localSettings)
                 .environment(\.theme, themeManager.current)
                 .task {
                     await sessionViewModel.restoreSession()

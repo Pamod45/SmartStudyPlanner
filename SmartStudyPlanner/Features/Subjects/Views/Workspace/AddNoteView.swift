@@ -5,6 +5,7 @@ struct AddNoteView: View {
     @Environment(\.dismiss) private var dismiss
 
     var existingResource: Resource? = nil
+    var initialContent: String? = nil
     var onSave: (Resource) -> Void
 
     @State private var title: String = ""
@@ -29,6 +30,9 @@ struct AddNoteView: View {
                 if let content = existing.content {
                     storage = NSAttributedString(string: content)
                 }
+            } else if let initial = initialContent {
+                storage = NSAttributedString(string: initial)
+                title = "Scanned Note"
             }
         }
     }
@@ -71,13 +75,41 @@ struct AddNoteView: View {
     }
 
     private func save() {
-        let resource = Resource(
-            id: existingResource?.id ?? UUID().uuidString,
-            subjectId: existingResource?.subjectId ?? "",
-            name: title.isEmpty ? (existingResource?.name ?? "Untitled") : title,
-            resourceType: .note,
-            content: storage.string
-        )
+        let resource: Resource
+        
+        if let existing = existingResource {
+            resource = Resource(
+                id: existing.id,
+                userId: existing.userId,
+                subjectId: existing.subjectId,
+                name: title.isEmpty ? "Untitled" : title,
+                resourceType: .note,
+                size: existing.size,
+                content: storage.string,
+                localFilePath: existing.localFilePath,
+                remoteURL: existing.remoteURL,
+                fileSize: existing.fileSize,
+                mimeType: existing.mimeType,
+                tags: existing.tags,
+                isFavorite: existing.isFavorite,
+                createdAt: existing.createdAt,
+                updatedAt: Date(),
+                syncStatus: .pendingUpdate
+            )
+        } else {
+            resource = Resource(
+                id: UUID().uuidString,
+                userId: "",
+                subjectId: "",
+                name: title.isEmpty ? "Untitled" : title,
+                resourceType: .note,
+                content: storage.string,
+                createdAt: Date(),
+                updatedAt: Date(),
+                syncStatus: .localOnly
+            )
+        }
+        
         onSave(resource)
         dismiss()
     }

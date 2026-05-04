@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.863120962211-ubnmf8jdjiv6662s3235ai74sce1r387</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use Face ID to securely and quickly log in to your account.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need camera access to scan your handwritten notes and convert them to text.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need microphone access to record your lectures.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>We need speech recognition access to generate live transcripts of your recordings.</string>
+</dict>
+</plist>

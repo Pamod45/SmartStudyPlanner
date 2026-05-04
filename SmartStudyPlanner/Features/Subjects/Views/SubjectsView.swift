@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SubjectsView: View {
     @Environment(\.theme) var theme
+    @EnvironmentObject var sessionViewModel: SessionViewModel
     @StateObject private var vm = SubjectsViewModel()
     @State private var searchText: String = ""
     @State private var sortOption = 0
@@ -88,9 +89,12 @@ struct SubjectsView: View {
                 }
             }
         }
+        .task(id: sessionViewModel.activeUserId) {
+            await vm.load(userId: sessionViewModel.activeUserId)
+        }
         .sheet(isPresented: $showAddSubject) {
             AddSubjectSheet { newSubject in
-                vm.addSubject(newSubject)
+                vm.addSubject(newSubject, userId: sessionViewModel.activeUserId)
             }
             .environment(\.theme, theme)
         }
@@ -154,5 +158,6 @@ struct SubjectsView: View {
 
 #Preview {
     SubjectsView()
+        .environmentObject(SessionViewModel())
         .environment(\.theme, AppTheme.defaultTheme)
 }

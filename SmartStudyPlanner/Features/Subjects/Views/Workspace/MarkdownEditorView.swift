@@ -33,10 +33,15 @@ struct RichTextEditorView: UIViewRepresentable {
         tv.tintColor = UIColor(theme.colors.primary)
         tv.typingAttributes = defaultAttributes(theme: theme)
 
+        if #available(iOS 18.0, *) {
+            tv.writingToolsBehavior = .complete
+        }
+
         let attributed = NSMutableAttributedString(attributedString: storage)
         if attributed.length == 0 {
             tv.attributedText = NSAttributedString(string: "", attributes: defaultAttributes(theme: theme))
         } else {
+            attributed.addAttribute(.foregroundColor, value: UIColor(theme.colors.textPrimary), range: NSRange(location: 0, length: attributed.length))
             tv.attributedText = attributed
         }
 
@@ -50,10 +55,13 @@ struct RichTextEditorView: UIViewRepresentable {
     func updateUIView(_ tv: UITextView, context: Context) {
         if tv.attributedText != storage && !context.coordinator.isEditing {
             let sel = tv.selectedRange
-            tv.attributedText = storage
+            let attributed = NSMutableAttributedString(attributedString: storage)
+            attributed.addAttribute(.foregroundColor, value: UIColor(theme.colors.textPrimary), range: NSRange(location: 0, length: attributed.length))
+            tv.attributedText = attributed
             tv.selectedRange = sel
         }
         tv.tintColor = UIColor(theme.colors.primary)
+        tv.typingAttributes = defaultAttributes(theme: theme)
     }
 
     func defaultAttributes(theme: AppTheme) -> [NSAttributedString.Key: Any] {

@@ -13,6 +13,8 @@ struct ResourcesTabView: View {
     @Binding var resources: [Resource]
     var filteredResources: [Resource]
     var onOpenNote: (Resource) -> Void
+    var onEditResource: (Resource) -> Void
+    var onRenameResource: (Resource, String) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
@@ -33,9 +35,22 @@ struct ResourcesTabView: View {
                         ResourceCard(
                             resource: resource,
                             onOpen: { onOpenNote(resource) },
+                            onEdit: { onEditResource(resource) },
+                            onRename: { newName in
+                                onRenameResource(resource, newName)
+                            },
                             onDelete: {
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                    resources.removeAll { $0.id == resource.id }
+                                Task {
+                                    do {
+                                        try await ResourceService.shared.deleteResource(id: resource.id)
+                                        await MainActor.run {
+                                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                                resources.removeAll { $0.id == resource.id }
+                                            }
+                                        }
+                                    } catch {
+                                        print("Failed to delete resource: \(error)")
+                                    }
                                 }
                             }
                         )

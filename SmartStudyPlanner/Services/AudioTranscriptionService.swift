@@ -1,0 +1,158 @@
+import Foundation
+import AVFoundation
+import Speech
+import Combine
+import SwiftUI
+
+struct TranscriptSegment: Codable, Identifiable, Equatable {
+    var id = UUID()
+    let text: String
+    var timestamp: TimeInterval
+    let duration: TimeInterval
+}
+
+class AudioTranscriptionService: NSObject, ObservableObject {
+    
+    @Published var isRecording: Bool = false
+    @Published var isPaused: Bool = false
+    @Published var elapsedSeconds: Int = 0
+    @Published var transcriptText: String = ""
+    @Published var segments: [TranscriptSegment] = []
+    @Published var errorMessage: String? = nil
+    
+    private var speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+    private var recognitionTask: SFSpeechRecognitionTask?
+    private let audioEngine = AVAudioEngine()
+    
+    private var audioFile: AVAudioFile?
+    private var timer: Timer?
+    var audioFileURL: URL?
+
+    override init() {
+        super.init()
+        setupPermissions()
+    }
+    
+    private func setupPermissions() {
+        AVAudioSession.sharedInstance().requestRecordPermission { _ in }
+        SFSpeechRecognizer.requestAuthorization { _ in }
+    }
+    
+    func startRecording() {
+        guard !isRecording else { return }
+        
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.playAndRecord, mode: .measurement, options: .defaultToSpeaker)
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            
+            let docsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            audioFileURL = docsDir.appendingPathComponent("\(UUID().uuidString).m4a")
+            
+            let inputNode = audioEngine.inputNode
+            let recordingFormat = inputNode.outputFormat(forBus: 0)
+            
+            audioFile = try AVAudioFile(forWriting: audioFileURL!, settings: recordingFormat.settings)
+            
+            recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
+            guard let recognitionRequest = recognitionRequest else { return }
+            recognitionRequest.shouldReportPartialResults = true
+            
+            recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { result, error in
+                var isFinal = false
+                
+                if let result = result {
+                    let newSegments = result.bestTranscription.segments.map { segment in
+                        TranscriptSegment(
+                            text: segment.substring,
+                            timestamp: segment.timestamp,
+                            duration: segment.duration
+                        )
+                    }
+                    
+                    DispatchQueue.main.async {
+                        self.transcriptText = result.bestTranscription.formattedString
+                        self.segments = newSegments
+                    }
+                    isFinal = result.isFinal
+                }
+                
+                if error != nil || isFinal {
+                    self.audioEngine.stop()
+                    inputNode.removeTap(onBus: 0)
+                    self.recognitionRequest = nil
+                    self.recognitionTask = nil
+                    self.audioFile = nil
+                }
+            }
+            
+            inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] (buffer: AVAudioPCMBuffer, when: AVAudioTime) in
+                guard let self = self else { return }
+                if !self.isPaused {
+                    self.recognitionRequest?.append(buffer)
+                    do {
+                        try self.audioFile?.write(from: buffer)
+                    } catch {
+                        print("Error writing audio file: \(error)")
+                    }
+                }
+            }
+            
+            audioEngine.prepare()
+            try audioEngine.start()
+            
+            isRecording = true
+            isPaused = false
+            startTimer()
+            
+        } catch {
+            errorMessage = "Failed to setup audio recording: \(error.localizedDescription)"
+            stopRecording()
+        }
+    }
+    
+    func pauseRecording() {
+        isPaused.toggle()
+        if isPaused {
+            stopTimer()
+        } else {
+            startTimer()
+        }
+    }
+    
+    func stopRecording() {
+        stopTimer()
+        
+        if audioEngine.isRunning {
+            audioEngine.stop()
+            audioEngine.inputNode.removeTap(onBus: 0)
+        }
+        
+        recognitionRequest?.endAudio()
+        recognitionTask?.cancel()
+        
+        isRecording = false
+        isPaused = false
+    }
+    
+    private func startTimer() {
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.elapsedSeconds += 1
+            }
+        }
+    }
+    
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+    
+    func getJSONTranscript() -> String {
+        if let data = try? JSONEncoder().encode(segments), let jsonStr = String(data: data, encoding: .utf8) {
+            return jsonStr
+        }
+        return ""
+    }
+}

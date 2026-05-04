@@ -43,7 +43,8 @@ struct AddSubjectSheet: View {
                         guard !subjectName.isEmpty else { return }
                         let newSubject = Subject(
                             name: subjectName,
-                            colorHex: selectedColor.toHex() ?? "#3B82F6"
+                            colorHex: selectedColor.toHex() ?? "#3B82F6",
+                            notes: notes
                         )
                         onSave(newSubject)
                         dismiss()
@@ -110,11 +111,8 @@ struct AddSubjectSheet: View {
             }
             .padding(.vertical, theme.spacing.lg)
             .background(theme.colors.surface.opacity(0.2))
-            
         }
     }
-
-    
 }
 
 #Preview {

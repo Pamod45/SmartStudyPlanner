@@ -10,18 +10,20 @@ import SwiftUI
 struct NotificationsSettingsView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var vm: SettingsViewModel
 
-    @State private var dailyGoalAlerts: Bool = true
-    @State private var preferredAlertTime: Date = Calendar.current.date(from: DateComponents(hour: 21, minute: 30)) ?? Date()
-    @State private var sessionReminders: Bool = true
-    @State private var reminderTime: Date = Calendar.current.date(from: DateComponents(hour: 21, minute: 30)) ?? Date()
-    @State private var quizReminders: Bool = true
-    @State private var quizRemindMe: String = "Immediately"
-    @State private var deadlineAlerts: Bool = true
-    @State private var deadlineAlertTime: String = "1 Day Before"
-
-    private let quizOptions = ["Immediately", "5 min after", "15 min after", "30 min after"]
-    private let deadlineOptions = ["Same Day", "1 Day Before", "2 Days Before", "1 Week Before"]
+    private let quizOptions: [(label: String, minutes: Int)] = [
+        ("Immediately", 0),
+        ("5 min after", 5),
+        ("15 min after", 15),
+        ("30 min after", 30)
+    ]
+    private let deadlineOptions: [(label: String, days: Int)] = [
+        ("Same Day", 0),
+        ("1 Day Before", 1),
+        ("2 Days Before", 2),
+        ("1 Week Before", 7)
+    ]
 
     var body: some View {
         ZStack {
@@ -36,32 +38,32 @@ struct NotificationsSettingsView: View {
                     VStack(spacing: theme.spacing.md) {
                         FieldSection(title: "DAILY GOALS") {
                             settingsCard([
-                                AnyView(toggleRow(title: "Daily Goal Alerts", isOn: $dailyGoalAlerts)),
-                                AnyView(timeRow(title: "Preferred Alert Time", time: $preferredAlertTime))
+                                AnyView(toggleRow(title: "Daily Goal Alerts", isOn: vm.binding(for: \.dailyGoalAlertsEnabled))),
+                                AnyView(timeRow(title: "Preferred Alert Time", time: vm.binding(for: \.dailyGoalAlertTime)))
                             ])
                         }
                         captionText("Receive a daily reminder to complete your study goals")
 
                         FieldSection(title: "STUDY SESSIONS") {
                             settingsCard([
-                                AnyView(toggleRow(title: "Session Reminders", isOn: $sessionReminders)),
-                                AnyView(timeRow(title: "Reminder Time", time: $reminderTime))
+                                AnyView(toggleRow(title: "Session Reminders", isOn: vm.binding(for: \.sessionRemindersEnabled))),
+                                AnyView(timeRow(title: "Reminder Time", time: vm.binding(for: \.sessionReminderTime)))
                             ])
                         }
                         captionText("Get notified before when you need to start studying")
 
                         FieldSection(title: "QUIZZES") {
                             settingsCard([
-                                AnyView(toggleRow(title: "Pending Quiz Reminders", isOn: $quizReminders)),
-                                AnyView(menuRow(title: "Remind Me", options: quizOptions, selected: $quizRemindMe))
+                                AnyView(toggleRow(title: "Pending Quiz Reminders", isOn: vm.binding(for: \.quizzesPendingReminders))),
+                                AnyView(menuRow(title: "Remind Me", options: quizOptions.map { $0.label }, selected: quizReminderLabel))
                             ])
                         }
                         captionText("Reminders to test your knowledge after a study session")
 
                         FieldSection(title: "DEADLINE") {
                             settingsCard([
-                                AnyView(toggleRow(title: "Deadline Alerts", isOn: $deadlineAlerts)),
-                                AnyView(menuRow(title: "Alert Time", options: deadlineOptions, selected: $deadlineAlertTime))
+                                AnyView(toggleRow(title: "Deadline Alerts", isOn: vm.binding(for: \.deadlineAlertsEnabled))),
+                                AnyView(menuRow(title: "Alert Time", options: deadlineOptions.map { $0.label }, selected: deadlineReminderLabel))
                             ])
                         }
                         captionText("Don't miss any upcoming exam or assignment")
@@ -158,10 +160,37 @@ struct NotificationsSettingsView: View {
             .foregroundColor(theme.colors.textSecondary)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
+
+    private var quizReminderLabel: Binding<String> {
+        Binding(
+            get: {
+                quizOptions.first(where: { $0.minutes == vm.settings.quizReminderMinutesAfter })?.label ?? quizOptions[0].label
+            },
+            set: { newValue in
+                if let minutes = quizOptions.first(where: { $0.label == newValue })?.minutes {
+                    vm.updateSettings { $0.quizReminderMinutesAfter = minutes }
+                }
+            }
+        )
+    }
+
+    private var deadlineReminderLabel: Binding<String> {
+        Binding(
+            get: {
+                deadlineOptions.first(where: { $0.days == vm.settings.deadlineReminderDaysBefore })?.label ?? deadlineOptions[0].label
+            },
+            set: { newValue in
+                if let days = deadlineOptions.first(where: { $0.label == newValue })?.days {
+                    vm.updateSettings { $0.deadlineReminderDaysBefore = days }
+                }
+            }
+        )
+    }
 }
 
 #Preview {
     NavigationStack { NotificationsSettingsView() }
         .environmentObject(ThemeManager())
+        .environmentObject(SettingsViewModel())
         .environment(\.theme, AppTheme.defaultTheme)
 }

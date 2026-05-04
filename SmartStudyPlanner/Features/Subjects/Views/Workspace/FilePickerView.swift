@@ -40,15 +40,32 @@ struct FilePickerView: UIViewControllerRepresentable {
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
             guard let url = urls.first else { return }
 
+            let hasAccess = url.startAccessingSecurityScopedResource()
+            defer {
+                if hasAccess {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
+
+            let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let destinationURL = documentsDirectory.appendingPathComponent(UUID().uuidString + "_" + url.lastPathComponent)
+
+            do {
+                try FileManager.default.copyItem(at: url, to: destinationURL)
+            } catch {
+                print("Failed to copy file to sandbox: \(error)")
+                return
+            }
+
             let fileName = url.deletingPathExtension().lastPathComponent
-            let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
+            let fileSize = (try? FileManager.default.attributesOfItem(atPath: destinationURL.path)[.size] as? Int) ?? 0
             let sizeMB = fileSize > 0 ? String(format: "%.1f MB", Double(fileSize) / 1_000_000) : ""
 
             let resource = Resource(
                 name: fileName,
                 resourceType: .pdf,
                 size: sizeMB,
-                localFilePath: url.absoluteString
+                localFilePath: destinationURL.lastPathComponent
             )
             onSave(resource)
         }

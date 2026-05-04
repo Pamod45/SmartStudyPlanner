@@ -34,6 +34,8 @@ struct SubjectWorkspaceView: View {
     @State private var selectedNote: Resource? = nil
     @State private var selectedLink: Resource? = nil
     @State private var selectedPDF: Resource? = nil
+    @State private var viewingPDF: Resource? = nil
+    @State private var viewingRecording: Resource? = nil
     @State private var studyPath: StudyPath? = nil
     @State private var showGeneratePath: Bool = false
     @State private var isRegeneratePath: Bool = false
@@ -107,7 +109,18 @@ struct SubjectWorkspaceView: View {
         }
         .sheet(isPresented: $showAddResource) {
             AddResourceSheet { newResource in
-                resources.append(newResource)
+                var resource = newResource
+                resource.subjectId = subject.id
+                resource.userId = subject.userId
+                resources.append(resource)
+                
+                Task {
+                    do {
+                        try await ResourceService.shared.createResource(resource)
+                    } catch {
+                        print("Failed to save resource: \(error)")
+                    }
+                }
             }
             .environment(\.theme, theme)
         }
@@ -115,6 +128,14 @@ struct SubjectWorkspaceView: View {
             AddNoteView(existingResource: note) { updatedResource in
                 if let index = resources.firstIndex(where: { $0.id == updatedResource.id }) {
                     resources[index] = updatedResource
+                    
+                    Task {
+                        do {
+                            try await ResourceService.shared.updateResource(updatedResource)
+                        } catch {
+                            print("Failed to update resource: \(error)")
+                        }
+                    }
                 }
             }
             .environment(\.theme, theme)
@@ -126,6 +147,13 @@ struct SubjectWorkspaceView: View {
                 onUpdate: { updated in
                     if let index = resources.firstIndex(where: { $0.id == updated.id }) {
                         resources[index] = updated
+                        Task {
+                            do {
+                                try await ResourceService.shared.updateResource(updated)
+                            } catch {
+                                print("Failed to update resource: \(error)")
+                            }
+                        }
                     }
                 }
             )
@@ -143,6 +171,14 @@ struct SubjectWorkspaceView: View {
             )
             .environment(\.theme, theme)
         }
+        .sheet(item: $viewingPDF) { pdf in
+            PDFViewerSheet(resource: pdf)
+                .environment(\.theme, theme)
+        }
+        .sheet(item: $viewingRecording) { recording in
+            RecordingPlayerView(resource: recording)
+                .environment(\.theme, theme)
+        }
         .sheet(isPresented: $showGeneratePath) {
             GenerateStudyPathSheet(
                 subject: subject,
@@ -152,6 +188,24 @@ struct SubjectWorkspaceView: View {
                 studyPath = newPath
             }
             .environment(\.theme, theme)
+        }
+        .onAppear {
+            loadResources()
+        }
+    }
+    
+    private func loadResources() {
+        resources = CoreDataService.shared.getCachedResources(for: subject.id)
+        
+        Task {
+            do {
+                let fetchedResources = try await ResourceService.shared.fetchResources(subjectId: subject.id)
+                await MainActor.run {
+                    resources = fetchedResources
+                }
+            } catch {
+                print("Failed to fetch resources: \(error)")
+            }
         }
     }
 
@@ -248,7 +302,32 @@ struct SubjectWorkspaceView: View {
                     } else if resource.type == .link {
                         selectedLink = resource
                     } else if resource.type == .pdf {
+                        viewingPDF = resource
+                    } else if resource.type == .recording {
+                        viewingRecording = resource
+                    }
+                },
+                onEditResource: { resource in
+                    if resource.type == .pdf {
                         selectedPDF = resource
+                    } else if resource.type == .link {
+                        selectedLink = resource
+                    }
+                },
+                onRenameResource: { resource, newName in
+                    if let index = resources.firstIndex(where: { $0.id == resource.id }) {
+                        var updatedResource = resources[index]
+                        updatedResource.name = newName
+                        updatedResource.updatedAt = Date()
+                        resources[index] = updatedResource
+                        
+                        Task {
+                            do {
+                                try await ResourceService.shared.updateResource(updatedResource)
+                            } catch {
+                                print("Failed to rename resource: \(error)")
+                            }
+                        }
                     }
                 }
             )

@@ -10,8 +10,8 @@ import SwiftUI
 struct SecurityView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var localSettings: LocalSettingsManager
 
-    @State private var faceIDEnabled: Bool = true
     @State private var showSignOutAllConfirm: Bool = false
 
     var body: some View {
@@ -31,10 +31,15 @@ struct SecurityView: View {
                                     .font(theme.typography.bodyLarge.weight(.semibold))
                                     .foregroundColor(theme.colors.textPrimary)
                                 Spacer()
-                                Toggle("", isOn: $faceIDEnabled).labelsHidden().tint(theme.colors.primary)
+                                Toggle("", isOn: $localSettings.faceIDEnabled).labelsHidden().tint(theme.colors.primary)
                             }
                             .padding(.horizontal, theme.spacing.md)
                             .padding(.vertical, theme.spacing.md)
+                            .onChange(of: localSettings.faceIDEnabled) { isEnabled in
+                                if isEnabled {
+                                    localSettings.requestBiometricAuth { _ in }
+                                }
+                            }
 
                             rowDivider
 
@@ -115,5 +120,6 @@ struct SecurityView: View {
 #Preview {
     NavigationStack { SecurityView() }
         .environmentObject(ThemeManager())
+        .environmentObject(LocalSettingsManager())
         .environment(\.theme, AppTheme.defaultTheme)
 }

@@ -12,8 +12,6 @@ struct SettingsView: View {
     @EnvironmentObject var sessionViewModel: SessionViewModel
     @StateObject private var vm = SettingsViewModel()
 
-    @State private var notificationsEnabled: Bool = true
-    @State private var darkModeEnabled: Bool = true
     @State private var showStudyGoals: Bool = false
     @State private var showIntegrations: Bool = false
     @State private var showSecurity: Bool = false
@@ -58,11 +56,11 @@ struct SettingsView: View {
         .background(
             Group {
                 NavigationLink(destination: ProfileEditView(user: Binding(get: { vm.settingsUser }, set: { vm.updateUser($0) })), isActive: $showProfile) { EmptyView() }
-                NavigationLink(destination: StudyGoalsView(), isActive: $showStudyGoals) { EmptyView() }
-                NavigationLink(destination: NotificationsSettingsView(), isActive: $showGeneralNotifications) { EmptyView() }
-                NavigationLink(destination: IntegrationsView(), isActive: $showIntegrations) { EmptyView() }
+                NavigationLink(destination: StudyGoalsView().environmentObject(vm), isActive: $showStudyGoals) { EmptyView() }
+                NavigationLink(destination: NotificationsSettingsView().environmentObject(vm), isActive: $showGeneralNotifications) { EmptyView() }
+                NavigationLink(destination: IntegrationsView().environmentObject(vm), isActive: $showIntegrations) { EmptyView() }
                 NavigationLink(destination: SecurityView(), isActive: $showSecurity) { EmptyView() }
-                NavigationLink(destination: AccessibilityView(), isActive: $showAccessibility) { EmptyView() }
+                NavigationLink(destination: AccessibilityView().environmentObject(vm), isActive: $showAccessibility) { EmptyView() }
             }
             .hidden()
         )
@@ -147,7 +145,7 @@ struct SettingsView: View {
                 icon: "bell.badge",
                 iconColor: theme.colors.textSecondary,
                 title: "Notifications",
-                isOn: $notificationsEnabled
+                isOn: vm.binding(for: \.notificationsEnabled)
             )),
             AnyView(settingsNavRow(
                 icon: "gearshape",
@@ -160,7 +158,7 @@ struct SettingsView: View {
                 icon: "moon",
                 iconColor: theme.colors.textSecondary,
                 title: "Dark mode",
-                isOn: $darkModeEnabled
+                isOn: vm.binding(for: \.darkModeEnabled)
             ))
         ])
     }
@@ -321,5 +319,7 @@ struct SettingsView: View {
         SettingsView()
     }
     .environmentObject(ThemeManager())
+    .environmentObject(SessionViewModel())
+    .environmentObject(LocalSettingsManager())
     .environment(\.theme, AppTheme.defaultTheme)
 }

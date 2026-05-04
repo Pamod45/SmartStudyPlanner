@@ -125,7 +125,8 @@ struct AddLinkSheet: View {
     }
     
     private func save() {
-        let finalURL = url.hasPrefix("http") ? url : "https://\(url)"
+        var rawURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalURL = rawURL.hasPrefix("http") ? rawURL : "https://\(rawURL)"
         let resource = Resource(
             id: existingResource?.id ?? UUID().uuidString,
             subjectId: existingResource?.subjectId ?? "",
@@ -138,5 +139,6 @@ struct AddLinkSheet: View {
         } else {
             onSave(resource)
         }
+        dismiss()
     }
 }

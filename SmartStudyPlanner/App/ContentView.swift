@@ -81,4 +81,5 @@ struct ContentView: View {
     ContentView()
         .environmentObject(ThemeManager())
         .environmentObject(SessionViewModel())
+        .environmentObject(LocalSettingsManager())
 }
