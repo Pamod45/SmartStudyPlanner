@@ -88,6 +88,39 @@ public class CDResource: NSManagedObject {
     @NSManaged public var syncStatus: String
 }
 
+@objc(CDStudyPathTopic)
+public class CDStudyPathTopic: NSManagedObject {
+    @NSManaged public var id: String
+    @NSManaged public var subjectId: String
+    @NSManaged public var userId: String
+    @NSManaged public var order: Int32
+    @NSManaged public var title: String
+    @NSManaged public var description_: String
+    @NSManaged public var subtopics: [String]
+    @NSManaged public var weightPercent: Int32
+    @NSManaged public var estimatedHours: Int32
+    @NSManaged public var resourceIds: [String]
+    @NSManaged public var completionPercent: Double
+    @NSManaged public var isCompleted: Bool
+    @NSManaged public var generatedAt: Date
+    @NSManaged public var syncStatus: String
+}
+
+@objc(CDQuizAttempt)
+public class CDQuizAttempt: NSManagedObject {
+    @NSManaged public var id: String
+    @NSManaged public var subjectId: String
+    @NSManaged public var userId: String
+    @NSManaged public var quizName: String
+    @NSManaged public var topicName: String
+    @NSManaged public var questionsData: Data
+    @NSManaged public var selectedAnswersData: Data
+    @NSManaged public var scorePercent: Int32
+    @NSManaged public var timeSpentSeconds: Int32
+    @NSManaged public var completedAt: Date
+    @NSManaged public var syncStatus: String
+}
+
 public class CoreDataStack {
     public static let shared = CoreDataStack()
     
@@ -507,7 +540,155 @@ public class CoreDataStack {
             resCreatedAtAttr, resUpdatedAtAttr, resSyncAttr
         ]
         
-        model.entities = [userEntity, settingsEntity, subjectEntity, resourceEntity]
+        let pathTopicEntity = NSEntityDescription()
+        pathTopicEntity.name = "CDStudyPathTopic"
+        pathTopicEntity.managedObjectClassName = NSStringFromClass(CDStudyPathTopic.self)
+
+        let ptIdAttr = NSAttributeDescription()
+        ptIdAttr.name = "id"
+        ptIdAttr.attributeType = .stringAttributeType
+        ptIdAttr.isOptional = false
+
+        let ptSubjectIdAttr = NSAttributeDescription()
+        ptSubjectIdAttr.name = "subjectId"
+        ptSubjectIdAttr.attributeType = .stringAttributeType
+        ptSubjectIdAttr.isOptional = false
+
+        let ptUserIdAttr = NSAttributeDescription()
+        ptUserIdAttr.name = "userId"
+        ptUserIdAttr.attributeType = .stringAttributeType
+        ptUserIdAttr.isOptional = false
+
+        let ptOrderAttr = NSAttributeDescription()
+        ptOrderAttr.name = "order"
+        ptOrderAttr.attributeType = .integer32AttributeType
+        ptOrderAttr.isOptional = false
+
+        let ptTitleAttr = NSAttributeDescription()
+        ptTitleAttr.name = "title"
+        ptTitleAttr.attributeType = .stringAttributeType
+        ptTitleAttr.isOptional = false
+
+        let ptDescAttr = NSAttributeDescription()
+        ptDescAttr.name = "description_"
+        ptDescAttr.attributeType = .stringAttributeType
+        ptDescAttr.isOptional = false
+
+        let ptSubtopicsAttr = NSAttributeDescription()
+        ptSubtopicsAttr.name = "subtopics"
+        ptSubtopicsAttr.attributeType = .transformableAttributeType
+        ptSubtopicsAttr.valueTransformerName = NSValueTransformerName.secureUnarchiveFromDataTransformerName.rawValue
+        ptSubtopicsAttr.isOptional = false
+
+        let ptWeightAttr = NSAttributeDescription()
+        ptWeightAttr.name = "weightPercent"
+        ptWeightAttr.attributeType = .integer32AttributeType
+        ptWeightAttr.isOptional = false
+
+        let ptHoursAttr = NSAttributeDescription()
+        ptHoursAttr.name = "estimatedHours"
+        ptHoursAttr.attributeType = .integer32AttributeType
+        ptHoursAttr.isOptional = false
+
+        let ptResourceIdsAttr = NSAttributeDescription()
+        ptResourceIdsAttr.name = "resourceIds"
+        ptResourceIdsAttr.attributeType = .transformableAttributeType
+        ptResourceIdsAttr.valueTransformerName = NSValueTransformerName.secureUnarchiveFromDataTransformerName.rawValue
+        ptResourceIdsAttr.isOptional = false
+
+        let ptCompletionAttr = NSAttributeDescription()
+        ptCompletionAttr.name = "completionPercent"
+        ptCompletionAttr.attributeType = .doubleAttributeType
+        ptCompletionAttr.isOptional = false
+
+        let ptCompletedAttr = NSAttributeDescription()
+        ptCompletedAttr.name = "isCompleted"
+        ptCompletedAttr.attributeType = .booleanAttributeType
+        ptCompletedAttr.isOptional = false
+
+        let ptGeneratedAtAttr = NSAttributeDescription()
+        ptGeneratedAtAttr.name = "generatedAt"
+        ptGeneratedAtAttr.attributeType = .dateAttributeType
+        ptGeneratedAtAttr.isOptional = false
+
+        let ptSyncAttr = NSAttributeDescription()
+        ptSyncAttr.name = "syncStatus"
+        ptSyncAttr.attributeType = .stringAttributeType
+        ptSyncAttr.isOptional = false
+
+        pathTopicEntity.properties = [
+            ptIdAttr, ptSubjectIdAttr, ptUserIdAttr, ptOrderAttr, ptTitleAttr,
+            ptDescAttr, ptSubtopicsAttr, ptWeightAttr, ptHoursAttr, ptResourceIdsAttr,
+            ptCompletionAttr, ptCompletedAttr, ptGeneratedAtAttr, ptSyncAttr
+        ]
+        
+        // CDQuizAttempt
+        let quizAttemptEntity = NSEntityDescription()
+        quizAttemptEntity.name = "CDQuizAttempt"
+        quizAttemptEntity.managedObjectClassName = NSStringFromClass(CDQuizAttempt.self)
+
+        let qaIdAttr = NSAttributeDescription()
+        qaIdAttr.name = "id"
+        qaIdAttr.attributeType = .stringAttributeType
+        qaIdAttr.isOptional = false
+
+        let qaSubjectIdAttr = NSAttributeDescription()
+        qaSubjectIdAttr.name = "subjectId"
+        qaSubjectIdAttr.attributeType = .stringAttributeType
+        qaSubjectIdAttr.isOptional = false
+
+        let qaUserIdAttr = NSAttributeDescription()
+        qaUserIdAttr.name = "userId"
+        qaUserIdAttr.attributeType = .stringAttributeType
+        qaUserIdAttr.isOptional = false
+
+        let qaQuizNameAttr = NSAttributeDescription()
+        qaQuizNameAttr.name = "quizName"
+        qaQuizNameAttr.attributeType = .stringAttributeType
+        qaQuizNameAttr.isOptional = false
+
+        let qaTopicNameAttr = NSAttributeDescription()
+        qaTopicNameAttr.name = "topicName"
+        qaTopicNameAttr.attributeType = .stringAttributeType
+        qaTopicNameAttr.isOptional = false
+
+        let qaQuestionsDataAttr = NSAttributeDescription()
+        qaQuestionsDataAttr.name = "questionsData"
+        qaQuestionsDataAttr.attributeType = .binaryDataAttributeType
+        qaQuestionsDataAttr.isOptional = false
+
+        let qaSelectedAnswersDataAttr = NSAttributeDescription()
+        qaSelectedAnswersDataAttr.name = "selectedAnswersData"
+        qaSelectedAnswersDataAttr.attributeType = .binaryDataAttributeType
+        qaSelectedAnswersDataAttr.isOptional = false
+
+        let qaScorePercentAttr = NSAttributeDescription()
+        qaScorePercentAttr.name = "scorePercent"
+        qaScorePercentAttr.attributeType = .integer32AttributeType
+        qaScorePercentAttr.isOptional = false
+
+        let qaTimeSpentAttr = NSAttributeDescription()
+        qaTimeSpentAttr.name = "timeSpentSeconds"
+        qaTimeSpentAttr.attributeType = .integer32AttributeType
+        qaTimeSpentAttr.isOptional = false
+
+        let qaCompletedAtAttr = NSAttributeDescription()
+        qaCompletedAtAttr.name = "completedAt"
+        qaCompletedAtAttr.attributeType = .dateAttributeType
+        qaCompletedAtAttr.isOptional = false
+
+        let qaSyncStatusAttr = NSAttributeDescription()
+        qaSyncStatusAttr.name = "syncStatus"
+        qaSyncStatusAttr.attributeType = .stringAttributeType
+        qaSyncStatusAttr.isOptional = false
+
+        quizAttemptEntity.properties = [
+            qaIdAttr, qaSubjectIdAttr, qaUserIdAttr, qaQuizNameAttr, qaTopicNameAttr,
+            qaQuestionsDataAttr, qaSelectedAnswersDataAttr, qaScorePercentAttr,
+            qaTimeSpentAttr, qaCompletedAtAttr, qaSyncStatusAttr
+        ]
+
+        model.entities = [userEntity, settingsEntity, subjectEntity, resourceEntity, pathTopicEntity, quizAttemptEntity]
         
         let container = NSPersistentContainer(name: "SmartStudyPlanner", managedObjectModel: model)
         

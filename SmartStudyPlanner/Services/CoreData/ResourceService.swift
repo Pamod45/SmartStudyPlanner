@@ -1,4 +1,3 @@
-
 import Foundation
 import FirebaseFirestore
 
@@ -39,8 +38,23 @@ class ResourceService {
             firestoreData["mimeType"] = mimeType
         }
         
-        try await db.collection("resources").document(resource.id).setData(firestoreData)
+        let batch = db.batch()
+        
+        let resourceRef = db.collection("resources").document(resource.id)
+        batch.setData(firestoreData, forDocument: resourceRef)
+        
+        let subjectRef = db.collection("subjects").document(resource.subjectId)
+        batch.updateData(["resourceCount": FieldValue.increment(Int64(1))], forDocument: subjectRef)
+        
+        try await batch.commit()
+        
         CoreDataService.shared.upsertResource(resource)
+        
+        // Update local subject resourceCount
+        if var subject = CoreDataService.shared.getCachedSubject(id: resource.subjectId) {
+            subject.resourceCount += 1
+            CoreDataService.shared.upsertSubject(subject)
+        }
     }
 
     func fetchResources(subjectId: String) async throws -> [Resource] {
@@ -114,8 +128,22 @@ class ResourceService {
         CoreDataService.shared.upsertResource(resource)
     }
 
-    func deleteResource(id: String) async throws {
-        try await db.collection("resources").document(id).delete()
+    func deleteResource(id: String, subjectId: String) async throws {
+        let batch = db.batch()
+        
+        let resourceRef = db.collection("resources").document(id)
+        batch.deleteDocument(resourceRef)
+        
+        let subjectRef = db.collection("subjects").document(subjectId)
+        batch.updateData(["resourceCount": FieldValue.increment(Int64(-1))], forDocument: subjectRef)
+        
+        try await batch.commit()
+        
         CoreDataService.shared.deleteResource(id: id)
+        
+        if var subject = CoreDataService.shared.getCachedSubject(id: subjectId) {
+            subject.resourceCount = max(0, subject.resourceCount - 1)
+            CoreDataService.shared.upsertSubject(subject)
+        }
     }
 }

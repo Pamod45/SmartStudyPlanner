@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AD2210722FA9E653008A5637 /* Hub in Frameworks */ = {isa = PBXBuildFile; productRef = AD2210712FA9E653008A5637 /* Hub */; };
+		AD2210742FA9E653008A5637 /* Tokenizers in Frameworks */ = {isa = PBXBuildFile; productRef = AD2210732FA9E653008A5637 /* Tokenizers */; };
+		AD2210762FA9E653008A5637 /* Transformers in Frameworks */ = {isa = PBXBuildFile; productRef = AD2210752FA9E653008A5637 /* Transformers */; };
 		AD53B3DB2F8CCADB0002309F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = AD53B3DA2F8CCADB0002309F /* GoogleService-Info.plist */; };
 		AD53B3DE2F8CCC570002309F /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = AD53B3DD2F8CCC570002309F /* FirebaseAuth */; };
 		AD53B3E02F8CCC570002309F /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = AD53B3DF2F8CCC570002309F /* FirebaseCore */; };
@@ -15,13 +18,41 @@
 		AD6EE9372FA8F2AC00634F15 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = AD6EE9362FA8F2AC00634F15 /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		AD94F8742FA9FDB000F6BBBE /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = "";
+			dstSubfolderSpec = 7;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		AD060C662F718F47001254E6 /* SmartStudyPlanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartStudyPlanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD53B3DA2F8CCADB0002309F /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		AD6EE9322FA8F1E100634F15 /* Exceptions for "SmartStudyPlanner" folder in "SmartStudyPlanner" target */ = {
+		AD83D5D42FAA57D800C70697 /* Exceptions for "Resources" folder in "SmartStudyPlanner" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				smollm2_135m_instruct_only_logits.mlmodelc,
+				tokenizer/chat_template.jinja,
+				tokenizer/merges.txt,
+				tokenizer/special_tokens_map.json,
+				tokenizer/tiny_tokenizer_config.json,
+				tokenizer/tiny_tokenizer.json,
+				tokenizer/token_decoder.json,
+				tokenizer/tokenizer_config.json,
+				tokenizer/tokenizer.json,
+				tokenizer/vocab.json,
+			);
+			target = AD060C652F718F47001254E6 /* SmartStudyPlanner */;
+		};
+		AD94F9A72FAA0FB200F6BBBE /* Exceptions for "SmartStudyPlanner" folder in "SmartStudyPlanner" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -34,9 +65,17 @@
 		AD060C682F718F47001254E6 /* SmartStudyPlanner */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AD6EE9322FA8F1E100634F15 /* Exceptions for "SmartStudyPlanner" folder in "SmartStudyPlanner" target */,
+				AD94F9A72FAA0FB200F6BBBE /* Exceptions for "SmartStudyPlanner" folder in "SmartStudyPlanner" target */,
 			);
 			path = SmartStudyPlanner;
+			sourceTree = "<group>";
+		};
+		AD7EB66D2FAA40DD005AA717 /* Resources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AD83D5D42FAA57D800C70697 /* Exceptions for "Resources" folder in "SmartStudyPlanner" target */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -46,6 +85,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AD2210722FA9E653008A5637 /* Hub in Frameworks */,
+				AD2210742FA9E653008A5637 /* Tokenizers in Frameworks */,
+				AD2210762FA9E653008A5637 /* Transformers in Frameworks */,
 				AD6EE9372FA8F2AC00634F15 /* GoogleSignInSwift in Frameworks */,
 				AD53B3E02F8CCC570002309F /* FirebaseCore in Frameworks */,
 				AD6EE9352FA8F2AC00634F15 /* GoogleSignIn in Frameworks */,
@@ -60,6 +102,7 @@
 		AD060C5D2F718F47001254E6 = {
 			isa = PBXGroup;
 			children = (
+				AD7EB66D2FAA40DD005AA717 /* Resources */,
 				AD53B3DA2F8CCADB0002309F /* GoogleService-Info.plist */,
 				AD060C682F718F47001254E6 /* SmartStudyPlanner */,
 				AD060C672F718F47001254E6 /* Products */,
@@ -84,6 +127,7 @@
 				AD060C622F718F47001254E6 /* Sources */,
 				AD060C632F718F47001254E6 /* Frameworks */,
 				AD060C642F718F47001254E6 /* Resources */,
+				AD94F8742FA9FDB000F6BBBE /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -91,6 +135,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				AD060C682F718F47001254E6 /* SmartStudyPlanner */,
+				AD7EB66D2FAA40DD005AA717 /* Resources */,
 			);
 			name = SmartStudyPlanner;
 			packageProductDependencies = (
@@ -99,6 +144,9 @@
 				AD53B3E12F8CCC570002309F /* FirebaseFirestore */,
 				AD6EE9342FA8F2AC00634F15 /* GoogleSignIn */,
 				AD6EE9362FA8F2AC00634F15 /* GoogleSignInSwift */,
+				AD2210712FA9E653008A5637 /* Hub */,
+				AD2210732FA9E653008A5637 /* Tokenizers */,
+				AD2210752FA9E653008A5637 /* Transformers */,
 			);
 			productName = SmartStudyPlanner;
 			productReference = AD060C662F718F47001254E6 /* SmartStudyPlanner.app */;
@@ -131,6 +179,7 @@
 			packageReferences = (
 				AD53B3DC2F8CCC570002309F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				AD6EE9332FA8F2AC00634F15 /* XCRemoteSwiftPackageReference "googlesignin-ios" */,
+				AD2210702FA9E653008A5637 /* XCRemoteSwiftPackageReference "swift-transformers" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AD060C672F718F47001254E6 /* Products */;
@@ -290,11 +339,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SmartStudyPlanner/SmartStudyPlanner.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2BCJ5647BL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				"HEADER_SEARCH_PATHS[arch=*]" = "$(BUILD_ROOT)/../../SourcePackages/checkouts/llama.cpp/";
 				INFOPLIST_FILE = SmartStudyPlanner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SmartStudyPlanner;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
@@ -303,11 +354,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				"OTHER_SWIFT_FLAGS[arch=*]" = "-DGGML_USE_METAL";
 				PRODUCT_BUNDLE_IDENTIFIER = com.003.SmartStudyPlanner;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -325,11 +378,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SmartStudyPlanner/SmartStudyPlanner.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2BCJ5647BL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				"HEADER_SEARCH_PATHS[arch=*]" = "$(BUILD_ROOT)/../../SourcePackages/checkouts/llama.cpp/";
 				INFOPLIST_FILE = SmartStudyPlanner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SmartStudyPlanner;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
@@ -338,11 +393,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				"OTHER_SWIFT_FLAGS[arch=*]" = "-DGGML_USE_METAL";
 				PRODUCT_BUNDLE_IDENTIFIER = com.003.SmartStudyPlanner;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -379,6 +436,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		AD2210702FA9E653008A5637 /* XCRemoteSwiftPackageReference "swift-transformers" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-transformers";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.1;
+			};
+		};
 		AD53B3DC2F8CCC570002309F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -398,6 +463,21 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		AD2210712FA9E653008A5637 /* Hub */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD2210702FA9E653008A5637 /* XCRemoteSwiftPackageReference "swift-transformers" */;
+			productName = Hub;
+		};
+		AD2210732FA9E653008A5637 /* Tokenizers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD2210702FA9E653008A5637 /* XCRemoteSwiftPackageReference "swift-transformers" */;
+			productName = Tokenizers;
+		};
+		AD2210752FA9E653008A5637 /* Transformers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD2210702FA9E653008A5637 /* XCRemoteSwiftPackageReference "swift-transformers" */;
+			productName = Transformers;
+		};
 		AD53B3DD2F8CCC570002309F /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AD53B3DC2F8CCC570002309F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

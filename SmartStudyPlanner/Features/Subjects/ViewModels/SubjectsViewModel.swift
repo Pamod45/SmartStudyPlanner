@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import FirebaseFirestore
 
 @MainActor
 class SubjectsViewModel: ObservableObject {
@@ -73,6 +74,29 @@ class SubjectsViewModel: ObservableObject {
             CoreDataService.shared.upsertSubject(updated)
         }
     }
+    
+    func refreshSubjectCounts(for subjectId: String) {
+        Task {
+            do {
+                let snapshot = try await Firestore.firestore()
+                    .collection("subjects")
+                    .document(subjectId)
+                    .getDocument()
+                
+                if let data = snapshot.data(),
+                   let updatedSubject = Subject(from: data, id: snapshot.documentID) {
+                    await MainActor.run {
+                        if let idx = subjects.firstIndex(where: { $0.id == subjectId }) {
+                            subjects[idx] = updatedSubject
+                            CoreDataService.shared.upsertSubject(updatedSubject)
+                        }
+                    }
+                }
+            } catch {
+                print("Failed to refresh subject counts: \(error)")
+            }
+        }
+    }
 
     func topics(for subject: Subject) -> [StudyTopic] {
         return []
@@ -90,3 +114,4 @@ class SubjectsViewModel: ObservableObject {
         return []
     }
 }
+

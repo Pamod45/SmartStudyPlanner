@@ -44,7 +44,7 @@ struct Subject: Identifiable, Hashable, Codable, Syncable {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         syncStatus: SyncStatus = .localOnly,
-        sessionIds: [String] = []
+        noteFilePaths: [String] = []
 
     ) {
         self.id = id
@@ -107,25 +107,59 @@ struct Subject: Identifiable, Hashable, Codable, Syncable {
         let createdAt = Self.clampDate(dateValue("createdAt", fallback: Date()), fallback: Date())
         let updatedAt = Self.clampDate(dateValue("updatedAt", fallback: Date()), fallback: Date())
 
+        let subjectId = data["id"] as? String ?? id
+        let colorHex = data["colorHex"] as? String ?? "#3B82F6"
+        let notes = data["notes"] as? String ?? ""
+        let iconName = data["iconName"] as? String ?? "book.fill"
+        let targetHoursPerWeek = data["targetHoursPerWeek"] as? Double ?? 0
+        let totalHoursStudied = data["totalHoursStudied"] as? Double ?? 0
+        
+        let resourceCount: Int
+        if let count = data["resourceCount"] as? Int {
+            resourceCount = count
+        } else if let count64 = data["resourceCount"] as? Int64 {
+            resourceCount = Int(count64)
+        } else {
+            resourceCount = 0
+        }
+        
+        let topicCount: Int
+        if let count = data["topicCount"] as? Int {
+            topicCount = count
+        } else if let count64 = data["topicCount"] as? Int64 {
+            topicCount = Int(count64)
+        } else {
+            topicCount = 0
+        }
+        
+        let deadlineIds = data["deadlineIds"] as? [String] ?? []
+        let resourceIds = data["resourceIds"] as? [String] ?? []
+        let sessionIds = data["sessionIds"] as? [String] ?? []
+        let noteFilePaths = data["noteFilePaths"] as? [String] ?? []
+        let isArchived = data["isArchived"] as? Bool ?? false
+        
+        let syncStatusRawValue = data["syncStatus"] as? String ?? ""
+        let syncStatus = SyncStatus(rawValue: syncStatusRawValue) ?? .localOnly
+
         self.init(
-            id: data["id"] as? String ?? id,
+            id: subjectId,
             userId: userId,
             name: name,
-            colorHex: data["colorHex"] as? String ?? "#3B82F6",
-            notes: data["notes"] as? String ?? "",
-            iconName: data["iconName"] as? String ?? "book.fill",
-            targetHoursPerWeek: data["targetHoursPerWeek"] as? Double ?? 0,
-            totalHoursStudied: data["totalHoursStudied"] as? Double ?? 0,
-            resourceCount: data["resourceCount"] as? Int ?? Int((data["resourceCount"] as? Int64) ?? 0),
-            topicCount: data["topicCount"] as? Int ?? Int((data["topicCount"] as? Int64) ?? 0),
-            deadlineIds: data["deadlineIds"] as? [String] ?? [],
-            resourceIds: data["resourceIds"] as? [String] ?? [],
-            sessionIds: data["sessionIds"] as? [String] ?? [],
-            noteFilePaths: data["noteFilePaths"] as? [String] ?? [],
-            isArchived: data["isArchived"] as? Bool ?? false,
+            colorHex: colorHex,
+            notes: notes,
+            iconName: iconName,
+            targetHoursPerWeek: targetHoursPerWeek,
+            totalHoursStudied: totalHoursStudied,
+            resourceCount: resourceCount,
+            topicCount: topicCount,
+            deadlineIds: deadlineIds,
+            resourceIds: resourceIds,
+            sessionIds: sessionIds,
+            isArchived: isArchived,
             createdAt: createdAt,
             updatedAt: updatedAt,
-            syncStatus: SyncStatus(rawValue: data["syncStatus"] as? String ?? "") ?? .localOnly
+            syncStatus: syncStatus,
+            noteFilePaths: noteFilePaths
         )
     }
 

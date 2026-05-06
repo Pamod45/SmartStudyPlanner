@@ -48,3 +48,8 @@ fastlane/test_output/
 *.swp
 *.tmp
 *.temp
+*.mlmodelc
+
+Resources/
+
+

@@ -40,6 +40,9 @@ struct SubjectWorkspaceView: View {
     @State private var showGeneratePath: Bool = false
     @State private var isRegeneratePath: Bool = false
     @State private var quizAttempts: [QuizAttempt] = []
+    
+    @State private var isGeneratingAIPath: Bool = false
+    @State private var generationProgressText: String = "Analyzing resources..."
 
     private var filteredResources: [Resource] {
         if searchText.isEmpty { return resources }
@@ -86,6 +89,27 @@ struct SubjectWorkspaceView: View {
                         .padding(.horizontal, theme.spacing.sm)
                 }
             }
+            
+            if isGeneratingAIPath {
+                ZStack {
+                    Color.black.opacity(0.4).ignoresSafeArea()
+                    VStack(spacing: theme.spacing.lg) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: theme.colors.primary))
+                            .scaleEffect(1.5)
+                        
+                        Text(generationProgressText)
+                            .font(theme.typography.bodyMedium.weight(.semibold))
+                            .foregroundColor(theme.colors.textPrimary)
+                    }
+                    .padding(theme.spacing.xl)
+                    .background(theme.colors.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
+                    .shadow(color: Color.black.opacity(0.1), radius: 20, y: 10)
+                }
+                .transition(.opacity)
+                .animation(.easeInOut, value: isGeneratingAIPath)
+            }
         }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showAddDeadline) {
@@ -117,6 +141,9 @@ struct SubjectWorkspaceView: View {
                 Task {
                     do {
                         try await ResourceService.shared.createResource(resource)
+                        await MainActor.run {
+                            subjectsVM?.refreshSubjectCounts(for: subject.id)
+                        }
                     } catch {
                         print("Failed to save resource: \(error)")
                     }
@@ -185,15 +212,34 @@ struct SubjectWorkspaceView: View {
                 resources: resources,
                 isRegenerate: isRegeneratePath
             ) { newPath in
-                studyPath = newPath
+                generateStudyPath(with: newPath)
             }
             .environment(\.theme, theme)
         }
         .onAppear {
             loadResources()
+            loadStudyPath()
         }
     }
     
+    private func loadStudyPath() {
+        let cachedTopics = CoreDataService.shared.getCachedStudyPath(for: subject.id)
+        if !cachedTopics.isEmpty {
+            self.studyPath = StudyPath(subjectId: subject.id, topics: cachedTopics)
+        }
+        
+        Task {
+            do {
+                let topics = try await StudyPathService.shared.fetchStudyPath(for: subject.id)
+                await MainActor.run {
+                    self.studyPath = StudyPath(subjectId: subject.id, topics: topics)
+                }
+            } catch {
+                print("Failed to fetch study path: \(error)")
+            }
+        }
+    }
+
     private func loadResources() {
         resources = CoreDataService.shared.getCachedResources(for: subject.id)
         
@@ -205,6 +251,56 @@ struct SubjectWorkspaceView: View {
                 }
             } catch {
                 print("Failed to fetch resources: \(error)")
+            }
+        }
+    }
+    
+    private func generateStudyPath(with basePath: StudyPath) {
+        isGeneratingAIPath = true
+        generationProgressText = "Extracting text from resources..."
+        
+        let selectedResources = resources.filter { basePath.generatedFromResourceIds.contains($0.id) }
+        print("DEBUG: generateStudyPath called with \(selectedResources.count) resources")
+        
+        Task {
+            do {
+                print("DEBUG: Starting text extraction...")
+                let combinedText = try await ContentExtractionService.shared.extractText(from: selectedResources)
+                print("DEBUG: Text extraction complete. Extracted \(combinedText.count) characters.")
+                
+                await MainActor.run {
+                    generationProgressText = "Generating AI Study Path..."
+                }
+                
+                print("DEBUG: Starting LLM generation...")
+//                let topics = try await
+//                StudyContentOrchestrator.shared.buildStudyPath(from: combinedText)
+                let topics = try await StudyContentOrchestrator.shared.buildStudyPath(from: combinedText)
+
+                await MainActor.run {
+                    var finalPath = basePath
+                    finalPath.topics = topics
+                    self.studyPath = finalPath
+                    self.isGeneratingAIPath = false
+                    
+                    Task {
+                        do {
+                            try await StudyPathService.shared.saveStudyPath(topics, for: subject.id)
+                            print("✅ Study path saved")
+                            // Refresh subject counts in the list
+                            await MainActor.run {
+                                subjectsVM?.refreshSubjectCounts(for: subject.id)
+                            }
+                        } catch {
+                            print("❌ Failed to save study path: \(error)")
+                        }
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    print("Failed to generate AI path: \(error)")
+                    self.isGeneratingAIPath = false
+                }
             }
         }
     }
@@ -353,7 +449,11 @@ struct SubjectWorkspaceView: View {
                 attempts: $quizAttempts
             )
         case .aiAssistant:
-            AIAssistantTabView()
+            AIAssistantTabView(
+                subject: subject,
+                resources: resources,
+                studyPath: studyPath
+            )
         }
     }
 }

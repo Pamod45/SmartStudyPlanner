@@ -42,6 +42,7 @@ struct QuizQuestion: Identifiable, Codable {
     var options: [String]
     var correctOptionIndex: Int
     var expertTip: String
+    var keyword: String
     var hint: String?
     var points: Int
 
@@ -54,6 +55,7 @@ struct QuizQuestion: Identifiable, Codable {
         options: [String],
         correctOptionIndex: Int,
         expertTip: String = "",
+        keyword: String = "",
         hint: String? = nil,
         points: Int = 1
     ) {
@@ -65,6 +67,7 @@ struct QuizQuestion: Identifiable, Codable {
         self.options = options
         self.correctOptionIndex = correctOptionIndex
         self.expertTip = expertTip
+        self.keyword = keyword
         self.hint = hint
         self.points = points
     }

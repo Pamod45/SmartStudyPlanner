@@ -11,6 +11,7 @@ struct QuizResultsView: View {
     @Environment(\.theme) var theme
     let attempt: QuizAttempt
     var onDone: () -> Void
+    var onReattempt: () -> Void
 
     @State private var animatedProgress: Double = 0
 
@@ -192,8 +193,30 @@ struct QuizResultsView: View {
     }
 
     private var doneBar: some View {
-        PrimaryButton(title: "Done") { onDone() }
-                .padding(.horizontal, theme.spacing.lg)
-                .padding(.vertical, theme.spacing.md)
+        HStack(spacing: theme.spacing.sm) {
+            Button {
+                onDone()
+            } label: {
+                Text("Done")
+                    .font(theme.typography.bodyLarge.weight(.semibold))
+                    .foregroundColor(theme.colors.primary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(theme.colors.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: theme.radius.xl)
+                            .stroke(theme.colors.primary.opacity(0.5), lineWidth: 1.5)
+                    )
+            }
+            .buttonStyle(.plain)
+
+            PrimaryButton(title: "Try Again", icon: "arrow.clockwise") {
+                onReattempt()
+            }
+        }
+        .padding(.horizontal, theme.spacing.lg)
+        .padding(.vertical, theme.spacing.md)
+        .background(theme.colors.background)
     }
 }

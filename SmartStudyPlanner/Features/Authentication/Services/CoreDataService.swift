@@ -166,17 +166,51 @@ class CoreDataService {
                     deadlineIds: cdSubject.deadlineIds,
                     resourceIds: cdSubject.resourceIds,
                     sessionIds: cdSubject.sessionIds,
-                    noteFilePaths: cdSubject.noteFilePaths,
                     isArchived: cdSubject.isArchived,
                     createdAt: cdSubject.createdAt,
                     updatedAt: cdSubject.updatedAt,
-                    syncStatus: SyncStatus(rawValue: cdSubject.syncStatus) ?? .localOnly
+                    syncStatus: SyncStatus(rawValue: cdSubject.syncStatus) ?? .localOnly,
+                    noteFilePaths: cdSubject.noteFilePaths
                 )
             }
         } catch {
             print("Failed to fetch cached subjects: \(error)")
             return []
         }
+    }
+
+    func getCachedSubject(id: String) -> Subject? {
+        let request = NSFetchRequest<CDSubject>(entityName: "CDSubject")
+        request.predicate = NSPredicate(format: "id == %@", id)
+        request.fetchLimit = 1
+
+        do {
+            if let cdSubject = try CoreDataStack.shared.context.fetch(request).first {
+                return Subject(
+                    id: cdSubject.id,
+                    userId: cdSubject.userId,
+                    name: cdSubject.name,
+                    colorHex: cdSubject.colorHex,
+                    notes: cdSubject.notes,
+                    iconName: cdSubject.iconName,
+                    targetHoursPerWeek: cdSubject.targetHoursPerWeek,
+                    totalHoursStudied: cdSubject.totalHoursStudied,
+                    resourceCount: cdSubject.resourceCount,
+                    topicCount: cdSubject.topicCount,
+                    deadlineIds: cdSubject.deadlineIds,
+                    resourceIds: cdSubject.resourceIds,
+                    sessionIds: cdSubject.sessionIds,
+                    isArchived: cdSubject.isArchived,
+                    createdAt: cdSubject.createdAt,
+                    updatedAt: cdSubject.updatedAt,
+                    syncStatus: SyncStatus(rawValue: cdSubject.syncStatus) ?? .localOnly,
+                    noteFilePaths: cdSubject.noteFilePaths
+                )
+            }
+        } catch {
+            print("Failed to fetch cached subject by id: \(error)")
+        }
+        return nil
     }
 
     func upsertSubject(_ subject: Subject) {
@@ -310,6 +344,83 @@ class CoreDataService {
         }
     }
     
+    func getCachedStudyPath(for subjectId: String) -> [StudyPathTopic] {
+        let request = NSFetchRequest<CDStudyPathTopic>(entityName: "CDStudyPathTopic")
+        request.predicate = NSPredicate(format: "subjectId == %@", subjectId)
+        let sortDescriptor = NSSortDescriptor(key: "order", ascending: true)
+        request.sortDescriptors = [sortDescriptor]
+
+        do {
+            let results = try CoreDataStack.shared.context.fetch(request)
+            return results.map { cdTopic in
+                StudyPathTopic(
+                    id: cdTopic.id,
+                    subjectId: cdTopic.subjectId,
+                    userId: cdTopic.userId,
+                    order: Int(cdTopic.order),
+                    title: cdTopic.title,
+                    description: cdTopic.description_,
+                    subtopics: cdTopic.subtopics,
+                    weightPercent: Int(cdTopic.weightPercent),
+                    estimatedHours: Int(cdTopic.estimatedHours),
+                    resourceIds: cdTopic.resourceIds,
+                    completionPercent: cdTopic.completionPercent,
+                    isCompleted: cdTopic.isCompleted,
+                    generatedAt: cdTopic.generatedAt,
+                    syncStatus: SyncStatus(rawValue: cdTopic.syncStatus) ?? .localOnly
+                )
+            }
+        } catch {
+            print("Failed to fetch cached study path: \(error)")
+            return []
+        }
+    }
+
+    func upsertStudyPathTopic(_ topic: StudyPathTopic) {
+        let context = CoreDataStack.shared.context
+
+        let request = NSFetchRequest<CDStudyPathTopic>(entityName: "CDStudyPathTopic")
+        request.predicate = NSPredicate(format: "id == %@", topic.id)
+        request.fetchLimit = 1
+
+        let cdTopic: CDStudyPathTopic
+        if let existing = try? context.fetch(request).first {
+            cdTopic = existing
+        } else {
+            cdTopic = CDStudyPathTopic(context: context)
+        }
+
+        cdTopic.id = topic.id
+        cdTopic.subjectId = topic.subjectId
+        cdTopic.userId = topic.userId
+        cdTopic.order = Int32(topic.order)
+        cdTopic.title = topic.title
+        cdTopic.description_ = topic.description
+        cdTopic.subtopics = topic.subtopics
+        cdTopic.weightPercent = Int32(topic.weightPercent)
+        cdTopic.estimatedHours = Int32(topic.estimatedHours)
+        cdTopic.resourceIds = topic.resourceIds
+        cdTopic.completionPercent = topic.completionPercent
+        cdTopic.isCompleted = topic.isCompleted
+        cdTopic.generatedAt = topic.generatedAt
+        cdTopic.syncStatus = topic.syncStatus.rawValue
+
+        CoreDataStack.shared.saveContext()
+    }
+
+    func cacheStudyPath(_ topics: [StudyPathTopic]) {
+        topics.forEach { upsertStudyPathTopic($0) }
+    }
+
+    func deleteStudyPath(for subjectId: String) {
+        let context = CoreDataStack.shared.context
+        let request = NSFetchRequest<NSFetchRequestResult>(entityName: "CDStudyPathTopic")
+        request.predicate = NSPredicate(format: "subjectId == %@", subjectId)
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: request)
+        try? context.execute(deleteRequest)
+        CoreDataStack.shared.saveContext()
+    }
+    
     func clearCache() {
         let context = CoreDataStack.shared.context
         let request = NSFetchRequest<NSFetchRequestResult>(entityName: "CDUserProfile")
@@ -328,8 +439,85 @@ class CoreDataService {
         let resourcesDeleteRequest = NSBatchDeleteRequest(fetchRequest: resourcesRequest)
         try? context.execute(resourcesDeleteRequest)
 
+        let studyPathRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CDStudyPathTopic")
+        let studyPathDeleteRequest = NSBatchDeleteRequest(fetchRequest: studyPathRequest)
+        try? context.execute(studyPathDeleteRequest)
+
         CoreDataStack.shared.saveContext()
     }
+
+    // MARK: - Quiz Attempts
+
+    func getCachedAttempts(for subjectId: String) -> [QuizAttempt] {
+        let request = NSFetchRequest<CDQuizAttempt>(entityName: "CDQuizAttempt")
+        request.predicate = NSPredicate(format: "subjectId == %@", subjectId)
+        let sortDescriptor = NSSortDescriptor(key: "completedAt", ascending: false)
+        request.sortDescriptors = [sortDescriptor]
+
+        do {
+            let results = try CoreDataStack.shared.context.fetch(request)
+            return results.compactMap { cd -> QuizAttempt? in
+                let questions: [QuizQuestion] = (try? JSONDecoder().decode([QuizQuestion].self, from: cd.questionsData)) ?? []
+                let selectedAnswers: [String: Int] = (try? JSONDecoder().decode([String: Int].self, from: cd.selectedAnswersData)) ?? [:]
+
+                return QuizAttempt(
+                    id: cd.id,
+                    userId: cd.userId,
+                    quizName: cd.quizName,
+                    topicName: cd.topicName,
+                    subjectId: cd.subjectId,
+                    questions: questions,
+                    selectedAnswers: selectedAnswers,
+                    timeSpentSeconds: Int(cd.timeSpentSeconds),
+                    completedAt: cd.completedAt,
+                    syncStatus: SyncStatus(rawValue: cd.syncStatus) ?? .localOnly
+                )
+            }
+        } catch {
+            print("Failed to fetch cached quiz attempts: \(error)")
+            return []
+        }
+    }
+
+    func upsertAttempt(_ attempt: QuizAttempt) {
+        let context = CoreDataStack.shared.context
+
+        let request = NSFetchRequest<CDQuizAttempt>(entityName: "CDQuizAttempt")
+        request.predicate = NSPredicate(format: "id == %@", attempt.id)
+        request.fetchLimit = 1
+
+        let cdAttempt: CDQuizAttempt
+        if let existing = try? context.fetch(request).first {
+            cdAttempt = existing
+        } else {
+            cdAttempt = CDQuizAttempt(context: context)
+        }
+
+        let questionsData  = (try? JSONEncoder().encode(attempt.questions))         ?? Data()
+        let answersData    = (try? JSONEncoder().encode(attempt.selectedAnswers))    ?? Data()
+
+        cdAttempt.id                 = attempt.id
+        cdAttempt.subjectId          = attempt.subjectId
+        cdAttempt.userId             = attempt.userId
+        cdAttempt.quizName           = attempt.quizName
+        cdAttempt.topicName          = attempt.topicName
+        cdAttempt.questionsData      = questionsData
+        cdAttempt.selectedAnswersData = answersData
+        cdAttempt.scorePercent       = Int32(attempt.scorePercent)
+        cdAttempt.timeSpentSeconds   = Int32(attempt.timeSpentSeconds)
+        cdAttempt.completedAt        = attempt.completedAt
+        cdAttempt.syncStatus         = attempt.syncStatus.rawValue
+
+        CoreDataStack.shared.saveContext()
+    }
+
+    func deleteAttempt(id: String) {
+        let context = CoreDataStack.shared.context
+        let request = NSFetchRequest<CDQuizAttempt>(entityName: "CDQuizAttempt")
+        request.predicate = NSPredicate(format: "id == %@", id)
+        if let existing = try? context.fetch(request).first {
+            context.delete(existing)
+            CoreDataStack.shared.saveContext()
+        }
+    }
 }
-
-

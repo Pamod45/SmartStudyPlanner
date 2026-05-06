@@ -43,13 +43,40 @@ struct QuizSessionView: View {
         ZStack {
             theme.colors.background.ignoresSafeArea()
             if showResults {
-                QuizResultsView(attempt: attempt) {
-                    dismiss()
-                }
+                QuizResultsView(
+                    attempt: attempt,
+                    onDone: { dismiss() },
+                    onReattempt: { resetForReattempt() }
+                )
             } else {
                 questionScreen
             }
         }.background(theme.colors.surface.opacity(0.2))
+    }
+    
+    private func resetForReattempt() {
+        let fresh = QuizAttempt(
+            id: UUID().uuidString,
+            userId:          attempt.userId,
+            quizId:          attempt.quizId,
+            quizName:        attempt.quizName,
+            topicName:       attempt.topicName,
+            subjectId:       attempt.subjectId,
+            subjectColorHex: attempt.subjectColorHex,
+            questions:       attempt.questions, 
+            selectedAnswers: [:],
+            answers:         [],
+            timeSpentSeconds: 0,
+            completedAt:     Date(),
+            syncStatus:      .localOnly
+        )
+        withAnimation(.easeInOut(duration: 0.3)) {
+            attempt             = fresh
+            currentIndex        = 0
+            selectedOptionIndex = nil
+            startTime           = Date()
+            showResults         = false
+        }
     }
 
     private var questionScreen: some View {

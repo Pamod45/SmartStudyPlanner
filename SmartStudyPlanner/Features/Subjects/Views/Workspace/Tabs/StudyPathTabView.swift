@@ -21,7 +21,7 @@ struct StudyPathTabView: View {
     private var overallCompletion: Int {
         guard let path = studyPath, !path.topics.isEmpty else { return 0 }
         let total = path.topics.reduce(0) { $0 + $1.weightPercent }
-        let done  = path.topics.reduce(0) { $0 + ($1.completionPercent * $1.weightPercent / 100) }
+        let done  = path.topics.reduce(0) { $0 + (Int($1.completionPercent) * $1.weightPercent / 100) }
         guard total > 0 else { return 0 }
         return done * 100 / total
     }

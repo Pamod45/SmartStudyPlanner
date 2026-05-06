@@ -42,7 +42,7 @@ struct ResourcesTabView: View {
                             onDelete: {
                                 Task {
                                     do {
-                                        try await ResourceService.shared.deleteResource(id: resource.id)
+                                        try await ResourceService.shared.deleteResource(id: resource.id, subjectId: resource.subjectId)
                                         await MainActor.run {
                                             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                                                 resources.removeAll { $0.id == resource.id }
