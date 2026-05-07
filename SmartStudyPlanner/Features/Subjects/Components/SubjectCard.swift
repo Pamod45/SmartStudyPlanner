@@ -62,5 +62,10 @@ struct SubjectCard: View {
         .padding(theme.spacing.lg)
         .background(theme.colors.surface)
         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Subject: \(subject.name)")
+        .accessibilityValue("\(subject.resourceCount) Resources, \(subject.topicCount) Topics. Updated on \(subject.updatedAt.formatted(date: .abbreviated, time: .omitted))")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { onTap() }
     }
 }

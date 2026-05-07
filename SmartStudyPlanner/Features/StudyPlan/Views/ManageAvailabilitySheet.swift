@@ -6,13 +6,16 @@ struct ManageAvailabilitySheet: View {
 
     var onSave: (AvailabilitySlot) -> Void
 
-    @State private var selectedType: AvailabilityType = .date
+    @State private var selectedType: AvailabilityType = .specificDate
     @State private var startTime: Date = Calendar.current.date(bySettingHour: 17, minute: 30, second: 0, of: .now) ?? .now
-    @State private var endTime: Date = Calendar.current.date(bySettingHour: 21, minute: 30, second: 0, of: .now) ?? .now
+    @State private var endTime: Date   = Calendar.current.date(bySettingHour: 21, minute: 30, second: 0, of: .now) ?? .now
     @State private var selectedDate: Date = .now
-    @State private var selectedWeekday: Int = 2
-    @State private var rangeStart: Date = .now
-    @State private var rangeEnd: Date = Calendar.current.date(byAdding: .day, value: 7, to: .now) ?? .now
+    @State private var rangeStart: Date  = .now
+    @State private var rangeEnd: Date    = Calendar.current.date(byAdding: .day, value: 6, to: .now) ?? .now
+
+    private var todayStart: Date {
+        Calendar.current.startOfDay(for: .now)
+    }
 
     var body: some View {
         ZStack {
@@ -28,17 +31,15 @@ struct ManageAvailabilitySheet: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: theme.spacing.xl) {
+
                         FieldSection(title: "AVAILABILITY TYPE") {
-                            Picker("", selection: $selectedType) {
-                                ForEach(AvailabilityType.allCases, id: \.self) { type in
-                                    Text(type.rawValue).tag(type)
-                                }
+                            HStack(spacing: theme.spacing.sm) {
+                                typeChip(.specificDate, label: "Single Date", icon: "calendar")
+                                typeChip(.dateRange,    label: "Date Range",  icon: "calendar.badge.plus")
                             }
-                            .pickerStyle(.segmented)
-                            .tint(theme.colors.primary)
                         }
 
-                        FieldSection(title: "TIME SLOT") {
+                        FieldSection(title: "TIME WINDOW") {
                             VStack(spacing: 0) {
                                 timeRow(label: "Start Time", time: $startTime)
                                 Divider()
@@ -53,17 +54,21 @@ struct ManageAvailabilitySheet: View {
                         dateSection
                     }
                     .padding(theme.spacing.lg)
+                    .padding(.bottom, theme.spacing.xxl)
                 }
             }
             .background(theme.colors.surface.opacity(0.2))
+        }
+        .onChange(of: rangeStart) { _, newValue in
+            if rangeEnd < newValue {
+                rangeEnd = newValue
+            }
         }
     }
 
     private var headerSection: some View {
         HStack {
-            Button {
-                dismiss()
-            } label: {
+            Button { dismiss() } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(theme.colors.textPrimary)
@@ -74,20 +79,43 @@ struct ManageAvailabilitySheet: View {
 
             Spacer()
 
-            Text("Manage Availability")
+            Text("Add Availability")
                 .font(theme.typography.headingMedium)
                 .fontWeight(.bold)
                 .foregroundColor(theme.colors.textPrimary)
 
             Spacer()
 
-            Button("Save") {
-                save()
-            }
-            .font(theme.typography.bodyMedium)
-            .fontWeight(.semibold)
-            .foregroundColor(theme.colors.primary)
+            Button("Save") { save() }
+                .font(theme.typography.bodyMedium)
+                .fontWeight(.semibold)
+                .foregroundColor(theme.colors.primary)
         }
+    }
+
+    private func typeChip(_ type: AvailabilityType, label: String, icon: String) -> some View {
+        let isSelected = selectedType == type
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) { selectedType = type }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .semibold))
+                Text(label)
+                    .font(theme.typography.bodySmall)
+                    .fontWeight(.semibold)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(isSelected ? theme.colors.primary : theme.colors.surface)
+            .foregroundColor(isSelected ? theme.colors.textOnPrimary : theme.colors.textSecondary)
+            .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: theme.radius.lg)
+                    .stroke(isSelected ? theme.colors.primary : theme.colors.border.opacity(0.4), lineWidth: 1.5)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private func timeRow(label: String, time: Binding<Date>) -> some View {
@@ -95,9 +123,7 @@ struct ManageAvailabilitySheet: View {
             Text(label)
                 .font(theme.typography.bodyMedium)
                 .foregroundColor(theme.colors.textPrimary)
-
             Spacer()
-
             DatePicker("", selection: time, displayedComponents: .hourAndMinute)
                 .datePickerStyle(.compact)
                 .labelsHidden()
@@ -109,16 +135,14 @@ struct ManageAvailabilitySheet: View {
     @ViewBuilder
     private var dateSection: some View {
         switch selectedType {
-        case .date:
+        case .specificDate:
             FieldSection(title: "DATE") {
                 HStack {
                     Text("Select Date")
                         .font(theme.typography.bodyMedium)
                         .foregroundColor(theme.colors.textPrimary)
-
                     Spacer()
-
-                    DatePicker("", selection: $selectedDate, displayedComponents: .date)
+                    DatePicker("", selection: $selectedDate, in: todayStart..., displayedComponents: .date)
                         .datePickerStyle(.compact)
                         .labelsHidden()
                         .tint(theme.colors.primary)
@@ -128,46 +152,15 @@ struct ManageAvailabilitySheet: View {
                 .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
             }
 
-        case .weekly:
-            FieldSection(title: "DAY OF WEEK") {
-                let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-                LazyVGrid(
-                    columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
-                    spacing: theme.spacing.md
-                ) {
-                    ForEach(1...7, id: \.self) { day in
-                        Button {
-                            selectedWeekday = day
-                        } label: {
-                            Text(weekdays[day - 1])
-                                .font(theme.typography.bodyMedium)
-                                .fontWeight(.semibold)
-                                .foregroundColor(selectedWeekday == day ? .white : theme.colors.textPrimary)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 48)
-                                .background(selectedWeekday == day ? theme.colors.primary : theme.colors.surface)
-                                .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: theme.radius.xl)
-                                        .stroke(
-                                            selectedWeekday == day ? theme.colors.primary : theme.colors.border.opacity(0.3),
-                                            lineWidth: 1.5
-                                        )
-                                )
-                        }
-                    }
-                }
-            }
-
-        case .range:
+        case .dateRange:
             FieldSection(title: "DATE RANGE") {
                 VStack(spacing: 0) {
                     HStack {
-                        Text("Start Date")
+                        Text("From")
                             .font(theme.typography.bodyMedium)
                             .foregroundColor(theme.colors.textPrimary)
                         Spacer()
-                        DatePicker("", selection: $rangeStart, displayedComponents: .date)
+                        DatePicker("", selection: $rangeStart, in: todayStart..., displayedComponents: .date)
                             .datePickerStyle(.compact)
                             .labelsHidden()
                             .tint(theme.colors.primary)
@@ -179,11 +172,11 @@ struct ManageAvailabilitySheet: View {
                         .padding(.leading, theme.spacing.md)
 
                     HStack {
-                        Text("End Date")
+                        Text("To")
                             .font(theme.typography.bodyMedium)
                             .foregroundColor(theme.colors.textPrimary)
                         Spacer()
-                        DatePicker("", selection: $rangeEnd, in: rangeStart..., displayedComponents: .date)
+                        DatePicker("", selection: $rangeEnd, in: Calendar.current.startOfDay(for: max(todayStart, rangeStart))..., displayedComponents: .date)
                             .datePickerStyle(.compact)
                             .labelsHidden()
                             .tint(theme.colors.primary)
@@ -192,22 +185,24 @@ struct ManageAvailabilitySheet: View {
                 }
                 .background(theme.colors.surface)
                 .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
-            }
 
-        case .daily:
-            EmptyView()
+                let days = Calendar.current.dateComponents([.day], from: rangeStart, to: rangeEnd).day ?? 0
+                Text("Applies to \(days + 1) day\(days == 0 ? "" : "s")")
+                    .font(theme.typography.bodySmall)
+                    .foregroundColor(theme.colors.textSecondary)
+                    .padding(.top, 4)
+            }
         }
     }
 
     private func save() {
         let slot = AvailabilitySlot(
-            type: selectedType,
-            startTime: startTime,
-            endTime: endTime,
-            date: selectedType == .date ? selectedDate : nil,
-            weekday: selectedType == .weekly ? selectedWeekday : nil,
-            rangeStart: selectedType == .range ? rangeStart : nil,
-            rangeEnd: selectedType == .range ? rangeEnd : nil
+            type:       selectedType,
+            startTime:  startTime,
+            endTime:    endTime,
+            date:       selectedType == .specificDate ? selectedDate : nil,
+            rangeStart: selectedType == .dateRange    ? rangeStart   : nil,
+            rangeEnd:   selectedType == .dateRange    ? rangeEnd     : nil
         )
         onSave(slot)
         dismiss()

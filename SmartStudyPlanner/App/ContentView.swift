@@ -29,7 +29,7 @@ struct ContentView: View {
         }
         .environment(\.theme, themeManager.current)
         .tint(themeManager.current.colors.primary)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
     }
 
     private var mainTabView: some View {
@@ -59,7 +59,7 @@ struct ContentView: View {
             .tag(AppTab.plan)
 
             NavigationStack {
-                ProgressView()
+                UserProgressView()
             }
             .tabItem {
                 Label(AppTab.progress.title, systemImage: AppTab.progress.icon)
@@ -81,4 +81,5 @@ struct ContentView: View {
     ContentView()
         .environmentObject(ThemeManager())
         .environmentObject(SessionViewModel())
+        .environmentObject(LocalSettingsManager())
 }

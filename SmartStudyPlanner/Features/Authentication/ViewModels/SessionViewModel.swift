@@ -37,6 +37,7 @@ class SessionViewModel: ObservableObject {
         } catch {
             print("Error signing out: \(error)")
         }
+        AIMessageStore.shared.clearAll()
         session = .unauthenticated
     }
 }

@@ -5,8 +5,9 @@ enum ProgressTab: String, CaseIterable {
     case charts  = "Charts"
 }
 
-struct ProgressView: View {
+struct UserProgressView: View {
     @Environment(\.theme) var theme
+    @EnvironmentObject var sessionVM: SessionViewModel
     @StateObject private var vm = ProgressViewModel()
     @State private var selectedTab: ProgressTab = .summary
 
@@ -33,6 +34,9 @@ struct ProgressView: View {
                 }
             }
         }
+        .task(id: sessionVM.activeUserId) {
+            await vm.load(userId: sessionVM.activeUserId)
+        }
     }
 
     private var headerSection: some View {
@@ -55,6 +59,7 @@ struct ProgressView: View {
 }
 
 #Preview {
-    ProgressView()
+    UserProgressView()
         .environment(\.theme, AppTheme.defaultTheme)
+        .environmentObject(SessionViewModel())
 }

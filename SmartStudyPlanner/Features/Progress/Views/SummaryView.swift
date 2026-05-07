@@ -31,7 +31,7 @@ struct SummaryView: View {
                     }
 
                     VStack(alignment: .leading, spacing: theme.spacing.md) {
-                        Text("AI Insights")
+                        Text("Study Insights")
                             .font(theme.typography.headingSmall)
                             .fontWeight(.bold)
                             .foregroundColor(theme.colors.textPrimary)

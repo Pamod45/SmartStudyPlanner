@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import LocalAuthentication
 
 struct LoginView: View {
     @Environment(\.theme) var theme
     @EnvironmentObject var sessionViewModel: SessionViewModel
+    @EnvironmentObject var localSettings: LocalSettingsManager
     @StateObject private var vm = AuthViewModel()
     @State private var email: String = ""
     @State private var password: String = ""
@@ -126,9 +128,45 @@ struct LoginView: View {
 
     private var socialButtons: some View {
         HStack(spacing: theme.spacing.lg) {
-            RoundedIconButton(icon: "g.circle.fill"){}
-            RoundedIconButton(icon: "apple.logo"){}
-            RoundedIconButton(icon: "faceid"){}
+            RoundedIconButton(icon: "g.circle.fill"){
+                guard let rootVC = Utilities.shared.topViewController() else { return }
+                Task {
+                    await vm.signInWithGoogle(presentingViewController: rootVC) { user in
+                        if let user = user {
+                            sessionViewModel.signIn(user: user)
+                        }
+                    }
+                }
+            }
+            RoundedIconButton(icon: "faceid"){
+                let isFaceIDEnabled = localSettings.faceIDEnabled
+                guard isFaceIDEnabled else {
+                    vm.errorMessage = "Face ID is not enabled in settings."
+                    return
+                }
+                
+                let context = LAContext()
+                var error: NSError?
+                if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+                    context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Log in with Face ID") { success, _ in
+                        DispatchQueue.main.async {
+                            if success {
+                                Task {
+                                    await vm.signInWithFaceID { user in
+                                        if let user = user {
+                                            sessionViewModel.signIn(user: user)
+                                        }
+                                    }
+                                }
+                            } else {
+                                vm.errorMessage = "Face ID authentication failed."
+                            }
+                        }
+                    }
+                } else {
+                    vm.errorMessage = "Face ID is not available on this device."
+                }
+            }
         }
     }
 
@@ -151,10 +189,38 @@ struct LoginView: View {
     }
 }
 
+class Utilities {
+    static let shared = Utilities()
+    private init() {}
+    
+    @MainActor
+    func topViewController(controller: UIViewController? = nil) -> UIViewController? {
+        let rootVC = controller ?? UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow }?
+            .rootViewController
+
+        if let navigationController = rootVC as? UINavigationController {
+            return topViewController(controller: navigationController.visibleViewController)
+        }
+        if let tabController = rootVC as? UITabBarController {
+            if let selected = tabController.selectedViewController {
+                return topViewController(controller: selected)
+            }
+        }
+        if let presented = rootVC?.presentedViewController {
+            return topViewController(controller: presented)
+        }
+        return rootVC
+    }
+}
+
 #Preview {
     NavigationStack {
         LoginView()
             .environment(\.theme, AppTheme.defaultTheme)
             .environmentObject(SessionViewModel())
+            .environmentObject(LocalSettingsManager())
     }
 }

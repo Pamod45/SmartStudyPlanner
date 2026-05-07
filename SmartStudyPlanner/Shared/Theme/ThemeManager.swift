@@ -11,6 +11,21 @@ import SwiftUI
 
 class ThemeManager: ObservableObject {
     @Published var current: AppTheme = .defaultTheme
+    @Published var isDarkMode: Bool = true
+    
+    func update(highContrast: Bool, darkMode: Bool, fontSize: Double) {
+        let baseTheme: AppTheme
+        if highContrast {
+            baseTheme = .highContrastTheme
+        } else if !darkMode {
+            baseTheme = .lightTheme
+        } else {
+            baseTheme = .defaultTheme
+        }
+        
+        current = baseTheme.scaled(by: fontSize)
+        isDarkMode = darkMode
+    }
 }
 
 private struct ThemeKey: EnvironmentKey {

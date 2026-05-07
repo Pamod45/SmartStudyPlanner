@@ -10,9 +10,7 @@ import SwiftUI
 struct IntegrationsView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
-
-    @State private var selectedWidget: String = "Progress Summary"
-    @State private var siriEnabled: Bool = true
+    @EnvironmentObject var vm: SettingsViewModel
 
     private let widgetOptions = ["Default Widget Data", "Progress Summary", "Daily Goals", "Upcoming Sessions"]
 
@@ -31,14 +29,14 @@ struct IntegrationsView: View {
                             VStack(spacing: 0) {
                                 ForEach(Array(widgetOptions.enumerated()), id: \.offset) { i, option in
                                     Button {
-                                        selectedWidget = option
+                                        vm.updateSettings { $0.widgetConfiguration = option }
                                     } label: {
                                         HStack {
                                             Text(option)
                                                 .font(theme.typography.bodyLarge.weight(.semibold))
                                                 .foregroundColor(theme.colors.textPrimary)
                                             Spacer()
-                                            if selectedWidget == option {
+                                            if vm.settings.widgetConfiguration == option {
                                                 Image(systemName: "checkmark")
                                                     .font(theme.typography.bodyMedium.weight(.semibold))
                                                     .foregroundColor(theme.colors.primary)
@@ -69,7 +67,7 @@ struct IntegrationsView: View {
                                     .font(theme.typography.bodyLarge.weight(.semibold))
                                     .foregroundColor(theme.colors.textPrimary)
                                 Spacer()
-                                Toggle("", isOn: $siriEnabled).labelsHidden().tint(theme.colors.primary)
+                                Toggle("", isOn: vm.binding(for: \.siriIntegrationEnabled)).labelsHidden().tint(theme.colors.primary)
                             }
                             .padding(.horizontal, theme.spacing.md)
                             .padding(.vertical, theme.spacing.md)
@@ -102,5 +100,6 @@ struct IntegrationsView: View {
 #Preview {
     NavigationStack { IntegrationsView() }
         .environmentObject(ThemeManager())
+        .environmentObject(SettingsViewModel())
         .environment(\.theme, AppTheme.defaultTheme)
 }

@@ -18,6 +18,11 @@ class UserService {
     func createUserProfile(_ user: AppUser) async throws {
         try await db.collection("users").document(user.id).setData(user.firestoreData)
         CoreDataService.shared.cacheProfile(user)
+
+        var settings = UserSettings.default
+        settings.userId = user.id
+        settings.id = user.id
+        try await createUserSettings(settings)
     }
     
     func fetchUserProfile(userId: String) async throws -> AppUser {
@@ -32,5 +37,24 @@ class UserService {
     func updateProfile(user: AppUser) async throws {
         try await db.collection("users").document(user.id).setData(user.firestoreData, merge: true)
         CoreDataService.shared.cacheProfile(user)
+    }
+
+    func createUserSettings(_ settings: UserSettings) async throws {
+        try await db.collection("userSettings").document(settings.userId).setData(settings.firestoreData)
+        CoreDataService.shared.cacheSettings(settings)
+    }
+
+    func fetchUserSettings(userId: String) async throws -> UserSettings {
+        let doc = try await db.collection("userSettings").document(userId).getDocument()
+        guard let data = doc.data(), let settings = UserSettings(from: data, userId: userId) else {
+            throw NSError(domain: "UserService", code: 404, userInfo: [NSLocalizedDescriptionKey: "User settings not found"])
+        }
+        CoreDataService.shared.cacheSettings(settings)
+        return settings
+    }
+
+    func updateSettings(_ settings: UserSettings) async throws {
+        try await db.collection("userSettings").document(settings.userId).setData(settings.firestoreData, merge: true)
+        CoreDataService.shared.cacheSettings(settings)
     }
 }

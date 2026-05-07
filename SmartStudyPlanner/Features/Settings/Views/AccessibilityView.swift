@@ -10,10 +10,23 @@ import SwiftUI
 struct AccessibilityView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var vm: SettingsViewModel
 
-    @State private var textSizePercent: Double = 100
-    @State private var reduceMotion: Bool = true
-    @State private var highContrastColors: Bool = true
+    @EnvironmentObject var themeManager: ThemeManager
+
+    private var textSizePercent: Binding<Double> {
+        Binding(
+            get: { vm.settings.accessibilityFontSize * 100 },
+            set: { newValue in
+                vm.updateSettings { $0.accessibilityFontSize = newValue / 100 }
+                themeManager.update(
+                    highContrast: vm.settings.highContrastEnabled,
+                    darkMode: vm.settings.darkModeEnabled,
+                    fontSize: newValue / 100
+                )
+            }
+        )
+    }
 
     var body: some View {
         ZStack {
@@ -30,9 +43,19 @@ struct AccessibilityView: View {
                             VStack(spacing: 0) {
                                 sliderRow
                                 rowDivider
-                                toggleRow(title: "Reduce Motion", isOn: $reduceMotion)
+                                toggleRow(title: "Reduce Motion", isOn: vm.binding(for: \.reduceMotionEnabled))
                                 rowDivider
-                                toggleRow(title: "High Contrast Colors", isOn: $highContrastColors)
+                                toggleRow(title: "High Contrast Colors", isOn: Binding(
+                                    get: { vm.settings.highContrastEnabled },
+                                    set: { newValue in
+                                        vm.updateSettings { $0.highContrastEnabled = newValue }
+                                        themeManager.update(
+                                            highContrast: newValue,
+                                            darkMode: vm.settings.darkModeEnabled,
+                                            fontSize: vm.settings.accessibilityFontSize
+                                        )
+                                    }
+                                ))
                             }
                             .background(theme.colors.surface)
                             .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
@@ -67,11 +90,11 @@ struct AccessibilityView: View {
                     .font(theme.typography.bodyLarge.weight(.semibold))
                     .foregroundColor(theme.colors.textPrimary)
                 Spacer()
-                Text("\(Int(textSizePercent))%")
+                Text("\(Int(textSizePercent.wrappedValue))%")
                     .font(theme.typography.bodyMedium)
                     .foregroundColor(theme.colors.textSecondary)
             }
-            Slider(value: $textSizePercent, in: 75...150, step: 5)
+            Slider(value: textSizePercent, in: 75...150, step: 5)
                 .tint(theme.colors.primary)
         }
         .padding(.horizontal, theme.spacing.md)
@@ -98,5 +121,6 @@ struct AccessibilityView: View {
 #Preview {
     NavigationStack { AccessibilityView() }
         .environmentObject(ThemeManager())
+        .environmentObject(SettingsViewModel())
         .environment(\.theme, AppTheme.defaultTheme)
 }

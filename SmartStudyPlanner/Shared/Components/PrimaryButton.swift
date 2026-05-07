@@ -38,7 +38,7 @@ struct PrimaryButton: View {
                 .opacity(isLoading ? 0 : 1)
 
                 if isLoading {
-                    ProgressView()
+                    SwiftUI.ProgressView()
                         .tint(theme.colors.textOnPrimary)
                 }
             }
@@ -50,4 +50,3 @@ struct PrimaryButton: View {
         .disabled(isLoading)
     }
 }
-

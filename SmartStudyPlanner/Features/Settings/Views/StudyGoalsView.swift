@@ -10,9 +10,7 @@ import SwiftUI
 struct StudyGoalsView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
-
-    @State private var dailyGoalHours: Double = 4.0
-    @State private var preferredStudyTime: String = "Evening"
+    @EnvironmentObject var vm: SettingsViewModel
 
     private let studyTimes = ["Morning", "Afternoon", "Evening", "Night"]
 
@@ -65,11 +63,11 @@ struct StudyGoalsView: View {
                     .font(theme.typography.bodyLarge.weight(.semibold))
                     .foregroundColor(theme.colors.textPrimary)
                 Spacer()
-                Text(String(format: "%.1f hrs", dailyGoalHours))
+                Text(String(format: "%.1f hrs", vm.settings.dailyStudyGoalHours))
                     .font(theme.typography.bodyMedium)
                     .foregroundColor(theme.colors.textSecondary)
             }
-            Slider(value: $dailyGoalHours, in: 0.5...12, step: 0.5)
+            Slider(value: vm.binding(for: \.dailyStudyGoalHours), in: 0.5...12, step: 0.5)
                 .tint(theme.colors.primary)
         }
         .padding(.horizontal, theme.spacing.md)
@@ -84,11 +82,11 @@ struct StudyGoalsView: View {
             Spacer()
             Menu {
                 ForEach(studyTimes, id: \.self) { time in
-                    Button(time) { preferredStudyTime = time }
+                    Button(time) { vm.updateSettings { $0.preferredStudyTime = time } }
                 }
             } label: {
                 HStack(spacing: 4) {
-                    Text(preferredStudyTime)
+                    Text(vm.settings.preferredStudyTime)
                         .font(theme.typography.bodyMedium)
                         .foregroundColor(theme.colors.textSecondary)
                     Image(systemName: "chevron.up.chevron.down")
@@ -109,5 +107,6 @@ struct StudyGoalsView: View {
 #Preview {
     NavigationStack { StudyGoalsView() }
         .environmentObject(ThemeManager())
+        .environmentObject(SettingsViewModel())
         .environment(\.theme, AppTheme.defaultTheme)
 }

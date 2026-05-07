@@ -19,7 +19,7 @@ struct SubjectWorkspaceView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
 
-    let subject: Subject
+    @State var subject: Subject
     var subjectsVM: SubjectsViewModel? = nil
 
     @State private var selectedTab: WorkspaceTab = .resources
@@ -34,10 +34,16 @@ struct SubjectWorkspaceView: View {
     @State private var selectedNote: Resource? = nil
     @State private var selectedLink: Resource? = nil
     @State private var selectedPDF: Resource? = nil
+    @State private var viewingPDF: Resource? = nil
+    @State private var viewingRecording: Resource? = nil
     @State private var studyPath: StudyPath? = nil
     @State private var showGeneratePath: Bool = false
     @State private var isRegeneratePath: Bool = false
     @State private var quizAttempts: [QuizAttempt] = []
+    
+    @State private var isGeneratingAIPath: Bool = false
+    @State private var generationProgressText: String = "Analyzing resources..."
+    @State private var showEditSubject: Bool = false
 
     private var filteredResources: [Resource] {
         if searchText.isEmpty { return resources }
@@ -58,7 +64,8 @@ struct SubjectWorkspaceView: View {
                     deadlines: $deadlines,
                     isExpanded: $isDeadlinesExpanded,
                     onAdd: { showAddDeadline = true },
-                    onCardTap: { deadline in selectedDeadline = deadline }
+                    onCardTap: { deadline in selectedDeadline = deadline },
+                    onDelete: { deadline in deleteDeadline(deadline) }
                 )
                 .padding(.horizontal, theme.spacing.sm)
                 .padding(.bottom, theme.spacing.md)
@@ -79,35 +86,109 @@ struct SubjectWorkspaceView: View {
                     
                 }
 
-                ScrollView(showsIndicators: false) {
+                if selectedTab == .aiAssistant {
                     tabContent
                         .padding(.horizontal, theme.spacing.sm)
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        tabContent
+                            .padding(.horizontal, theme.spacing.sm)
+                    }
                 }
+            }
+            
+            if isGeneratingAIPath {
+                ZStack {
+                    Color.black.opacity(0.4).ignoresSafeArea()
+                    VStack(spacing: theme.spacing.lg) {
+                        SwiftUI.ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: theme.colors.primary))
+                            .controlSize(.large)
+                        
+                        Text(generationProgressText)
+                            .font(theme.typography.bodyMedium.weight(.semibold))
+                            .foregroundColor(theme.colors.textPrimary)
+                    }
+                    .padding(theme.spacing.xl)
+                    .background(theme.colors.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
+                    .shadow(color: Color.black.opacity(0.1), radius: 20, y: 10)
+                }
+                .transition(.opacity)
+                .animation(.easeInOut, value: isGeneratingAIPath)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showAddDeadline) {
-            AddDeadlineSheet(subjectId: subject.id) { newDeadline in
-                deadlines.append(newDeadline)
+            AddDeadlineSheet(subjectId: subject.id, userId: subject.userId) { newDeadline in
+                var deadline = newDeadline
+                deadline.subjectColorHex = subject.colorHex
+                deadlines.append(deadline)
+                Task {
+                    do {
+                        try await DeadlineService.shared.createDeadline(deadline)
+                    } catch {
+                        print("Failed to save deadline: \(error)")
+                    }
+                }
             }
+            .environment(\.theme, theme)
+        }
+        .sheet(isPresented: $showEditSubject) {
+            AddSubjectSheet(
+                editingSubject: subject,
+                onSave: { _ in },
+                onUpdate: { updated in
+                    subject = updated
+                    subjectsVM?.updateSubject(updated)
+                }
+            )
             .environment(\.theme, theme)
         }
         .sheet(item: $selectedDeadline) { deadline in
             AddDeadlineSheet(
                 subjectId: subject.id,
+                userId: subject.userId,
                 existingDeadline: deadline,
                 onSave: { _ in },
                 onUpdate: { updated in
                     if let index = deadlines.firstIndex(where: { $0.id == updated.id }) {
                         deadlines[index] = updated
                     }
+                    Task {
+                        do {
+                            try await DeadlineService.shared.updateDeadline(updated)
+                        } catch {
+                            print("Failed to update deadline: \(error)")
+                        }
+                    }
+                },
+                onDelete: { deadlineToDelete in
+                    deleteDeadline(deadlineToDelete)
                 }
             )
             .environment(\.theme, theme)
         }
         .sheet(isPresented: $showAddResource) {
             AddResourceSheet { newResource in
-                resources.append(newResource)
+                var resource = newResource
+                resource.subjectId = subject.id
+                resource.userId = subject.userId
+                resources.append(resource)
+                subjectsVM?.setResourceCount(resources.count, for: subject.id, resourceIds: resources.map(\.id))
+                
+                Task {
+                    do {
+                        try await ResourceService.shared.createResource(resource)
+                        let fetchedResources = try await ResourceService.shared.fetchResources(subjectId: subject.id)
+                        await MainActor.run {
+                            resources = fetchedResources
+                            subjectsVM?.setResourceCount(fetchedResources.count, for: subject.id, resourceIds: fetchedResources.map(\.id))
+                        }
+                    } catch {
+                        print("Failed to save resource: \(error)")
+                    }
+                }
             }
             .environment(\.theme, theme)
         }
@@ -115,6 +196,14 @@ struct SubjectWorkspaceView: View {
             AddNoteView(existingResource: note) { updatedResource in
                 if let index = resources.firstIndex(where: { $0.id == updatedResource.id }) {
                     resources[index] = updatedResource
+                    
+                    Task {
+                        do {
+                            try await ResourceService.shared.updateResource(updatedResource)
+                        } catch {
+                            print("Failed to update resource: \(error)")
+                        }
+                    }
                 }
             }
             .environment(\.theme, theme)
@@ -126,6 +215,13 @@ struct SubjectWorkspaceView: View {
                 onUpdate: { updated in
                     if let index = resources.firstIndex(where: { $0.id == updated.id }) {
                         resources[index] = updated
+                        Task {
+                            do {
+                                try await ResourceService.shared.updateResource(updated)
+                            } catch {
+                                print("Failed to update resource: \(error)")
+                            }
+                        }
                     }
                 }
             )
@@ -143,15 +239,133 @@ struct SubjectWorkspaceView: View {
             )
             .environment(\.theme, theme)
         }
+        .sheet(item: $viewingPDF) { pdf in
+            PDFViewerSheet(resource: pdf)
+                .environment(\.theme, theme)
+        }
+        .sheet(item: $viewingRecording) { recording in
+            RecordingPlayerView(resource: recording)
+                .environment(\.theme, theme)
+        }
         .sheet(isPresented: $showGeneratePath) {
             GenerateStudyPathSheet(
                 subject: subject,
                 resources: resources,
                 isRegenerate: isRegeneratePath
             ) { newPath in
-                studyPath = newPath
+                generateStudyPath(with: newPath)
             }
             .environment(\.theme, theme)
+        }
+        .onAppear {
+            loadResources()
+            loadStudyPath()
+            loadDeadlines()
+        }
+    }
+    
+    private func loadStudyPath() {
+        let cachedTopics = CoreDataService.shared.getCachedStudyPath(for: subject.id)
+        if !cachedTopics.isEmpty {
+            self.studyPath = StudyPath(subjectId: subject.id, topics: cachedTopics)
+        }
+        
+        Task {
+            do {
+                let topics = try await StudyPathService.shared.fetchStudyPath(for: subject.id)
+                await MainActor.run {
+                    self.studyPath = StudyPath(subjectId: subject.id, topics: topics)
+                }
+            } catch {
+                print("Failed to fetch study path: \(error)")
+            }
+        }
+    }
+
+    private func loadDeadlines() {
+        deadlines = CoreDataService.shared.getCachedDeadlines(for: subject.id)
+        Task {
+            do {
+                let fetched = try await DeadlineService.shared.fetchDeadlines(subjectId: subject.id)
+                await MainActor.run { deadlines = fetched }
+            } catch {
+                print("Failed to fetch deadlines: \(error)")
+            }
+        }
+    }
+
+    private func deleteDeadline(_ deadline: Deadline) {
+        deadlines.removeAll { $0.id == deadline.id }
+        Task {
+            do {
+                try await DeadlineService.shared.deleteDeadline(id: deadline.id, subjectId: subject.id)
+            } catch {
+                print("Failed to delete deadline: \(error)")
+            }
+        }
+    }
+
+    private func loadResources() {
+        resources = CoreDataService.shared.getCachedResources(for: subject.id)
+        
+        Task {
+            do {
+                let fetchedResources = try await ResourceService.shared.fetchResources(subjectId: subject.id)
+                await MainActor.run {
+                    resources = fetchedResources
+                    subjectsVM?.setResourceCount(fetchedResources.count, for: subject.id, resourceIds: fetchedResources.map(\.id))
+                }
+            } catch {
+                print("Failed to fetch resources: \(error)")
+            }
+        }
+    }
+    
+    private func generateStudyPath(with basePath: StudyPath) {
+        isGeneratingAIPath = true
+        generationProgressText = "Extracting text from resources..."
+        
+        let selectedResources = resources.filter { basePath.generatedFromResourceIds.contains($0.id) }
+        print("DEBUG: generateStudyPath called with \(selectedResources.count) resources")
+        
+        Task {
+            do {
+                print("DEBUG: Starting text extraction...")
+                let combinedText = try await ContentExtractionService.shared.extractText(from: selectedResources)
+                print("DEBUG: Text extraction complete. Extracted \(combinedText.count) characters.")
+                
+                await MainActor.run {
+                    generationProgressText = "Generating AI Study Path..."
+                }
+                
+                print("DEBUG: Starting LLM generation...")
+                let topics = try await StudyContentOrchestrator.shared.buildStudyPath(from: combinedText)
+
+                await MainActor.run {
+                    var finalPath = basePath
+                    finalPath.topics = topics
+                    self.studyPath = finalPath
+                    self.isGeneratingAIPath = false
+                    
+                    Task {
+                        do {
+                            try await StudyPathService.shared.saveStudyPath(topics, for: subject.id)
+                            print("✅ Study path saved")
+                            // Refresh subject counts in the list
+                            await MainActor.run {
+                                subjectsVM?.refreshSubjectCounts(for: subject.id)
+                            }
+                        } catch {
+                            print("❌ Failed to save study path: \(error)")
+                        }
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    print("Failed to generate AI path: \(error)")
+                    self.isGeneratingAIPath = false
+                }
+            }
         }
     }
 
@@ -174,7 +388,13 @@ struct SubjectWorkspaceView: View {
 
             Spacer()
 
-            Color.clear.frame(width: 36, height: 36)
+            Button { showEditSubject = true } label: {
+                Image(systemName: "pencil")
+                    .fontWeight(.semibold)
+                    .foregroundColor(theme.colors.textPrimary)
+                    .frame(width: 36, height: 36)
+                    .glassEffect(.regular, in: Circle())
+            }
         }
     }
 
@@ -205,7 +425,7 @@ struct SubjectWorkspaceView: View {
 
     private var tabContentHeader: some View {
         HStack {
-            Text(selectedTab == .resources ? "Your Resources" : selectedTab.rawValue)
+            Text(selectedTab == .resources ? "Your Resources (\(resources.count))" : selectedTab.rawValue)
                 .font(theme.typography.headingMedium)
                 .fontWeight(.bold)
                 .foregroundColor(theme.colors.textPrimary)
@@ -248,7 +468,32 @@ struct SubjectWorkspaceView: View {
                     } else if resource.type == .link {
                         selectedLink = resource
                     } else if resource.type == .pdf {
+                        viewingPDF = resource
+                    } else if resource.type == .recording {
+                        viewingRecording = resource
+                    }
+                },
+                onEditResource: { resource in
+                    if resource.type == .pdf {
                         selectedPDF = resource
+                    } else if resource.type == .link {
+                        selectedLink = resource
+                    }
+                },
+                onRenameResource: { resource, newName in
+                    if let index = resources.firstIndex(where: { $0.id == resource.id }) {
+                        var updatedResource = resources[index]
+                        updatedResource.name = newName
+                        updatedResource.updatedAt = Date()
+                        resources[index] = updatedResource
+                        
+                        Task {
+                            do {
+                                try await ResourceService.shared.updateResource(updatedResource)
+                            } catch {
+                                print("Failed to rename resource: \(error)")
+                            }
+                        }
                     }
                 }
             )
@@ -274,7 +519,11 @@ struct SubjectWorkspaceView: View {
                 attempts: $quizAttempts
             )
         case .aiAssistant:
-            AIAssistantTabView()
+            AIAssistantTabView(
+                subject: subject,
+                resources: resources,
+                studyPath: studyPath
+            )
         }
     }
 }

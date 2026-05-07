@@ -46,6 +46,9 @@ struct StatCard: View {
         .frame(maxWidth: .infinity, minHeight: 130, alignment: .leading)
         .background(theme.colors.surface)
         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.label): \(item.value)")
+        .accessibilityValue(item.badge != nil ? "Status: \(item.badge!)" : "")
     }
 }
 
@@ -113,6 +116,9 @@ struct SubjectProgressCard: View {
         .padding(theme.spacing.md)
         .background(theme.colors.surface)
         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Subject: \(item.name), \(item.subtitle). Status: \(item.status.rawValue)")
+        .accessibilityValue("Mastery: \(Int(item.mastery * 100))%")
     }
 }
 
@@ -156,5 +162,8 @@ struct InsightCard: View {
             Spacer()
         }
         .padding(theme.spacing.md)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.tag): \(item.title)")
+        .accessibilityValue(item.body)
     }
 }

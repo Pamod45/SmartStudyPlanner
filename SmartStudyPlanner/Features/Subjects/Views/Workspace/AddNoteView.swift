@@ -5,11 +5,14 @@ struct AddNoteView: View {
     @Environment(\.dismiss) private var dismiss
 
     var existingResource: Resource? = nil
+    var initialContent: String? = nil
     var onSave: (Resource) -> Void
 
     @State private var title: String = ""
     @State private var storage: NSAttributedString = NSAttributedString(string: "")
     @FocusState private var titleFocused: Bool
+    @StateObject private var ttsManager = TextToSpeechManager.shared
+
 
     var body: some View {
         ZStack {
@@ -24,18 +27,27 @@ struct AddNoteView: View {
         }
         .navigationBarHidden(true)
         .onAppear {
+            ttsManager.stop()
+
             if let existing = existingResource {
                 title = existing.name
                 if let content = existing.content {
                     storage = NSAttributedString(string: content)
                 }
+            } else if let initial = initialContent {
+                storage = NSAttributedString(string: initial)
+                title = "Scanned Note"
             }
+        }
+        .onDisappear {
+            ttsManager.stop()
         }
     }
 
     private var topBar: some View {
         HStack {
             Button("Cancel") {
+                ttsManager.stop()
                 dismiss()
             }
             .font(theme.typography.bodyMedium)
@@ -58,6 +70,25 @@ struct AddNoteView: View {
 
             Spacer()
 
+            if !storage.string.isEmpty {
+                Button {
+                    if ttsManager.isSpeaking {
+                        if ttsManager.isPaused {
+                            ttsManager.resume()
+                        } else {
+                            ttsManager.pause()
+                        }
+                    } else {
+                        ttsManager.speak(text: storage.string)
+                    }
+                } label: {
+                    Image(systemName: ttsManager.isSpeaking && !ttsManager.isPaused ? "pause.circle.fill" : "play.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(theme.colors.primary)
+                }
+                .padding(.trailing, theme.spacing.sm)
+            }
+
             Button("Done") {
                 save()
             }
@@ -71,14 +102,43 @@ struct AddNoteView: View {
     }
 
     private func save() {
-        let resource = Resource(
-            id: existingResource?.id ?? UUID().uuidString,
-            subjectId: existingResource?.subjectId ?? "",
-            name: title.isEmpty ? (existingResource?.name ?? "Untitled") : title,
-            resourceType: .note,
-            content: storage.string
-        )
+        let resource: Resource
+        
+        if let existing = existingResource {
+            resource = Resource(
+                id: existing.id,
+                userId: existing.userId,
+                subjectId: existing.subjectId,
+                name: title.isEmpty ? "Untitled" : title,
+                resourceType: .note,
+                size: existing.size,
+                content: storage.string,
+                localFilePath: existing.localFilePath,
+                remoteURL: existing.remoteURL,
+                fileSize: existing.fileSize,
+                mimeType: existing.mimeType,
+                tags: existing.tags,
+                isFavorite: existing.isFavorite,
+                createdAt: existing.createdAt,
+                updatedAt: Date(),
+                syncStatus: .pendingUpdate
+            )
+        } else {
+            resource = Resource(
+                id: UUID().uuidString,
+                userId: "",
+                subjectId: "",
+                name: title.isEmpty ? "Untitled" : title,
+                resourceType: .note,
+                content: storage.string,
+                createdAt: Date(),
+                updatedAt: Date(),
+                syncStatus: .localOnly
+            )
+        }
+        
         onSave(resource)
+        ttsManager.stop()
         dismiss()
     }
 }

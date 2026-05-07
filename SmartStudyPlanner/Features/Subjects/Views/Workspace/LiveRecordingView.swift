@@ -13,21 +13,14 @@ struct LiveRecordingView: View {
 
     var onSave: (Resource) -> Void
 
-    @State private var isRecording: Bool = true
-    @State private var isPaused: Bool = false
-    @State private var elapsedSeconds: Int = 0
-    @State private var timer: AnyCancellable? = nil
+    @StateObject private var audioService = AudioTranscriptionService()
+    
     @State private var wavePhase: Double = 0
     @State private var waveTimer: AnyCancellable? = nil
 
-    @State private var transcriptLines: [TranscriptLine] = [
-        TranscriptLine(timestamp: "00:15", text: "So, the primary objective of the semantic layer in our architecture is to provide a consistent interface for all downstream data consumers."),
-        TranscriptLine(timestamp: "00:18", text: "By decoupling the physical data structures from the business logic, we ensure that changes in the underlying...")
-    ]
-
     private var formattedTime: String {
-        let m = elapsedSeconds / 60
-        let s = elapsedSeconds % 60
+        let m = audioService.elapsedSeconds / 60
+        let s = audioService.elapsedSeconds % 60
         return String(format: "%02d:%02d", m, s)
     }
 
@@ -55,8 +48,13 @@ struct LiveRecordingView: View {
                 transcriptPanel
             }
         }
-        .onAppear { startTimers() }
-        .onDisappear { stopTimers() }
+        
+        .onDisappear {
+            if audioService.isRecording {
+                audioService.stopRecording()
+                stopTimers()
+            }
+        }
     }
 
     private var topBar: some View {
@@ -69,10 +67,10 @@ struct LiveRecordingView: View {
 
                 HStack(spacing: theme.spacing.xs) {
                     Circle()
-                        .fill(isRecording && !isPaused ? .green : theme.colors.textSecondary)
+                        .fill(audioService.isRecording && !audioService.isPaused ? .green : theme.colors.textSecondary)
                         .frame(width: 8, height: 8)
 
-                    Text("\(formattedTime) • \(isRecording && !isPaused ? "TRANSCRIBING" : "PAUSED")")
+                    Text("\(formattedTime) • \(audioService.isRecording && !audioService.isPaused ? "TRANSCRIBING" : "PAUSED")")
                         .font(theme.typography.bodySmall)
                         .fontWeight(.semibold)
                         .foregroundColor(theme.colors.textSecondary)
@@ -99,7 +97,7 @@ struct LiveRecordingView: View {
             ForEach(0..<32, id: \.self) { index in
                 let height = waveBarHeight(for: index)
                 Capsule()
-                    .fill(theme.colors.primary.opacity(isPaused ? 0.3 : 0.8))
+                    .fill(theme.colors.primary.opacity(audioService.isPaused ? 0.3 : 0.8))
                     .frame(width: 4, height: height)
                     .animation(.easeInOut(duration: 0.15), value: height)
             }
@@ -108,7 +106,7 @@ struct LiveRecordingView: View {
     }
 
     private func waveBarHeight(for index: Int) -> CGFloat {
-        guard !isPaused else { return 8 }
+        guard !audioService.isPaused else { return 8 }
         let base = sin(Double(index) * 0.5 + wavePhase) * 20 + 24
         let variation = sin(Double(index) * 1.2 + wavePhase * 1.5) * 10
         return max(8, CGFloat(base + variation))
@@ -120,10 +118,9 @@ struct LiveRecordingView: View {
 
             VStack(spacing: theme.spacing.sm) {
                 Button {
-                    isPaused.toggle()
-                    if isPaused { stopTimers() } else { startTimers() }
+                    audioService.pauseRecording()
                 } label: {
-                    Image(systemName: isPaused ? "play.fill" : "pause")
+                    Image(systemName: audioService.isPaused ? "play.fill" : "pause")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(theme.colors.textPrimary)
                         .frame(width: 56, height: 56)
@@ -140,6 +137,10 @@ struct LiveRecordingView: View {
             Spacer()
 
             Button {
+                if !audioService.isRecording && audioService.elapsedSeconds == 0 {
+                    audioService.startRecording()
+                    startTimers()
+                }
             } label: {
                 ZStack {
                     Circle()
@@ -196,23 +197,21 @@ struct LiveRecordingView: View {
             .padding(.bottom, theme.spacing.md)
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: theme.spacing.lg) {
-                    ForEach(transcriptLines) { line in
-                        VStack(alignment: .leading, spacing: theme.spacing.xs) {
-                            Text(line.timestamp)
-                                .font(theme.typography.labelSmall)
-                                .fontWeight(.semibold)
-                                .foregroundColor(theme.colors.textSecondary)
-
-                            Text(line.text)
-                                .font(theme.typography.bodyMedium)
-                                .foregroundColor(theme.colors.textPrimary)
-                                .lineSpacing(4)
+                ScrollViewReader { proxy in
+                    highlightedLiveTranscript
+                        .font(theme.typography.headingMedium)
+                        .fontWeight(.medium)
+                        .lineSpacing(8)
+                        .padding(.horizontal, theme.spacing.lg)
+                        .padding(.bottom, theme.spacing.xl)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .id("transcriptText")
+                        .onChange(of: audioService.transcriptText) { _ in
+                            withAnimation {
+                                proxy.scrollTo("transcriptText", anchor: .bottom)
+                            }
                         }
-                    }
                 }
-                .padding(.horizontal, theme.spacing.lg)
-                .padding(.bottom, theme.spacing.xl)
             }
         }
         .frame(maxWidth: .infinity)
@@ -221,27 +220,50 @@ struct LiveRecordingView: View {
         .ignoresSafeArea(edges: .bottom)
     }
 
-    private func startTimers() {
-        timer = Timer.publish(every: 1, on: .main, in: .common)
-            .autoconnect()
-            .sink { _ in elapsedSeconds += 1 }
+    private var highlightedLiveTranscript: Text {
+        let segments = audioService.segments
+        guard !segments.isEmpty else {
+            return Text(audioService.transcriptText.isEmpty ? (audioService.isRecording ? "Listening..." : "Tap the microphone to start recording.") : audioService.transcriptText)
+                .foregroundColor(theme.colors.textSecondary.opacity(0.6))
+        }
+        
+        var combinedText = Text("")
+        let activeIndex = segments.count - 1
+        
+        for (index, segment) in segments.enumerated() {
+            let isActive = index == activeIndex
+            let wordText = Text(segment.text + " ")
+                .foregroundColor(isActive ? theme.colors.primary : theme.colors.textSecondary.opacity(0.4))
+            combinedText = combinedText + wordText
+        }
+        return combinedText
+    }
 
+    private func startTimers() {
         waveTimer = Timer.publish(every: 0.05, on: .main, in: .common)
             .autoconnect()
             .sink { _ in wavePhase += 0.15 }
     }
 
     private func stopTimers() {
-        timer?.cancel()
         waveTimer?.cancel()
     }
 
     private func save() {
         stopTimers()
+        audioService.stopRecording()
+        
+        guard let url = audioService.audioFileURL else {
+            dismiss()
+            return
+        }
+        
         let resource = Resource(
             name: "Recording \(Date().formatted(date: .abbreviated, time: .shortened))",
             resourceType: .recording,
-            size: formattedTime
+            size: formattedTime,
+            content: audioService.getJSONTranscript(),
+            localFilePath: url.lastPathComponent
         )
         onSave(resource)
         dismiss()

@@ -14,6 +14,7 @@ struct DeadlineSection: View {
     @Binding var isExpanded: Bool
     var onAdd: () -> Void
     var onCardTap: (Deadline) -> Void = { _ in }
+    var onDelete: (Deadline) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
@@ -53,9 +54,11 @@ struct DeadlineSection: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: theme.spacing.md) {
                             ForEach(deadlines) { deadline in
-                                WorkspaceDeadlineCard(deadline: deadline) {
-                                    onCardTap(deadline)
-                                }
+                                WorkspaceDeadlineCard(
+                                    deadline: deadline,
+                                    onTap: { onCardTap(deadline) },
+                                    onDelete: { onDelete(deadline) }
+                                )
                             }
                         }
                     }

@@ -50,7 +50,6 @@ struct ProfileEditView: View {
                         avatarSection
                         fieldsSection
                         saveButton
-                        Spacer(minLength: theme.spacing.xxl + 8)
                         deleteButton
                     }
                     .padding(.horizontal, theme.spacing.sm)

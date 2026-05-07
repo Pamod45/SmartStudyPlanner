@@ -5,15 +5,22 @@ struct CreateStudyPlanSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var availabilitySlots: [AvailabilitySlot] = []
+    var subjects: [Subject] = []
+    var studyPathTopics: [String: [StudyPathTopic]] = [:]
     var onPlanCreated: (([StudySession]) -> Void)? = nil
 
     @State private var startDate: Date = .now
-    @State private var endDate: Date = Calendar.current.date(byAdding: .month, value: 1, to: .now) ?? .now
+    @State private var endDate: Date   = Calendar.current.date(byAdding: .month, value: 1, to: .now) ?? .now
     @State private var expandedSubjectID: String? = nil
     @State private var selectedSubjectIDs: Set<String> = []
     @State private var selectedTopicIDs: Set<String> = []
+    @State private var isScheduling: Bool = false
+    @State private var showValidationAlert: Bool = false
+    @State private var validationTitle: String = ""
+    @State private var validationMessage: String = ""
 
-    var subjects: [Subject] = []
+    private var hasSelection: Bool { !selectedSubjectIDs.isEmpty }
+    private var todayStart: Date { Calendar.current.startOfDay(for: .now) }
 
     var body: some View {
         ZStack {
@@ -29,24 +36,33 @@ struct CreateStudyPlanSheet: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: theme.spacing.xl) {
+
                         FieldSection(title: "PLAN DURATION") {
                             VStack(spacing: 0) {
-                                dateRow(label: "Start Date", date: $startDate)
+                                dateRow(label: "Start Date", date: $startDate, range: todayStart...)
                                 Divider()
                                     .background(theme.colors.background)
                                     .padding(.leading, theme.spacing.md)
-                                dateRow(label: "End Date", date: $endDate)
+                                dateRow(label: "End Date", date: $endDate, range: Calendar.current.startOfDay(for: max(todayStart, startDate))...)
                             }
                             .background(theme.colors.surface)
                             .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
                         }
 
-                        FieldSection(title: "FOCUS SUBJECTS") {
-                            VStack(spacing: theme.spacing.md) {
-                                ForEach(subjects) { subject in
-                                    subjectRow(subject)
+                        FieldSection(title: "SUBJECTS & TOPICS") {
+                            if subjects.isEmpty {
+                                emptySubjectsView
+                            } else {
+                                VStack(spacing: theme.spacing.md) {
+                                    ForEach(subjects) { subject in
+                                        subjectRow(subject)
+                                    }
                                 }
                             }
+                        }
+
+                        if availabilitySlots.isEmpty {
+                            noSlotsWarning
                         }
                     }
                     .padding(theme.spacing.lg)
@@ -54,14 +70,26 @@ struct CreateStudyPlanSheet: View {
                 }
             }
             .background(theme.colors.surface.opacity(0.2))
+
+            if isScheduling {
+                schedulingOverlay
+            }
+        }
+        .onChange(of: startDate) { _, newValue in
+            if endDate < newValue {
+                endDate = newValue
+            }
+        }
+        .alert(validationTitle, isPresented: $showValidationAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(validationMessage)
         }
     }
 
     private var headerSection: some View {
         HStack {
-            Button {
-                dismiss()
-            } label: {
+            Button { dismiss() } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(theme.colors.textPrimary)
@@ -79,25 +107,21 @@ struct CreateStudyPlanSheet: View {
 
             Spacer()
 
-            Button("Create") {
-                let sessions = generateSessions()
-                onPlanCreated?(sessions)
-                dismiss()
-            }
-            .font(theme.typography.bodyMedium)
-            .fontWeight(.semibold)
-            .foregroundColor(selectedSubjectIDs.isEmpty ? theme.colors.textSecondary : theme.colors.primary)
-            .disabled(selectedSubjectIDs.isEmpty)
+            Button("Create") { createPlan() }
+                .font(theme.typography.bodyMedium)
+                .fontWeight(.semibold)
+                .foregroundColor(hasSelection ? theme.colors.primary : theme.colors.textSecondary)
+                .disabled(!hasSelection || isScheduling)
         }
     }
 
-    private func dateRow(label: String, date: Binding<Date>) -> some View {
+    private func dateRow(label: String, date: Binding<Date>, range: PartialRangeFrom<Date>) -> some View {
         HStack {
             Text(label)
                 .font(theme.typography.bodyMedium)
                 .foregroundColor(theme.colors.textPrimary)
             Spacer()
-            DatePicker("", selection: date, displayedComponents: .date)
+            DatePicker("", selection: date, in: range, displayedComponents: .date)
                 .datePickerStyle(.compact)
                 .labelsHidden()
                 .tint(theme.colors.primary)
@@ -105,31 +129,34 @@ struct CreateStudyPlanSheet: View {
         .padding(theme.spacing.md)
     }
 
-    private func topicKeys(for subject: Subject) -> [String] {
-        sampleTopics(for: subject).map { "\(subject.id)-\($0.id)" }
+    private func topics(for subject: Subject) -> [StudyPathTopic] {
+        (studyPathTopics[subject.id] ?? []).sorted { $0.order < $1.order }
+    }
+
+    private func topicKey(_ topic: StudyPathTopic, subject: Subject) -> String {
+        "\(subject.id)-\(topic.id)"
     }
 
     private func allTopicsDeselected(for subject: Subject) -> Bool {
-        let keys = topicKeys(for: subject)
-        return keys.allSatisfy { !selectedTopicIDs.contains($0) }
+        topics(for: subject).allSatisfy { !selectedTopicIDs.contains(topicKey($0, subject: subject)) }
     }
 
     private func subjectRow(_ subject: Subject) -> some View {
         let isSelected = selectedSubjectIDs.contains(subject.id)
         let isExpanded = expandedSubjectID == subject.id
-        let topics = sampleTopics(for: subject)
-        let totalHrs = topics.reduce(0) { $0 + $1.estimatedHours }
+        let subjectTopics = topics(for: subject)
+        let totalMins = subjectTopics.reduce(0) { $0 + $1.estimatedMinutes }
 
         return VStack(spacing: 0) {
             HStack(spacing: theme.spacing.md) {
                 Button {
                     withAnimation(.spring(duration: 0.4)) {
-                        if selectedSubjectIDs.contains(subject.id) {
+                        if isSelected {
                             selectedSubjectIDs.remove(subject.id)
-                            topics.forEach { selectedTopicIDs.remove("\(subject.id)-\($0.id)") }
+                            subjectTopics.forEach { selectedTopicIDs.remove(topicKey($0, subject: subject)) }
                         } else {
                             selectedSubjectIDs.insert(subject.id)
-                            topics.forEach { selectedTopicIDs.insert("\(subject.id)-\($0.id)") }
+                            subjectTopics.forEach { selectedTopicIDs.insert(topicKey($0, subject: subject)) }
                         }
                     }
                 } label: {
@@ -139,46 +166,50 @@ struct CreateStudyPlanSheet: View {
                 }
                 .buttonStyle(.plain)
 
+                Circle()
+                    .fill(subject.color)
+                    .frame(width: 10, height: 10)
+
                 VStack(alignment: .leading, spacing: 3) {
                     Text(subject.name)
                         .font(theme.typography.bodyLarge)
                         .fontWeight(.bold)
                         .foregroundColor(theme.colors.textPrimary)
-                    Text("\(topics.count) Topics • \(subject.resourceCount) Resources")
-                        .font(theme.typography.bodySmall)
-                        .foregroundColor(theme.colors.textSecondary)
+                    if subjectTopics.isEmpty {
+                        Text("No study path yet")
+                            .font(theme.typography.bodySmall)
+                            .foregroundColor(theme.colors.textSecondary)
+                    } else {
+                        Text("\(subjectTopics.count) topics · ~\(totalMins / 60)h \(totalMins % 60)m")
+                            .font(theme.typography.bodySmall)
+                            .foregroundColor(theme.colors.textSecondary)
+                    }
                 }
 
                 Spacer()
 
-                Text("Est. \(totalHrs) Hrs")
-                    .font(theme.typography.bodySmall)
-                    .foregroundColor(theme.colors.textSecondary)
-
-                Button {
-                    withAnimation(.spring(duration: 0.4)) {
-                        expandedSubjectID = isExpanded ? nil : subject.id
+                if !subjectTopics.isEmpty {
+                    Button {
+                        withAnimation(.spring(duration: 0.4)) {
+                            expandedSubjectID = isExpanded ? nil : subject.id
+                        }
+                    } label: {
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(theme.colors.textSecondary)
+                            .frame(width: 32, height: 32)
+                            .overlay(Circle().stroke(theme.colors.border.opacity(0.5), lineWidth: 1.5))
                     }
-                } label: {
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(theme.colors.textSecondary)
-                        .frame(width: 32, height: 32)
-                        .overlay(
-                            Circle()
-                                .stroke(theme.colors.border.opacity(0.5), lineWidth: 1.5)
-                        )
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .padding(theme.spacing.md)
 
-            if isExpanded {
+            if isExpanded && !subjectTopics.isEmpty {
                 VStack(spacing: 0) {
-                    ForEach(topics) { topic in
+                    ForEach(subjectTopics) { topic in
                         topicRow(topic, subject: subject)
-
-                        if topic.id != topics.last?.id {
+                        if topic.id != subjectTopics.last?.id {
                             Divider()
                                 .background(theme.colors.border.opacity(0.15))
                                 .padding(.leading, theme.spacing.xl)
@@ -196,144 +227,272 @@ struct CreateStudyPlanSheet: View {
         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
     }
 
-    private func topicRow(_ topic: StudyTopic, subject: Subject) -> some View {
-        let topicKey = "\(subject.id)-\(topic.id)"
-        return TopicRowView(
-            topic: topic,
-            isSelected: selectedTopicIDs.contains(topicKey),
-            onTap: {
-                withAnimation(.spring(duration: 0.4)) {
-                    if selectedTopicIDs.contains(topicKey) {
-                        selectedTopicIDs.remove(topicKey)
-                        if allTopicsDeselected(for: subject) {
-                            selectedSubjectIDs.remove(subject.id)
-                        }
-                    } else {
-                        selectedTopicIDs.insert(topicKey)
-                        if !selectedSubjectIDs.contains(subject.id) {
-                            selectedSubjectIDs.insert(subject.id)
-                        }
+    private func topicRow(_ topic: StudyPathTopic, subject: Subject) -> some View {
+        let key        = topicKey(topic, subject: subject)
+        let isSelected = selectedTopicIDs.contains(key)
+        let hrs        = topic.estimatedMinutes / 60
+        let mins       = topic.estimatedMinutes % 60
+
+        return Button {
+            withAnimation(.spring(duration: 0.3)) {
+                if isSelected {
+                    selectedTopicIDs.remove(key)
+                    if allTopicsDeselected(for: subject) {
+                        selectedSubjectIDs.remove(subject.id)
                     }
+                } else {
+                    selectedTopicIDs.insert(key)
+                    selectedSubjectIDs.insert(subject.id)
                 }
             }
-        )
-    }
-
-    private func sampleTopics(for subject: Subject) -> [StudyTopic] {
-        return []
-    }
-    
-    private func generateSessions() -> [StudySession] {
-        let cal = Calendar.current
-        let today = Date()
-
-        var pairs: [(subject: Subject, topic: StudyTopic)] = []
-        for subject in subjects where selectedSubjectIDs.contains(subject.id) {
-            let topics = sampleTopics(for: subject)
-            for topic in topics {
-                let key = "\(subject.id)-\(topic.id)"
-                if selectedTopicIDs.contains(key) {
-                    pairs.append((subject, topic))
-                }
-            }
-        }
-
-        guard !pairs.isEmpty else { return [] }
-
-        var studyDates: [Date] = []
-        var cursor = today
-        while studyDates.count < 4, cursor <= endDate {
-            let hasSlot = availabilitySlots.contains { slot in
-                switch slot.type {
-                case .date:
-                    return slot.date.map { cal.isDate($0, inSameDayAs: cursor) } ?? false
-                case .daily:
-                    return true
-                case .weekly:
-                    return slot.weekday == cal.component(.weekday, from: cursor)
-                case .range:
-                    guard let s = slot.rangeStart, let e = slot.rangeEnd else { return false }
-                    return cursor >= s && cursor <= e
-                }
-            }
-            if hasSlot { studyDates.append(cursor) }
-            cursor = cal.date(byAdding: .day, value: 1, to: cursor) ?? cursor.addingTimeInterval(86400)
-        }
-
-        if studyDates.isEmpty {
-            studyDates = (1...3).compactMap { cal.date(byAdding: .day, value: $0, to: today) }
-        }
-
-        var sessions: [StudySession] = []
-        var dayIndex = 0
-        var sessionStartHour = 9
-
-        for (idx, pair) in pairs.enumerated() {
-            guard dayIndex < studyDates.count else { break }
-
-            let day = studyDates[dayIndex]
-            let durationHours = min(pair.topic.estimatedHours, 2)
-            guard let start = cal.date(bySettingHour: sessionStartHour, minute: 0, second: 0, of: day),
-                  let end   = cal.date(bySettingHour: sessionStartHour + durationHours, minute: 0, second: 0, of: day)
-            else { continue }
-
-            let session = StudySession(
-                subjectId: pair.subject.id,
-                subjectName: pair.subject.name,
-                subjectColorHex: pair.subject.colorHex,
-                title: pair.topic.name,
-                topic: pair.topic.name,
-                scheduledDate: day,
-                startTime: start,
-                endTime: end,
-                hasReminder: false
-            )
-            sessions.append(session)
-
-            sessionStartHour += durationHours + 1
-            if (idx + 1) % 2 == 0 {
-                dayIndex += 1
-                sessionStartHour = 9
-            }
-        }
-
-        return sessions
-    }
-}
-
-private struct TopicRowView: View {
-    @Environment(\.theme) var theme
-    let topic: StudyTopic
-    let isSelected: Bool
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
+        } label: {
             HStack(spacing: theme.spacing.md) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(theme.typography.bodyLarge)
                     .foregroundColor(isSelected ? theme.colors.primary : theme.colors.textSecondary)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(topic.name)
+                    Text(topic.title)
                         .font(theme.typography.bodyMedium)
                         .fontWeight(.semibold)
                         .foregroundColor(theme.colors.textPrimary)
-                    Text("\(topic.resourceCount) Resources")
-                        .font(theme.typography.bodySmall)
-                        .foregroundColor(theme.colors.textSecondary)
+                    HStack(spacing: 6) {
+                        if hrs > 0 {
+                            Text("~\(hrs)h \(mins)m")
+                                .font(theme.typography.bodySmall)
+                                .foregroundColor(theme.colors.textSecondary)
+                        } else {
+                            Text("~\(mins)m")
+                                .font(theme.typography.bodySmall)
+                                .foregroundColor(theme.colors.textSecondary)
+                        }
+                        difficultyBadge(topic.difficultyLevel)
+                    }
                 }
 
                 Spacer()
-
-                Text("Est. \(topic.estimatedHours) Hrs")
-                    .font(theme.typography.bodySmall)
-                    .foregroundColor(theme.colors.textSecondary)
             }
             .padding(.horizontal, theme.spacing.md)
             .padding(.vertical, theme.spacing.md)
         }
         .buttonStyle(.plain)
+    }
+
+    private func difficultyBadge(_ level: Int) -> some View {
+        let color: Color = level <= 3 ? theme.colors.success :
+                           level <= 6 ? .orange : theme.colors.error
+        return Text("Lvl \(level)")
+            .font(theme.typography.caption)
+            .fontWeight(.semibold)
+            .foregroundColor(color)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(color.opacity(0.12))
+            .clipShape(Capsule())
+    }
+
+    private var emptySubjectsView: some View {
+        HStack {
+            Spacer()
+            VStack(spacing: theme.spacing.sm) {
+                Image(systemName: "book.closed")
+                    .font(.system(size: 28))
+                    .foregroundColor(theme.colors.textSecondary)
+                Text("No subjects yet")
+                    .font(theme.typography.bodyMedium)
+                    .foregroundColor(theme.colors.textSecondary)
+                Text("Add subjects and generate a Study Path first.")
+                    .font(theme.typography.bodySmall)
+                    .foregroundColor(theme.colors.textSecondary.opacity(0.7))
+                    .multilineTextAlignment(.center)
+            }
+            Spacer()
+        }
+        .padding(.vertical, theme.spacing.xl)
+    }
+
+    private var noSlotsWarning: some View {
+        HStack(spacing: theme.spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.orange)
+            Text("No availability slots added yet. Add your free time first so the scheduler can place sessions.")
+                .font(theme.typography.bodySmall)
+                .foregroundColor(theme.colors.textSecondary)
+        }
+        .padding(theme.spacing.md)
+        .background(Color.orange.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
+    }
+
+    private var schedulingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.45).ignoresSafeArea()
+            VStack(spacing: theme.spacing.lg) {
+                SwiftUI.ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: theme.colors.primary))
+                    .controlSize(.large)
+                Text("Building your schedule…")
+                    .font(theme.typography.bodyMedium)
+                    .fontWeight(.semibold)
+                    .foregroundColor(theme.colors.textPrimary)
+            }
+            .padding(theme.spacing.xl)
+            .background(theme.colors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
+            .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
+        }
+        .transition(.opacity)
+        .animation(.easeInOut, value: isScheduling)
+    }
+
+
+    private func createPlan() {
+        let entries = buildEntries()
+        let period = selectedPeriod()
+        let slots   = availabilitySlots
+        let requiredMinutes = entries.flatMap(\.topics).reduce(0) { total, topic in
+            total + (topic.estimatedMinutes > 0 ? topic.estimatedMinutes : max(30, topic.weightPercent * 6))
+        }
+
+        guard !entries.isEmpty else {
+            showValidation(
+                title: "Select Topics",
+                message: "Select at least one topic before creating a study plan."
+            )
+            return
+        }
+
+        let availableSlots = slots.filter { slotApplies($0, during: period) }
+        guard !availableSlots.isEmpty else {
+            showValidation(
+                title: "No Availability",
+                message: "There are no available study times in the selected date range. Add availability first, then create the plan."
+            )
+            return
+        }
+
+        isScheduling = true
+        let sessions = StudyScheduleService.shared.schedule(
+            entries: entries,
+            slots:   availableSlots,
+            period:  period
+        )
+        let validSessions = sessions.filter { sessionFits($0, in: availableSlots) }
+        let scheduledMinutes = validSessions.reduce(0) { $0 + max(0, $1.durationMinutes) }
+
+        guard !validSessions.isEmpty else {
+            isScheduling = false
+            showValidation(
+                title: "No Sessions Created",
+                message: "The selected availability is too short to create a study session. Add a longer availability slot in this date range."
+            )
+            return
+        }
+
+        guard validSessions.count == sessions.count else {
+            isScheduling = false
+            showValidation(
+                title: "Availability Mismatch",
+                message: "Some generated sessions fell outside your available time slots. Add availability in the selected date range and try again."
+            )
+            return
+        }
+
+        guard scheduledMinutes >= requiredMinutes else {
+            isScheduling = false
+            showValidation(
+                title: "Not Enough Availability",
+                message: "Your selected topics need about \(formatMinutes(requiredMinutes)), but this date range can schedule only about \(formatMinutes(scheduledMinutes)). Remove some topics or add more availability to complete the plan."
+            )
+            return
+        }
+
+        Task {
+            await MainActor.run {
+                isScheduling = false
+                onPlanCreated?(validSessions)
+                dismiss()
+            }
+        }
+    }
+
+    private func buildEntries() -> [StudyScheduleService.SubjectEntry] {
+        subjects.compactMap { subject in
+            guard selectedSubjectIDs.contains(subject.id) else { return nil }
+            let selected = topics(for: subject).filter { selectedTopicIDs.contains(topicKey($0, subject: subject)) }
+            guard !selected.isEmpty else { return nil }
+            return StudyScheduleService.SubjectEntry(
+                subject:         subject,
+                topics:          selected,
+                nearestDeadline: nil   
+            )
+        }
+    }
+
+    private func selectedPeriod() -> DateInterval {
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: startDate)
+        let endStart = cal.startOfDay(for: endDate)
+        let nextDay = cal.date(byAdding: .day, value: 1, to: endStart) ?? endStart
+        let end = nextDay.addingTimeInterval(-1)
+        return DateInterval(start: start, end: end)
+    }
+
+    private func slotApplies(_ slot: AvailabilitySlot, during period: DateInterval) -> Bool {
+        let cal = Calendar.current
+        var current = cal.startOfDay(for: period.start)
+        let last = cal.startOfDay(for: period.end)
+
+        while current <= last {
+            if slot.applies(on: current) {
+                return true
+            }
+            guard let next = cal.date(byAdding: .day, value: 1, to: current) else { break }
+            current = next
+        }
+
+        return false
+    }
+
+    private func sessionFits(_ session: StudySession, in slots: [AvailabilitySlot]) -> Bool {
+        slots.contains { slot in
+            sessionFits(session, in: slot)
+        }
+    }
+
+    private func sessionFits(_ session: StudySession, in slot: AvailabilitySlot) -> Bool {
+        let cal = Calendar.current
+
+        guard slot.applies(on: session.scheduledDate) || slot.applies(on: session.startTime) else {
+            return false
+        }
+
+        let slotStartMinutes = minutesSinceStartOfDay(slot.startTime, calendar: cal)
+        let slotEndMinutes = minutesSinceStartOfDay(slot.endTime, calendar: cal)
+        let sessionStartMinutes = minutesSinceStartOfDay(session.startTime, calendar: cal)
+        let sessionEndMinutes = minutesSinceStartOfDay(session.endTime, calendar: cal)
+
+        return sessionStartMinutes >= slotStartMinutes
+            && sessionEndMinutes <= slotEndMinutes
+            && session.endTime > session.startTime
+    }
+
+    private func minutesSinceStartOfDay(_ date: Date, calendar: Calendar) -> Int {
+        calendar.component(.hour, from: date) * 60 + calendar.component(.minute, from: date)
+    }
+
+    private func showValidation(title: String, message: String) {
+        validationTitle = title
+        validationMessage = message
+        showValidationAlert = true
+    }
+
+    private func formatMinutes(_ minutes: Int) -> String {
+        let hours = minutes / 60
+        let mins = minutes % 60
+        if hours == 0 { return "\(mins)m" }
+        if mins == 0 { return "\(hours)h" }
+        return "\(hours)h \(mins)m"
     }
 }
 

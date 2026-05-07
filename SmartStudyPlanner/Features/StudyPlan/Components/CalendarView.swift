@@ -37,8 +37,9 @@ struct CalendarView: UIViewRepresentable {
             }
         }
 
-        let allDates = decoratedDates()
+        let allDates = Array(Set(context.coordinator.decoratedDates).union(decoratedDates()))
         uiView.reloadDecorations(forDateComponents: allDates, animated: true)
+        context.coordinator.decoratedDates = decoratedDates()
     }
 
     private func decoratedDates() -> [DateComponents] {
@@ -49,16 +50,7 @@ struct CalendarView: UIViewRepresentable {
         for i in 0..<60 {
             guard let date = calendar.date(byAdding: .day, value: i, to: today) else { continue }
             let comps = calendar.dateComponents([.year, .month, .day], from: date)
-            let hasSlot = slots.contains { slot in
-                switch slot.type {
-                case .date:   return slot.date.map { calendar.isDate($0, inSameDayAs: date) } ?? false
-                case .daily:  return true
-                case .weekly: return slot.weekday == calendar.component(.weekday, from: date)
-                case .range:
-                    guard let s = slot.rangeStart, let e = slot.rangeEnd else { return false }
-                    return date >= s && date <= e
-                }
-            }
+            let hasSlot = slots.contains { $0.applies(on: date) }
             if hasSlot { dates.insert(comps) }
         }
 
@@ -77,9 +69,11 @@ struct CalendarView: UIViewRepresentable {
 
     class Coordinator: NSObject, UICalendarSelectionSingleDateDelegate, UICalendarViewDelegate {
         var parent: CalendarView
+        var decoratedDates: [DateComponents] = []
 
         init(_ parent: CalendarView) {
             self.parent = parent
+            self.decoratedDates = parent.decoratedDates()
         }
 
         func dateSelection(_ selection: UICalendarSelectionSingleDate, didSelectDate dateComponents: DateComponents?) {
@@ -90,16 +84,7 @@ struct CalendarView: UIViewRepresentable {
             guard let date = Calendar.current.date(from: dateComponents) else { return nil }
             let cal = Calendar.current
 
-            let hasSlot = parent.slots.contains { slot in
-                switch slot.type {
-                case .date:   return slot.date.map { cal.isDate($0, inSameDayAs: date) } ?? false
-                case .daily:  return true
-                case .weekly: return slot.weekday == cal.component(.weekday, from: date)
-                case .range:
-                    guard let s = slot.rangeStart, let e = slot.rangeEnd else { return false }
-                    return date >= s && date <= e
-                }
-            }
+            let hasSlot = parent.slots.contains { $0.applies(on: date) }
 
             let hasSession = parent.sessions.contains { cal.isDate($0.startTime, inSameDayAs: date) }
             let hasDeadline = parent.deadlines.contains { cal.isDate($0.dueDate, inSameDayAs: date) }

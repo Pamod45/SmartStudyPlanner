@@ -21,6 +21,8 @@ struct QuizConfigSheet: View {
     @State private var configTab: ConfigTab = .topics
     @State private var selectedTopicIDs: Set<String> = []
     @State private var selectedResourceIDs: Set<String> = []
+    @State private var isGenerating: Bool = false
+    @State private var generationError: String? = nil
 
     enum ConfigTab { case topics, resources }
 
@@ -60,6 +62,32 @@ struct QuizConfigSheet: View {
             }
             .padding(theme.spacing.lg)
             .background(theme.colors.surface.opacity(0.2))
+
+            if isGenerating {
+                ZStack {
+                    Color.black.opacity(0.45).ignoresSafeArea()
+                    VStack(spacing: theme.spacing.lg) {
+                        SwiftUI.ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: theme.colors.primary))
+                            .controlSize(.large)
+                        Text("Generating quiz questions…")
+                            .font(theme.typography.bodyMedium.weight(.semibold))
+                            .foregroundColor(theme.colors.textPrimary)
+                        if let err = generationError {
+                            Text(err)
+                                .font(theme.typography.bodySmall)
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+                    .padding(theme.spacing.xl)
+                    .background(theme.colors.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
+                    .shadow(color: Color.black.opacity(0.12), radius: 20, y: 10)
+                }
+                .transition(.opacity)
+                .animation(.easeInOut, value: isGenerating)
+            }
         }
     }
 
@@ -324,26 +352,105 @@ struct QuizConfigSheet: View {
     private var startButton: some View {
         VStack(spacing: 0) {
             PrimaryButton(title: "Start Quiz", icon: "play.fill") {
-                let selTopics = topics.filter { selectedTopicIDs.contains($0.id) }
-                let count = max(3, questionCount)
-                let name = quizName.isEmpty ? (selTopics.first?.title ?? "Custom Quiz") : quizName
-                let attempt = QuizAttempt(
-                    quizName: name,
-                    topicName: selTopics.first?.title ?? "Custom",
-                    subjectId: subject.id,
-                    subjectColorHex: subject.colorHex,
-                    questions: [],
-                    timeSpentSeconds: 0
-                )
-                onStart(attempt)
-                dismiss()
+                guard !isGenerating else { return }
+                isGenerating = true
+                generationError = nil
+
+                let clamped       = min(max(3, questionCount), 10)
+                let selTopics     = topics.filter { selectedTopicIDs.contains($0.id) }
+                let selResources  = resources.filter { selectedResourceIDs.contains($0.id) }
+                let resolvedName  = quizName.isEmpty
+                    ? (configTab == .topics ? selTopics.first?.title : selResources.first?.name) ?? "Custom Quiz"
+                    : quizName
+
+                Task {
+                    do {
+                        var allQuestions: [QuizQuestion] = []
+
+                        if configTab == .topics {
+                            let topicText = try await quizText(for: selTopics)
+                            let category = selTopics.count == 1 ? selTopics[0].title : subject.name
+                            let qs = try await StudyContentOrchestrator.shared.buildQuizQuestions(
+                                from: topicText,
+                                questionCount: clamped,
+                                category: category
+                            )
+                            allQuestions.append(contentsOf: qs)
+                        } else {
+                            let extractedText = try await ContentExtractionService.shared.extractText(from: selResources)
+                            let qs = try await StudyContentOrchestrator.shared.buildQuizQuestions(
+                                from: extractedText,
+                                questionCount: clamped,
+                                category: subject.name
+                            )
+                            allQuestions.append(contentsOf: qs)
+                        }
+
+                        var finalQuestions = Array(allQuestions.shuffled().prefix(clamped))
+                        for i in finalQuestions.indices { finalQuestions[i].number = i + 1 }
+
+                        let attempt = QuizAttempt(
+                            quizName: resolvedName,
+                            topicName: selTopics.first?.title ?? (selResources.first?.name ?? "Custom"),
+                            subjectId: subject.id,
+                            subjectColorHex: subject.colorHex,
+                            questions: finalQuestions,
+                            timeSpentSeconds: 0
+                        )
+
+                        await MainActor.run {
+                            isGenerating = false
+                            onStart(attempt)
+                            dismiss()
+                        }
+                    } catch {
+                        await MainActor.run {
+                            isGenerating = false
+                            generationError = error.localizedDescription
+                        }
+                    }
+                }
             }
-            .disabled(!canStart)
-            .opacity(canStart ? 1 : 0.5)
+            .disabled(!canStart || isGenerating)
+            .opacity((canStart && !isGenerating) ? 1 : 0.5)
             .padding(.horizontal, theme.spacing.sm)
             .padding(.vertical, theme.spacing.md)
             .background(theme.colors.background)
         }
     }
-}
 
+    private func quizText(for selectedTopics: [StudyPathTopic]) async throws -> String {
+        let topicFocus = selectedTopics.map { topic in
+            var lines = ["Topic: \(topic.title)"]
+            if !topic.description.isEmpty {
+                lines.append("Description: \(topic.description)")
+            }
+            if !topic.subtopics.isEmpty {
+                lines.append("Subtopics: \(topic.subtopics.joined(separator: ", "))")
+            }
+            return lines.joined(separator: "\n")
+        }.joined(separator: "\n\n")
+
+        let topicResourceIds = Set(selectedTopics.flatMap { $0.resourceIds })
+        let fallbackResourceIds = Set(studyPath?.generatedFromResourceIds ?? [])
+        let relevantResourceIds = topicResourceIds.isEmpty ? fallbackResourceIds : topicResourceIds
+        let relevantResources = resources.filter { relevantResourceIds.contains($0.id) }
+
+        guard !relevantResources.isEmpty else {
+            return topicFocus
+        }
+
+        let resourceText = try await ContentExtractionService.shared.extractText(from: relevantResources)
+        guard !resourceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return topicFocus
+        }
+
+        return """
+        Focus quiz on these selected topics:
+        \(topicFocus)
+
+        Source study material:
+        \(resourceText)
+        """
+    }
+}

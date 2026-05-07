@@ -25,6 +25,7 @@ struct ChipPicker<T: Identifiable>: View {
                             .background(selection.id == item.id ? theme.colors.primary : theme.colors.surface)
                             .cornerRadius(theme.radius.full)
                     }
+                    .accessibilityAddTraits(selection.id == item.id ? .isSelected : [])
                 }
             }
         }

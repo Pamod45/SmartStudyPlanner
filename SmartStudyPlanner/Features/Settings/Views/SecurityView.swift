@@ -10,9 +10,8 @@ import SwiftUI
 struct SecurityView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var localSettings: LocalSettingsManager
 
-    @State private var faceIDEnabled: Bool = true
-    @State private var showSignOutAllConfirm: Bool = false
 
     var body: some View {
         ZStack {
@@ -31,7 +30,7 @@ struct SecurityView: View {
                                     .font(theme.typography.bodyLarge.weight(.semibold))
                                     .foregroundColor(theme.colors.textPrimary)
                                 Spacer()
-                                Toggle("", isOn: $faceIDEnabled).labelsHidden().tint(theme.colors.primary)
+                                Toggle("", isOn: $localSettings.faceIDEnabled).labelsHidden().tint(theme.colors.primary)
                             }
                             .padding(.horizontal, theme.spacing.md)
                             .padding(.vertical, theme.spacing.md)
@@ -40,25 +39,6 @@ struct SecurityView: View {
 
                             navRow(title: "Change Password") {}
 
-                            rowDivider
-
-                            navRow(title: "Manage Active Devices") {}
-
-                            rowDivider
-
-                            Button {
-                                showSignOutAllConfirm = true
-                            } label: {
-                                HStack {
-                                    Text("Sign out from all devices")
-                                        .font(theme.typography.bodyLarge.weight(.semibold))
-                                        .foregroundColor(theme.colors.error)
-                                    Spacer()
-                                }
-                                .padding(.horizontal, theme.spacing.md)
-                                .padding(.vertical, theme.spacing.md)
-                            }
-                            .buttonStyle(.plain)
                         }
                         .background(theme.colors.surface)
                         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
@@ -70,12 +50,6 @@ struct SecurityView: View {
             }
         }
         .navigationBarHidden(true)
-        .confirmationDialog("Sign Out All Devices", isPresented: $showSignOutAllConfirm, titleVisibility: .visible) {
-            Button("Sign Out All", role: .destructive) {}
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("You will be signed out from all devices.")
-        }
     }
 
     private var header: some View {
@@ -115,5 +89,6 @@ struct SecurityView: View {
 #Preview {
     NavigationStack { SecurityView() }
         .environmentObject(ThemeManager())
+        .environmentObject(LocalSettingsManager())
         .environment(\.theme, AppTheme.defaultTheme)
 }
