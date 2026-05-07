@@ -1,27 +1,381 @@
+import SwiftUI
 import Combine
-
-import SwiftUI
-import SwiftUI
-
 @MainActor
 class ProgressViewModel: ObservableObject {
+
     @Published var weeklySnapshots: [WeeklyProgressSnapshot] = []
     @Published var streak: StudyStreak = StudyStreak()
     @Published var completedSessions: [StudySession] = []
     @Published var isLoading: Bool = false
 
-    var stats: [StatItem] { [] }
-    var subjectProgressItems: [SubjectProgress] { [] }
-    var insights: [InsightItem] { [] }
-    var dailyActivity: [DailyActivity] { [] }
-    var monthActivity: [DailyActivity] { [] }
-    var quarterActivity: [DailyActivity] { [] }
-    var subjectDistribution: [SubjectDistribution] { [] }
-    var resourceUtilization: [ResourceUtilization] { [] }
-    var subjectNames: [String] { [] }
+    @Published private var allSessions: [StudySession] = []
+    @Published private var subjects: [Subject] = []
+    @Published private var allAttempts: [QuizAttempt] = []
+    @Published private var allResources: [Resource] = []
+
+    var stats: [StatItem] {
+        let totalMinutes = completedSessions.reduce(0) {
+            $0 + ($1.actualDurationMinutes ?? $1.durationMinutes)
+        }
+        let totalHours = Double(totalMinutes) / 60.0
+        let sessionCount = completedSessions.count
+        let ratedSessions = completedSessions.compactMap(\.rating)
+        let avgRating = ratedSessions.isEmpty
+            ? nil
+            : Double(ratedSessions.reduce(0, +)) / Double(ratedSessions.count)
+
+        return [
+            StatItem(
+                icon: "clock.fill",
+                iconColor: .blue,
+                value: String(format: "%.1f", totalHours),
+                label: "TOTAL HOURS",
+                badge: totalHours >= 1 ? "hrs" : nil,
+                badgeColor: .blue
+            ),
+            StatItem(
+                icon: "checkmark.circle.fill",
+                iconColor: .green,
+                value: "\(sessionCount)",
+                label: "SESSIONS DONE"
+            ),
+            StatItem(
+                icon: "flame.fill",
+                iconColor: .orange,
+                value: "\(streak.currentStreak)",
+                label: "DAY STREAK",
+                badge: streak.currentStreak >= 3 ? "\(streak.currentStreak) days" : nil,
+                badgeColor: .orange
+            ),
+            StatItem(
+                icon: "star.fill",
+                iconColor: Color(hex: "#F59E0B"),
+                value: avgRating.map { String(format: "%.1f/5", $0) } ?? "N/A",
+                label: "AVG RATING"
+            )
+        ]
+    }
+
+    var subjectProgressItems: [SubjectProgress] {
+        subjects.filter { !$0.isArchived }.map { subject in
+            let subjectSessions = completedSessions.filter { $0.subjectId == subject.id }
+            let hoursStudied = Double(subjectSessions.reduce(0) {
+                $0 + ($1.actualDurationMinutes ?? $1.durationMinutes)
+            }) / 60.0
+
+            let target = max(subject.targetHoursPerWeek, 1.0)
+            let sessionComponent = min(hoursStudied / target, 1.0)
+
+            let subjectAttempts = allAttempts.filter { $0.subjectId == subject.id }
+            let mastery: Double
+            if subjectAttempts.isEmpty {
+                mastery = sessionComponent
+            } else {
+                let quizComponent = Double(subjectAttempts.reduce(0) { $0 + $1.scorePercent })
+                    / Double(subjectAttempts.count) / 100.0
+                mastery = (sessionComponent * 0.7) + (quizComponent * 0.3)
+            }
+
+            let status: SubjectStatus
+            switch mastery {
+            case 0.75...: status = .excellent
+            case 0.40...: status = .good
+            default:      status = .needsFocus
+            }
+
+            let subtitle = String(format: "%.1fh / %.0fh weekly", hoursStudied, subject.targetHoursPerWeek)
+
+            return SubjectProgress(
+                name: subject.name,
+                subtitle: subtitle,
+                mastery: mastery,
+                status: status,
+                color: Color(hex: subject.colorHex)
+            )
+        }
+        .sorted { $0.mastery > $1.mastery }
+    }
+
+    var insights: [InsightItem] {
+        var items: [InsightItem] = []
+        let cal = Calendar.current
+        let byWeekday = Dictionary(grouping: completedSessions) {
+            cal.component(.weekday, from: $0.scheduledDate)
+        }
+        if let best = byWeekday.max(by: { $0.value.count < $1.value.count }) {
+            let dayName = cal.weekdaySymbols[best.key - 1]
+            items.append(InsightItem(
+                tag: "PEAK DAY",
+                tagColor: .blue,
+                title: "\(dayName)s are your strongest",
+                body: "You complete \(best.value.count) sessions on \(dayName)s. Consider scheduling harder topics on this day.",
+                icon: "calendar.badge.clock"
+            ))
+        }
+
+        if let top = subjectProgressItems.first, top.mastery > 0 {
+            items.append(InsightItem(
+                tag: "TOP SUBJECT",
+                tagColor: .green,
+                title: "\(top.name) is leading",
+                body: "Your mastery in \(top.name) is at \(Int(top.mastery * 100))%. Keep the momentum going.",
+                icon: "star.fill"
+            ))
+        }
+
+        let thisWeekStart = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())) ?? Date()
+        let lastWeekStart = cal.date(byAdding: .weekOfYear, value: -1, to: thisWeekStart) ?? Date()
+        let thisWeekCount = completedSessions.filter { $0.scheduledDate >= thisWeekStart }.count
+        let lastWeekCount = completedSessions.filter {
+            $0.scheduledDate >= lastWeekStart && $0.scheduledDate < thisWeekStart
+        }.count
+        if lastWeekCount > 0 {
+            let diff = thisWeekCount - lastWeekCount
+            let trend = diff >= 0 ? "up \(abs(diff))" : "down \(abs(diff))"
+            items.append(InsightItem(
+                tag: diff >= 0 ? "IMPROVING" : "WATCH OUT",
+                tagColor: diff >= 0 ? .green : .orange,
+                title: "Sessions are \(trend) this week",
+                body: "\(thisWeekCount) sessions this week vs \(lastWeekCount) last week.",
+                icon: diff >= 0 ? "arrow.up.right" : "arrow.down.right"
+            ))
+        }
+
+        if !allAttempts.isEmpty {
+            let bySubject = Dictionary(grouping: allAttempts, by: \.subjectId)
+            if let weakest = bySubject.min(by: {
+                let avgA = $0.value.reduce(0) { $0 + $1.scorePercent } / $0.value.count
+                let avgB = $1.value.reduce(0) { $0 + $1.scorePercent } / $1.value.count
+                return avgA < avgB
+            }) {
+                let avg = weakest.value.reduce(0) { $0 + $1.scorePercent } / weakest.value.count
+                let name = subjects.first(where: { $0.id == weakest.key })?.name ?? "a subject"
+                items.append(InsightItem(
+                    tag: "NEEDS WORK",
+                    tagColor: .orange,
+                    title: "Quiz scores low in \(name)",
+                    body: "Average quiz score of \(avg)% suggests \(name) needs more focused review sessions.",
+                    icon: "exclamationmark.triangle"
+                ))
+            }
+        }
+
+        return items
+    }
+
+    var dailyActivity: [DailyActivity] {
+        buildActivity(sessions: completedSessions, lookbackDays: 7, grouping: .day)
+    }
+
+    var monthActivity: [DailyActivity] {
+        buildActivity(sessions: completedSessions, lookbackDays: 30, grouping: .day)
+    }
+
+    var quarterActivity: [DailyActivity] {
+        buildActivity(sessions: completedSessions, lookbackDays: 90, grouping: .week)
+    }
+
+    var subjectDistribution: [SubjectDistribution] {
+        let total = Double(completedSessions.reduce(0) {
+            $0 + ($1.actualDurationMinutes ?? $1.durationMinutes)
+        })
+        guard total > 0 else { return [] }
+
+        let bySubject = Dictionary(grouping: completedSessions, by: \.subjectId)
+        return bySubject.compactMap { (_, sessions) -> SubjectDistribution? in
+            guard let first = sessions.first else { return nil }
+            let minutes = Double(sessions.reduce(0) {
+                $0 + ($1.actualDurationMinutes ?? $1.durationMinutes)
+            })
+            return SubjectDistribution(
+                name: first.subjectName,
+                percentage: minutes / total,
+                color: Color(hex: first.subjectColorHex)
+            )
+        }
+        .sorted { $0.percentage > $1.percentage }
+    }
+
+    var resourceUtilization: [ResourceUtilization] {
+        let typeMapping: [(display: String, type: ResourceType, icon: String)] = [
+            ("PDFs",       .pdf,       "doc.richtext.fill"),
+            ("Notes",      .note,      "note.text"),
+            ("Links",      .link,      "link"),
+            ("Recordings", .recording, "waveform"),
+            ("Slides",     .ppt,       "arrow.up.doc.fill")
+        ]
+        return typeMapping.compactMap { mapping in
+            let count = allResources.filter { $0.resourceType == mapping.type }.count
+            guard count > 0 else { return nil }
+            return ResourceUtilization(
+                type: mapping.display,
+                icon: mapping.icon,
+                count: count,
+                color: mapping.type.color
+            )
+        }
+    }
+
+    var subjectNames: [String] {
+        subjects.filter { !$0.isArchived }.map(\.name).sorted()
+    }
 
     func load(userId: String?) async {
+        guard let uid = userId, !uid.isEmpty else { return }
         isLoading = true
         defer { isLoading = false }
+
+        async let sessionsFetch = StudySessionService.shared.fetchAll(userId: uid)
+        async let subjectsFetch = SubjectService.shared.fetchSubjects(userId: uid)
+
+        let fetchedSessions = (try? await sessionsFetch) ?? []
+        let fetchedSubjects = (try? await subjectsFetch) ?? []
+
+        var fetchedAttempts: [QuizAttempt] = []
+        var fetchedResources: [Resource] = []
+
+        await withTaskGroup(of: ([QuizAttempt], [Resource]).self) { group in
+            for subject in fetchedSubjects {
+                group.addTask {
+                    async let attempts  = QuizService.shared.fetchAttempts(subjectId: subject.id)
+                    async let resources = ResourceService.shared.fetchResources(subjectId: subject.id)
+                    return ((try? await attempts) ?? [], (try? await resources) ?? [])
+                }
+            }
+            for await (a, r) in group {
+                fetchedAttempts.append(contentsOf: a)
+                fetchedResources.append(contentsOf: r)
+            }
+        }
+
+        allSessions  = fetchedSessions
+        subjects     = fetchedSubjects
+        allAttempts  = fetchedAttempts
+        allResources = fetchedResources
+
+        let completed = fetchedSessions.filter { $0.status == .completed }
+        completedSessions = completed
+        streak = computeStreak(from: completed)
+
+        Task { await updateSubjectHours(subjects: fetchedSubjects, sessions: completed, userId: uid) }
+    }
+
+    private func computeStreak(from sessions: [StudySession]) -> StudyStreak {
+        let cal = Calendar.current
+        let studyDays = Set(sessions.map { cal.startOfDay(for: $0.scheduledDate) })
+        let sortedDays = studyDays.sorted()
+        guard !sortedDays.isEmpty else { return StudyStreak() }
+
+        var longestRun = 1, currentRun = 1
+        for i in 1..<sortedDays.count {
+            let prev = sortedDays[i - 1]
+            let curr = sortedDays[i]
+            if let expected = cal.date(byAdding: .day, value: 1, to: prev),
+               cal.isDate(expected, inSameDayAs: curr) {
+                currentRun += 1
+                longestRun = max(longestRun, currentRun)
+            } else {
+                currentRun = 1
+            }
+        }
+
+        let today = cal.startOfDay(for: Date())
+        var current = 0
+        var checkDay = today
+        while studyDays.contains(checkDay) {
+            current += 1
+            guard let prev = cal.date(byAdding: .day, value: -1, to: checkDay) else { break }
+            checkDay = prev
+        }
+
+        let streakStart = current > 0
+            ? cal.date(byAdding: .day, value: -(current - 1), to: today)
+            : nil
+
+        return StudyStreak(
+            currentStreak: current,
+            longestStreak: longestRun,
+            lastStudyDate: sortedDays.last,
+            streakStartDate: streakStart
+        )
+    }
+
+    private enum ActivityGrouping { case day, week }
+
+    private func buildActivity(sessions: [StudySession],
+                               lookbackDays: Int,
+                               grouping: ActivityGrouping) -> [DailyActivity] {
+        let cal = Calendar.current
+        let cutoff = cal.date(byAdding: .day, value: -lookbackDays, to: Date()) ?? Date()
+        let recent = sessions.filter { $0.scheduledDate >= cutoff }
+
+        switch grouping {
+        case .day:
+            let dayLabels = ["SUN","MON","TUE","WED","THU","FRI","SAT"]
+            let byDay = Dictionary(grouping: recent) { cal.startOfDay(for: $0.scheduledDate) }
+            var result: [DailyActivity] = []
+            for (day, daySessions) in byDay {
+                let bySubject = Dictionary(grouping: daySessions, by: \.subjectId)
+                for (_, subSessions) in bySubject {
+                    guard let first = subSessions.first else { continue }
+                    let hours = Double(subSessions.reduce(0) {
+                        $0 + ($1.actualDurationMinutes ?? $1.durationMinutes)
+                    }) / 60.0
+                    let label: String
+                    if lookbackDays <= 7 {
+                        let weekdayIdx = cal.component(.weekday, from: day)
+                        label = dayLabels[weekdayIdx - 1]
+                    } else {
+                        label = "\(cal.component(.day, from: day))"
+                    }
+                    result.append(DailyActivity(
+                        day: label,
+                        date: day,
+                        hours: hours,
+                        subject: first.subjectName,
+                        color: Color(hex: first.subjectColorHex)
+                    ))
+                }
+            }
+            return result
+
+        case .week:
+            var result: [DailyActivity] = []
+            for weekIndex in 0..<13 {
+                guard let weekStart = cal.date(byAdding: .day, value: weekIndex * 7, to: cutoff),
+                      let weekEnd   = cal.date(byAdding: .day, value: 7, to: weekStart) else { continue }
+                let weekSessions = recent.filter { $0.scheduledDate >= weekStart && $0.scheduledDate < weekEnd }
+                guard !weekSessions.isEmpty else { continue }
+                let bySubject = Dictionary(grouping: weekSessions, by: \.subjectId)
+                for (_, subSessions) in bySubject {
+                    guard let first = subSessions.first else { continue }
+                    let hours = Double(subSessions.reduce(0) {
+                        $0 + ($1.actualDurationMinutes ?? $1.durationMinutes)
+                    }) / 60.0
+                    result.append(DailyActivity(
+                        day: "W\(weekIndex + 1)",
+                        date: weekStart,
+                        hours: hours,
+                        subject: first.subjectName,
+                        color: Color(hex: first.subjectColorHex)
+                    ))
+                }
+            }
+            return result
+        }
+    }
+
+    private func updateSubjectHours(subjects: [Subject], sessions: [StudySession], userId: String) async {
+        for subject in subjects {
+            let subjectSessions = sessions.filter { $0.subjectId == subject.id }
+            let totalHours = Double(subjectSessions.reduce(0) {
+                $0 + ($1.actualDurationMinutes ?? $1.durationMinutes)
+            }) / 60.0
+            guard abs(subject.totalHoursStudied - totalHours) > 0.01 else { continue }
+            var updated = subject
+            updated.totalHoursStudied = totalHours
+            updated.updatedAt = Date()
+            try? await SubjectService.shared.updateSubject(updated)
+        }
     }
 }
