@@ -9,21 +9,23 @@ class ContentExtractionService {
     private init() {}
     
     func extractText(from resources: [Resource]) async throws -> String {
-        return try await withThrowingTaskGroup(of: String.self) { group in
-            for resource in resources {
-                group.addTask {
-                    try await self.extractText(from: resource)
+        return try await Task.detached {
+            return try await withThrowingTaskGroup(of: String.self) { group in
+                for resource in resources {
+                    group.addTask {
+                        try await self.extractText(from: resource)
+                    }
                 }
-            }
-            
-            var combinedText = ""
-            for try await text in group {
-                if !text.isEmpty {
-                    combinedText += text + "\n\n"
+                
+                var combinedText = ""
+                for try await text in group {
+                    if !text.isEmpty {
+                        combinedText += text + "\n\n"
+                    }
                 }
+                return combinedText
             }
-            return combinedText
-        }
+        }.value
     }
     
     func extractText(from resource: Resource) async throws -> String {

@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCalendarsUsageDescription</key>
+	<string>We need access to your calendar to save your study schedule.</string>
+	<key>CFBundleIdentifier</key>
+	<string></string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>We need full access to sync your study sessions and manage event updates.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>

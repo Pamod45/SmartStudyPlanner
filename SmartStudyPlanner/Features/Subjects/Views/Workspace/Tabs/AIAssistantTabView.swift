@@ -14,11 +14,12 @@ struct AIAssistantTabView: View {
     let resources: [Resource]
     let studyPath: StudyPath?
 
-    @State private var messages: [ChatMessage] = []
+    @ObservedObject private var messageStore = AIMessageStore.shared
     @State private var selectedContext: ChatContext = .allDocs
     @State private var inputText: String = ""
     @State private var isThinking: Bool = false
 
+    private var messages: [ChatMessage] { messageStore.messages(for: selectedContext.id) }
     private var availableContexts: [ChatContext] {
         var ctxs: [ChatContext] = [.allDocs]
         ctxs += resources.map { .resource($0) }
@@ -211,7 +212,7 @@ struct AIAssistantTabView: View {
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        messages.append(ChatMessage(role: .user, content: trimmed))
+        messageStore.append(ChatMessage(role: .user, content: trimmed), for: selectedContext.id)
         inputText = ""
         isThinking = true
 
@@ -230,15 +231,19 @@ struct AIAssistantTabView: View {
                     userMessage: trimmed,
                     contextText: contextText,
                     subjectName: name,
+                    contextId: ctx.id,
                     history: historySnapshot
                 )
                 await MainActor.run {
-                    messages.append(ChatMessage(role: .assistant, content: reply))
+                    messageStore.append(ChatMessage(role: .assistant, content: reply), for: ctx.id)
                     isThinking = false
                 }
             } catch {
                 await MainActor.run {
-                    messages.append(ChatMessage(role: .error, content: "Couldn't get a response. Check your connection and try again."))
+                    let msg = error is URLError
+                        ? "Couldn't reach the AI server. Check your connection and try again."
+                        : "Apple Intelligence couldn't generate a response. Try again."
+                    messageStore.append(ChatMessage(role: .error, content: msg), for: ctx.id)
                     isThinking = false
                 }
             }

@@ -11,6 +11,8 @@ struct AddNoteView: View {
     @State private var title: String = ""
     @State private var storage: NSAttributedString = NSAttributedString(string: "")
     @FocusState private var titleFocused: Bool
+    @StateObject private var ttsManager = TextToSpeechManager.shared
+
 
     var body: some View {
         ZStack {
@@ -61,6 +63,25 @@ struct AddNoteView: View {
             .frame(maxWidth: 180)
 
             Spacer()
+
+            if !storage.string.isEmpty {
+                Button {
+                    if ttsManager.isSpeaking {
+                        if ttsManager.isPaused {
+                            ttsManager.resume()
+                        } else {
+                            ttsManager.pause()
+                        }
+                    } else {
+                        ttsManager.speak(text: storage.string)
+                    }
+                } label: {
+                    Image(systemName: ttsManager.isSpeaking && !ttsManager.isPaused ? "pause.circle.fill" : "play.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(theme.colors.primary)
+                }
+                .padding(.trailing, theme.spacing.sm)
+            }
 
             Button("Done") {
                 save()

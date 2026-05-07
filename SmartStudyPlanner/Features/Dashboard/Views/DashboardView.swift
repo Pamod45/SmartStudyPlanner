@@ -3,6 +3,7 @@ import SwiftUI
 struct DashboardView: View {
     @Environment(\.theme) var theme
     @EnvironmentObject var sessionVM: SessionViewModel
+    @EnvironmentObject var notificationStore: NotificationStore
     @StateObject private var vm = DashboardViewModel()
 
     @State private var editingDeadline: Deadline? = nil
@@ -10,6 +11,7 @@ struct DashboardView: View {
     @State private var showSubjectPicker = false
     @State private var pickerSelectedSubject: Subject? = nil
     @State private var shortcutFlow: ShortcutFlow? = nil
+    @State private var sessionToRate: StudySession? = nil
 
     var body: some View {
         ZStack {
@@ -72,6 +74,18 @@ struct DashboardView: View {
             resourceSheet(for: flow.action, subject: flow.subject)
                 .environment(\.theme, theme)
         }
+        .sheet(item: $sessionToRate) { session in
+            SessionRatingSheet(session: session) { rating in
+                guard let rating else { return }
+                Task {
+                    var updated = session
+                    updated.rating = rating
+                    updated.updatedAt = Date()
+                    try? await StudySessionService.shared.update(updated)
+                }
+            }
+            .environment(\.theme, theme)
+        }
     }
 
     private var headerSection: some View {
@@ -89,11 +103,24 @@ struct DashboardView: View {
 
             NavigationLink {
                 NotificationListView()
+                    .environmentObject(notificationStore)
                     .environment(\.theme, theme)
             } label: {
-                Image(systemName: "bell")
-                    .font(.system(size: 20))
-                    .foregroundColor(theme.colors.primary)
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell")
+                        .font(.system(size: 20))
+                        .foregroundColor(theme.colors.primary)
+                    if notificationStore.unreadCount > 0 {
+                        Text("\(min(notificationStore.unreadCount, 99))")
+                            .font(.caption2.bold())
+                            .foregroundColor(.white)
+                            .frame(minWidth: 16, minHeight: 16)
+                            .padding(.horizontal, 4)
+                            .background(Color.red)
+                            .clipShape(Capsule())
+                            .offset(x: 10, y: -8)
+                    }
+                }
             }
         }
     }
@@ -172,14 +199,34 @@ struct DashboardView: View {
                                         }
                                     }
                                 },
-                                onStop: { elapsedSeconds in
+                                onResume: {
+                                    let accumulated = (session.actualDurationMinutes ?? 0) * 60
+                                    StudyTimerService.shared.resume(session: session, previousSeconds: accumulated)
+                                },
+                                onPause: {
+                                    let totalSeconds = StudyTimerService.shared.pause()
+                                    Task {
+                                        var updated = session
+                                        updated.actualDurationMinutes = max(1, totalSeconds / 60)
+                                        updated.updatedAt = Date()
+                                        try? await StudySessionService.shared.update(updated)
+                                        if let idx = vm.upcomingSessions.firstIndex(where: { $0.id == session.id }) {
+                                            vm.upcomingSessions[idx] = updated
+                                        }
+                                    }
+                                },
+                                onComplete: {
+                                    let totalSeconds = StudyTimerService.shared.complete()
                                     Task {
                                         var updated = session
                                         updated.status = .completed
-                                        updated.actualDurationMinutes = max(1, elapsedSeconds / 60)
+                                        updated.actualDurationMinutes = max(1, totalSeconds / 60)
                                         updated.updatedAt = Date()
                                         try? await StudySessionService.shared.update(updated)
                                         vm.upcomingSessions.removeAll { $0.id == session.id }
+                                        sessionToRate = updated
+                                        let settings = CoreDataService.shared.getCachedSettings(for: updated.userId) ?? .default
+                                        NotificationService.shared.scheduleQuizReminder(for: updated, settings: settings)
                                     }
                                 }
                             )
@@ -230,7 +277,6 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Resource sheet dispatcher
 
     @ViewBuilder
     private func resourceSheet(for action: ResourceAction, subject: Subject) -> some View {

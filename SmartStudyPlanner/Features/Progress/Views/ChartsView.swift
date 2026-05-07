@@ -4,7 +4,6 @@ import Charts
 enum ChartType: String, CaseIterable, Identifiable {
     case dailyActivity = "Daily Activity"
     case subjectDist   = "Subject Dist"
-    case resourceUtil  = "Resource Util"
     var id: String { rawValue }
 }
 
@@ -20,15 +19,6 @@ enum TimePeriodFilter: String, CaseIterable {
     case all   = "All Time"
 }
 
-enum ResourceTypeFilter: String, CaseIterable {
-    case all        = "All Types"
-    case pdfs       = "PDFs"
-    case notes      = "Notes"
-    case links      = "Links"
-    case recordings = "Recordings"
-    case slides     = "Slides"
-}
-
 struct ChartsView: View {
     @Environment(\.theme) var theme
     @ObservedObject var vm: ProgressViewModel
@@ -38,15 +28,13 @@ struct ChartsView: View {
 
     @State private var dateRange: DateRangeFilter = .week
     @State private var timePeriod: TimePeriodFilter = .week
-    @State private var resourceType: ResourceTypeFilter = .all
-    @State private var selectedSubjects: Set<String> = []
+    @State private var selectedSubject: String? = nil
     @State private var activeFilterSheet: Int? = nil
 
     var allActivity: [DailyActivity]        { vm.dailyActivity }
     var monthActivity: [DailyActivity]      { vm.monthActivity }
     var quarterActivity: [DailyActivity]    { vm.quarterActivity }
     var distribution: [SubjectDistribution] { vm.subjectDistribution }
-    var utilization: [ResourceUtilization]  { vm.resourceUtilization }
 
     var activityData: [DailyActivity] {
         let base: [DailyActivity]
@@ -55,30 +43,23 @@ struct ChartsView: View {
         case .month:   base = monthActivity
         case .quarter: base = quarterActivity
         }
-        guard !selectedSubjects.isEmpty else { return base }
-        return base.filter { selectedSubjects.contains($0.subject) }
+        guard let subject = selectedSubject else { return base }
+        return base.filter { $0.subject == subject }
     }
 
     var distributionData: [SubjectDistribution] {
-        let base: [SubjectDistribution]
         switch timePeriod {
         case .week:
-            base = distribution
+            return distribution
         case .month:
-            base = distribution.map { SubjectDistribution(name: $0.name, percentage: min($0.percentage * 1.15, 1.0), color: $0.color) }
+            return distribution.map {
+                SubjectDistribution(name: $0.name, percentage: min($0.percentage * 1.15, 1.0), color: $0.color)
+            }
         case .all:
-            base = distribution.map { SubjectDistribution(name: $0.name, percentage: min($0.percentage * 1.3, 1.0), color: $0.color) }
+            return distribution.map {
+                SubjectDistribution(name: $0.name, percentage: min($0.percentage * 1.3, 1.0), color: $0.color)
+            }
         }
-        guard !selectedSubjects.isEmpty else { return base }
-        let filtered = base.filter { selectedSubjects.contains($0.name) }
-        let total = filtered.map(\.percentage).reduce(0, +)
-        guard total > 0 else { return filtered }
-        return filtered.map { SubjectDistribution(name: $0.name, percentage: $0.percentage / total, color: $0.color) }
-    }
-
-    var utilizationData: [ResourceUtilization] {
-        if resourceType == .all { return utilization }
-        return utilization.filter { $0.type == resourceType.rawValue }
     }
 
     var totalActivityHours: Double {
@@ -102,7 +83,6 @@ struct ChartsView: View {
                     switch selectedChart {
                     case .dailyActivity: dailyActivityChart
                     case .subjectDist:   subjectDistChart
-                    case .resourceUtil:  resourceUtilChart
                     }
                 }
                 .padding(.horizontal, theme.spacing.lg)
@@ -116,6 +96,7 @@ struct ChartsView: View {
                 .presentationDragIndicator(.visible)
         }
     }
+
 
     private var chartTypePicker: some View {
         HStack(spacing: theme.spacing.sm) {
@@ -145,7 +126,6 @@ struct ChartsView: View {
         switch type {
         case .dailyActivity: return "Activity"
         case .subjectDist:   return "Subjects"
-        case .resourceUtil:  return "Resources"
         }
     }
 
@@ -153,9 +133,9 @@ struct ChartsView: View {
         switch type {
         case .dailyActivity: return "chart.line.uptrend.xyaxis"
         case .subjectDist:   return "chart.pie.fill"
-        case .resourceUtil:  return "chart.bar.fill"
         }
     }
+
 
     private var filterStack: some View {
         let filters = filtersForCurrentChart
@@ -196,22 +176,16 @@ struct ChartsView: View {
     }
 
     private var filtersForCurrentChart: [FilterMeta] {
-        let subjectLabel = selectedSubjects.isEmpty ? "All Subjects" : selectedSubjects.sorted().joined(separator: ", ")
+        let subjectLabel = selectedSubject ?? "All Subjects"
         switch selectedChart {
         case .dailyActivity:
             return [
-                FilterMeta(icon: "calendar",    label: dateRange.rawValue,  isActive: dateRange != .week),
-                FilterMeta(icon: "book.closed", label: subjectLabel,        isActive: !selectedSubjects.isEmpty)
+                FilterMeta(icon: "calendar",    label: dateRange.rawValue, isActive: dateRange != .week),
+                FilterMeta(icon: "book.closed", label: subjectLabel,       isActive: selectedSubject != nil)
             ]
         case .subjectDist:
             return [
-                FilterMeta(icon: "clock",       label: timePeriod.rawValue, isActive: timePeriod != .week),
-                FilterMeta(icon: "book.closed", label: subjectLabel,        isActive: !selectedSubjects.isEmpty)
-            ]
-        case .resourceUtil:
-            return [
-                FilterMeta(icon: "doc.on.doc",  label: resourceType.rawValue, isActive: resourceType != .all),
-                FilterMeta(icon: "book.closed", label: subjectLabel,          isActive: !selectedSubjects.isEmpty)
+                FilterMeta(icon: "clock", label: timePeriod.rawValue, isActive: timePeriod != .week)
             ]
         }
     }
@@ -223,11 +197,11 @@ struct ChartsView: View {
             chart: selectedChart,
             dateRange: $dateRange,
             timePeriod: $timePeriod,
-            resourceType: $resourceType,
-            selectedSubjects: $selectedSubjects,
+            selectedSubject: $selectedSubject,
             allSubjectNames: allSubjectNames
         )
     }
+
 
     private struct DailyTotal: Identifiable {
         let id = UUID()
@@ -264,12 +238,6 @@ struct ChartsView: View {
                     .foregroundColor(theme.colors.textPrimary)
 
                 HStack(spacing: 6) {
-                    Image(systemName: "arrow.up.right")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(theme.colors.success)
-                    Text("+12% vs previous period")
-                        .font(theme.typography.bodySmall)
-                        .foregroundColor(theme.colors.textSecondary)
                     Spacer()
                     Text(dateRange.rawValue.uppercased())
                         .font(theme.typography.labelSmall.weight(.bold))
@@ -277,6 +245,14 @@ struct ChartsView: View {
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(theme.colors.primary.opacity(0.15))
                         .clipShape(Capsule())
+                    if let subject = selectedSubject {
+                        Text(subject.uppercased())
+                            .font(theme.typography.labelSmall.weight(.bold))
+                            .foregroundColor(theme.colors.textSecondary)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(theme.colors.surface)
+                            .clipShape(Capsule())
+                    }
                 }
             }
 
@@ -344,6 +320,7 @@ struct ChartsView: View {
         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
     }
 
+
     private var subjectDistChart: some View {
         let data = distributionData
         return VStack(alignment: .leading, spacing: theme.spacing.md) {
@@ -407,56 +384,8 @@ struct ChartsView: View {
         .background(theme.colors.surface)
         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
     }
-
-    private var resourceUtilChart: some View {
-        let data = utilizationData
-        return VStack(alignment: .leading, spacing: theme.spacing.md) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Resource Utilization")
-                    .font(theme.typography.headingSmall).fontWeight(.bold)
-                    .foregroundColor(theme.colors.textPrimary)
-                Text(resourceType == .all ? "All resource types" : resourceType.rawValue)
-                    .font(theme.typography.bodySmall)
-                    .foregroundColor(theme.colors.textSecondary)
-            }
-
-            Chart(data, id: \.type) { item in
-                BarMark(
-                    x: .value("Count", item.count),
-                    y: .value("Type", item.type)
-                )
-                .foregroundStyle(item.color)
-                .cornerRadius(6)
-                .annotation(position: .trailing) {
-                    Text("\(item.count)")
-                        .font(theme.typography.labelSmall.weight(.bold))
-                        .foregroundStyle(theme.colors.textSecondary)
-                }
-            }
-            .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 5)) { value in
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [4]))
-                        .foregroundStyle(theme.colors.border.opacity(0.3))
-                    AxisValueLabel()
-                        .font(theme.typography.label)
-                        .foregroundStyle(theme.colors.textSecondary)
-                }
-            }
-            .chartYAxis {
-                AxisMarks { _ in
-                    AxisValueLabel()
-                        .font(theme.typography.bodySmall.weight(.semibold))
-                        .foregroundStyle(theme.colors.textPrimary)
-                }
-            }
-            .frame(maxHeight: .infinity)
-        }
-        .padding(theme.spacing.md)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(theme.colors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
-    }
 }
+
 
 struct FilterSheetView: View {
     @Environment(\.theme) var theme
@@ -466,8 +395,7 @@ struct FilterSheetView: View {
     let chart: ChartType
     @Binding var dateRange: DateRangeFilter
     @Binding var timePeriod: TimePeriodFilter
-    @Binding var resourceType: ResourceTypeFilter
-    @Binding var selectedSubjects: Set<String>
+    @Binding var selectedSubject: String?
     let allSubjectNames: [String]
 
     var body: some View {
@@ -507,24 +435,22 @@ struct FilterSheetView: View {
     }
 
     private var sheetTitle: String {
-        if slot == 1 { return "Filter by Subject" }
         switch chart {
-        case .dailyActivity: return "Date Range"
-        case .subjectDist:   return "Time Period"
-        case .resourceUtil:  return "Resource Type"
+        case .dailyActivity:
+            return slot == 0 ? "Date Range" : "Filter by Subject"
+        case .subjectDist:
+            return "Time Period"
         }
     }
 
     @ViewBuilder
     private var sheetBody: some View {
-        if slot == 1 {
-            subjectPicker
-        } else {
-            switch chart {
-            case .dailyActivity: dateRangePicker
-            case .subjectDist:   timePeriodPicker
-            case .resourceUtil:  resourceTypePicker
-            }
+        switch chart {
+        case .dailyActivity:
+            if slot == 0 { dateRangePicker }
+            else          { subjectPicker }
+        case .subjectDist:
+            timePeriodPicker
         }
     }
 
@@ -570,17 +496,37 @@ struct FilterSheetView: View {
         optionRows(title: "TIME PERIOD", cases: TimePeriodFilter.allCases, selected: $timePeriod)
     }
 
-    private var resourceTypePicker: some View {
-        optionRows(title: "RESOURCE TYPE", cases: ResourceTypeFilter.allCases, selected: $resourceType)
-    }
-
     private var subjectPicker: some View {
-        FieldSection(title: "SUBJECTS") {
+        FieldSection(title: "SUBJECT") {
             VStack(spacing: 0) {
+                Button {
+                    selectedSubject = nil
+                    dismiss()
+                } label: {
+                    HStack {
+                        Text("All Subjects")
+                            .font(theme.typography.bodyMedium)
+                            .foregroundColor(theme.colors.textPrimary)
+                        Spacer()
+                        if selectedSubject == nil {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(theme.colors.primary)
+                        }
+                    }
+                    .padding(theme.spacing.md)
+                }
+                .buttonStyle(.plain)
+
+                if !allSubjectNames.isEmpty {
+                    Divider().background(theme.colors.border.opacity(0.2))
+                        .padding(.leading, theme.spacing.md)
+                }
+
                 ForEach(Array(allSubjectNames.enumerated()), id: \.offset) { idx, name in
                     Button {
-                        if selectedSubjects.contains(name) { selectedSubjects.remove(name) }
-                        else { selectedSubjects.insert(name) }
+                        selectedSubject = name
+                        dismiss()
                     } label: {
                         HStack(spacing: theme.spacing.md) {
                             Circle()
@@ -590,7 +536,7 @@ struct FilterSheetView: View {
                                 .font(theme.typography.bodyMedium)
                                 .foregroundColor(theme.colors.textPrimary)
                             Spacer()
-                            if selectedSubjects.contains(name) {
+                            if selectedSubject == name {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(theme.colors.primary)

@@ -12,11 +12,18 @@ struct AccessibilityView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var vm: SettingsViewModel
 
+    @EnvironmentObject var themeManager: ThemeManager
+
     private var textSizePercent: Binding<Double> {
         Binding(
             get: { vm.settings.accessibilityFontSize * 100 },
             set: { newValue in
                 vm.updateSettings { $0.accessibilityFontSize = newValue / 100 }
+                themeManager.update(
+                    highContrast: vm.settings.highContrastEnabled,
+                    darkMode: vm.settings.darkModeEnabled,
+                    fontSize: newValue / 100
+                )
             }
         )
     }
@@ -38,7 +45,17 @@ struct AccessibilityView: View {
                                 rowDivider
                                 toggleRow(title: "Reduce Motion", isOn: vm.binding(for: \.reduceMotionEnabled))
                                 rowDivider
-                                toggleRow(title: "High Contrast Colors", isOn: vm.binding(for: \.highContrastEnabled))
+                                toggleRow(title: "High Contrast Colors", isOn: Binding(
+                                    get: { vm.settings.highContrastEnabled },
+                                    set: { newValue in
+                                        vm.updateSettings { $0.highContrastEnabled = newValue }
+                                        themeManager.update(
+                                            highContrast: newValue,
+                                            darkMode: vm.settings.darkModeEnabled,
+                                            fontSize: vm.settings.accessibilityFontSize
+                                        )
+                                    }
+                                ))
                             }
                             .background(theme.colors.surface)
                             .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))

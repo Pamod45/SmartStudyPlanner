@@ -26,7 +26,9 @@ final class StudyContentOrchestrator: ObservableObject {
         defer { isGenerating = false }
 
         do {
-            let result = try await backend.generateStudyPath(from: text, topicCount: topicCount)
+            let result = try await Task.detached {
+                try await self.backend.generateStudyPath(from: text, topicCount: topicCount)
+            }.value
 
             return result.topics.map { t in
                 StudyPathTopic(
@@ -56,11 +58,13 @@ final class StudyContentOrchestrator: ObservableObject {
         defer { isGenerating = false }
 
         do {
-            let result = try await backend.generateQuizQuestions(
-                from: text,
-                questionCount: clamped,
-                category: category
-            )
+            let result = try await Task.detached {
+                try await self.backend.generateQuizQuestions(
+                    from: text,
+                    questionCount: clamped,
+                    category: category
+                )
+            }.value
 
             return result.questions.enumerated().map { index, item in
                 QuizQuestion(

@@ -31,6 +31,7 @@ public class CDUserSettings: NSManagedObject {
     @NSManaged public var deadlineAlertTime: Date
     @NSManaged public var preferredStudyTime: String
     @NSManaged public var deadlineReminderDaysBefore: Int
+    @NSManaged public var deadlineReminderHoursBefore: Int   
     @NSManaged public var sessionReminderMinutesBefore: Int
     @NSManaged public var theme: String
     @NSManaged public var darkModeEnabled: Bool
@@ -257,7 +258,6 @@ public class CoreDataStack {
         
         userEntity.properties = [idAttr, emailAttr, nameAttr, urlAttr, domainAttr, instituteAttr, usernameAttr]
         
-        // CDUserSettings
         let settingsEntity = NSEntityDescription()
         settingsEntity.name = "CDUserSettings"
         settingsEntity.managedObjectClassName = NSStringFromClass(CDUserSettings.self)
@@ -346,6 +346,11 @@ public class CoreDataStack {
         sDeadRemAttr.name = "deadlineReminderDaysBefore"
         sDeadRemAttr.attributeType = .integer64AttributeType
         sDeadRemAttr.isOptional = false
+
+        let sDeadHoursRemAttr = NSAttributeDescription()
+        sDeadHoursRemAttr.name = "deadlineReminderHoursBefore"
+        sDeadHoursRemAttr.attributeType = .integer64AttributeType
+        sDeadHoursRemAttr.isOptional = true
         
         let sSessRemAttr = NSAttributeDescription()
         sSessRemAttr.name = "sessionReminderMinutesBefore"
@@ -417,10 +422,10 @@ public class CoreDataStack {
             sBreakDurAttr, sNotifAttr, sDailyGoalAlertsEnabledAttr, sDailyAlertAttr,
             sSessionRemindersEnabledAttr, sSessionReminderTimeAttr, sQuizRemAttr,
             sQuizReminderMinutesAfterAttr, sDeadlineAlertsEnabledAttr, sDeadlineAlertAttr,
-            sPrefTimeAttr, sDeadRemAttr, sSessRemAttr, sThemeAttr, sDarkModeEnabledAttr,
-            sWidgetConfigurationAttr, sSiriIntegrationEnabledAttr, sAccFontAttr,
-            sReduceMotionEnabledAttr, sHighContrastEnabledAttr, sHapticAttr, sSoundAttr,
-            sCalSyncAttr, sUpdAttr, sSyncAttr
+            sPrefTimeAttr, sDeadRemAttr, sDeadHoursRemAttr, sSessRemAttr, sThemeAttr,
+            sDarkModeEnabledAttr, sWidgetConfigurationAttr, sSiriIntegrationEnabledAttr,
+            sAccFontAttr, sReduceMotionEnabledAttr, sHighContrastEnabledAttr, sHapticAttr,
+            sSoundAttr, sCalSyncAttr, sUpdAttr, sSyncAttr
         ]
 
         let subjectEntity = NSEntityDescription()
@@ -702,7 +707,6 @@ public class CoreDataStack {
             ptCompletionAttr, ptCompletedAttr, ptGeneratedAtAttr, ptSyncAttr
         ]
         
-        // CDQuizAttempt
         let quizAttemptEntity = NSEntityDescription()
         quizAttemptEntity.name = "CDQuizAttempt"
         quizAttemptEntity.managedObjectClassName = NSStringFromClass(CDQuizAttempt.self)

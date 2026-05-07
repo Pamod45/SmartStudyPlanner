@@ -1,6 +1,7 @@
 import ActivityKit
 import SwiftUI
 import Combine
+
 @MainActor
 final class StudyTimerService: ObservableObject {
     static let shared = StudyTimerService()
@@ -8,6 +9,8 @@ final class StudyTimerService: ObservableObject {
     @Published var activeSession: StudySession? = nil
     @Published var elapsedSeconds: Int = 0
     @Published var isRunning: Bool = false
+
+    private(set) var accumulatedSeconds: Int = 0
 
     private var startDate: Date?
     private var timer: Timer?
@@ -27,32 +30,64 @@ final class StudyTimerService: ObservableObject {
         elapsedSeconds = Int(Date().timeIntervalSince(start))
     }
 
+    var totalElapsedSeconds: Int { accumulatedSeconds + elapsedSeconds }
+
+    var formattedTotal: String { format(totalElapsedSeconds) }
+    var formattedElapsed: String { format(elapsedSeconds) }
+
     func start(session: StudySession) {
+        accumulatedSeconds = 0
+        _startTimer(session: session)
+    }
+    
+    func resume(session: StudySession, previousSeconds: Int) {
+        accumulatedSeconds = previousSeconds
+        _startTimer(session: session)
+    }
+
+    @discardableResult
+    func pause() -> Int {
+        let total = totalElapsedSeconds
+        accumulatedSeconds = total
+        stopInAppTimer()
+        if #available(iOS 16.1, *) { endLiveActivity() }
+        startDate = nil
+        isRunning = false
+        elapsedSeconds = 0
+        return total
+    }
+
+    @discardableResult
+    func complete() -> Int {
+        let total = totalElapsedSeconds
+        _fullReset()
+        return total
+    }
+
+    private func _startTimer(session: StudySession) {
         stopInAppTimer()
         startDate = Date()
         activeSession = session
         isRunning = true
+        elapsedSeconds = 0
         startInAppTimer()
-        if #available(iOS 16.1, *) {
-            startLiveActivity(session: session)
-        }
+        if #available(iOS 16.1, *) { startLiveActivity(session: session) }
     }
-    
-    func stop() -> Int {
-        let elapsed = elapsedSeconds
+
+    private func _fullReset() {
         stopInAppTimer()
         if #available(iOS 16.1, *) { endLiveActivity() }
         startDate = nil
         activeSession = nil
         isRunning = false
         elapsedSeconds = 0
-        return elapsed
+        accumulatedSeconds = 0
     }
 
-    var formattedElapsed: String {
-        let h = elapsedSeconds / 3600
-        let m = (elapsedSeconds % 3600) / 60
-        let s = elapsedSeconds % 60
+    func format(_ seconds: Int) -> String {
+        let h = seconds / 3600
+        let m = (seconds % 3600) / 60
+        let s = seconds % 60
         return h > 0
             ? String(format: "%02d:%02d:%02d", h, m, s)
             : String(format: "%02d:%02d", m, s)

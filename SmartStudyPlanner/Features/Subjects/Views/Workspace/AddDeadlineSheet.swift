@@ -21,7 +21,7 @@ struct AddDeadlineSheet: View {
     @State private var name: String = ""
     @State private var date: Date = .now
     @State private var time: Date = .now
-    @State private var hasReminder: Bool = false
+    @State private var hasReminder: Bool = true
     @State private var isHighPriority: Bool = false
     @State private var notes: String = ""
     @State private var selectedTag: DeadlineTag = .finalExam

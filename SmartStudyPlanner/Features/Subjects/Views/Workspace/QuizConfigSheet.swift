@@ -69,7 +69,7 @@ struct QuizConfigSheet: View {
                     VStack(spacing: theme.spacing.lg) {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: theme.colors.primary))
-                            .scaleEffect(1.4)
+                            .controlSize(.large)
                         Text("Generating quiz questions…")
                             .font(theme.typography.bodyMedium.weight(.semibold))
                             .foregroundColor(theme.colors.textPrimary)

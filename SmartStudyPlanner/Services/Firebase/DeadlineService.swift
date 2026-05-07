@@ -48,6 +48,9 @@ class DeadlineService {
                 CoreDataService.shared.upsertSubject(subject)
             }
         }
+
+        let settings = CoreDataService.shared.getCachedSettings(for: deadline.userId) ?? .default
+        NotificationService.shared.scheduleDeadlineAlert(deadline: synced, settings: settings)
     }
 
     func fetchDeadlines(subjectId: String) async throws -> [Deadline] {
@@ -112,6 +115,9 @@ class DeadlineService {
         var synced = deadline
         synced.syncStatus = .synced
         CoreDataService.shared.upsertDeadline(synced)
+
+        let settings = CoreDataService.shared.getCachedSettings(for: deadline.userId) ?? .default
+        NotificationService.shared.scheduleDeadlineAlert(deadline: synced, settings: settings)
     }
 
     func fetchAllDeadlines(userId: String) async throws -> [Deadline] {
@@ -166,5 +172,7 @@ class DeadlineService {
             subject.updatedAt = Date()
             CoreDataService.shared.upsertSubject(subject)
         }
+
+        NotificationService.shared.cancelNotification(id: "deadline-\(id)")
     }
 }

@@ -10,6 +10,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.theme) var theme
     @EnvironmentObject var sessionViewModel: SessionViewModel
+    @EnvironmentObject var themeManager: ThemeManager
     @StateObject private var vm = SettingsViewModel()
 
     @State private var showStudyGoals: Bool = false
@@ -61,6 +62,8 @@ struct SettingsView: View {
                 NavigationLink(destination: IntegrationsView().environmentObject(vm), isActive: $showIntegrations) { EmptyView() }
                 NavigationLink(destination: SecurityView(), isActive: $showSecurity) { EmptyView() }
                 NavigationLink(destination: AccessibilityView().environmentObject(vm), isActive: $showAccessibility) { EmptyView() }
+                NavigationLink(destination: FAQView(), isActive: $showFAQ) { EmptyView() }
+                NavigationLink(destination: TermsOfServiceView(), isActive: $showTerms) { EmptyView() }
             }
             .hidden()
         )
@@ -158,7 +161,17 @@ struct SettingsView: View {
                 icon: "moon",
                 iconColor: theme.colors.textSecondary,
                 title: "Dark mode",
-                isOn: vm.binding(for: \.darkModeEnabled)
+                isOn: Binding(
+                    get: { vm.settings.darkModeEnabled },
+                    set: { newValue in
+                        vm.updateSettings { $0.darkModeEnabled = newValue }
+                        themeManager.update(
+                            highContrast: vm.settings.highContrastEnabled,
+                            darkMode: newValue,
+                            fontSize: vm.settings.accessibilityFontSize
+                        )
+                    }
+                )
             ))
         ])
     }

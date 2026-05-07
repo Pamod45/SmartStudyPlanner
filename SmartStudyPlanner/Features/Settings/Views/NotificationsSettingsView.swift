@@ -6,23 +6,35 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 struct NotificationsSettingsView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var vm: SettingsViewModel
 
+    @State private var authStatus: UNAuthorizationStatus = .notDetermined
+
+    private let sessionMinuteOptions: [(label: String, minutes: Int)] = [
+        ("5 min before",  5),
+        ("10 min before", 10),
+        ("30 min before", 30),
+        ("1 hour before", 60)
+    ]
+
     private let quizOptions: [(label: String, minutes: Int)] = [
         ("Immediately", 0),
-        ("5 min after", 5),
+        ("5 min after",  5),
         ("15 min after", 15),
         ("30 min after", 30)
     ]
-    private let deadlineOptions: [(label: String, days: Int)] = [
-        ("Same Day", 0),
-        ("1 Day Before", 1),
-        ("2 Days Before", 2),
-        ("1 Week Before", 7)
+
+    private let deadlineHourOptions: [(label: String, hours: Int)] = [
+        ("1 hour before",  1),
+        ("3 hours before", 3),
+        ("24 hours before (1 day)", 24),
+        ("3 days before", 72),
+        ("1 week before", 168)
     ]
 
     var body: some View {
@@ -36,34 +48,31 @@ struct NotificationsSettingsView: View {
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: theme.spacing.md) {
-                        FieldSection(title: "DAILY GOALS") {
-                            settingsCard([
-                                AnyView(toggleRow(title: "Daily Goal Alerts", isOn: vm.binding(for: \.dailyGoalAlertsEnabled))),
-                                AnyView(timeRow(title: "Preferred Alert Time", time: vm.binding(for: \.dailyGoalAlertTime)))
-                            ])
+
+                        if authStatus == .denied {
+                            permissionDeniedBanner
                         }
-                        captionText("Receive a daily reminder to complete your study goals")
 
                         FieldSection(title: "STUDY SESSIONS") {
                             settingsCard([
                                 AnyView(toggleRow(title: "Session Reminders", isOn: vm.binding(for: \.sessionRemindersEnabled))),
-                                AnyView(timeRow(title: "Reminder Time", time: vm.binding(for: \.sessionReminderTime)))
+                                AnyView(menuRow(
+                                    title: "Remind Me",
+                                    options: sessionMinuteOptions.map { $0.label },
+                                    selected: sessionReminderLabel
+                                ))
                             ])
                         }
-                        captionText("Get notified before when you need to start studying")
-
-                        FieldSection(title: "QUIZZES") {
-                            settingsCard([
-                                AnyView(toggleRow(title: "Pending Quiz Reminders", isOn: vm.binding(for: \.quizzesPendingReminders))),
-                                AnyView(menuRow(title: "Remind Me", options: quizOptions.map { $0.label }, selected: quizReminderLabel))
-                            ])
-                        }
-                        captionText("Reminders to test your knowledge after a study session")
+                        captionText("Get notified before your session starts")
 
                         FieldSection(title: "DEADLINE") {
                             settingsCard([
                                 AnyView(toggleRow(title: "Deadline Alerts", isOn: vm.binding(for: \.deadlineAlertsEnabled))),
-                                AnyView(menuRow(title: "Alert Time", options: deadlineOptions.map { $0.label }, selected: deadlineReminderLabel))
+                                AnyView(menuRow(
+                                    title: "Alert Me",
+                                    options: deadlineHourOptions.map { $0.label },
+                                    selected: deadlineHourLabel
+                                ))
                             ])
                         }
                         captionText("Don't miss any upcoming exam or assignment")
@@ -74,6 +83,9 @@ struct NotificationsSettingsView: View {
             }
         }
         .navigationBarHidden(true)
+        .task {
+            authStatus = await NotificationService.shared.checkAuthorizationStatus()
+        }
     }
 
     private var header: some View {
@@ -86,6 +98,41 @@ struct NotificationsSettingsView: View {
             Spacer()
             RoundedIconButton(icon: "chevron.left") {}.opacity(0)
         }
+    }
+
+
+    private var permissionDeniedBanner: some View {
+        HStack(spacing: theme.spacing.md) {
+            Image(systemName: "bell.slash.fill")
+                .font(.system(size: 22))
+                .foregroundColor(.orange)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Notifications Disabled")
+                    .font(theme.typography.bodyLarge.weight(.semibold))
+                    .foregroundColor(theme.colors.textPrimary)
+                Text("Enable notifications in iOS Settings to receive alerts.")
+                    .font(theme.typography.caption)
+                    .foregroundColor(theme.colors.textSecondary)
+            }
+
+            Spacer()
+
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            .font(theme.typography.caption.weight(.semibold))
+            .foregroundColor(.orange)
+        }
+        .padding(theme.spacing.md)
+        .background(Color.orange.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
+        .overlay(
+            RoundedRectangle(cornerRadius: theme.radius.xl)
+                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+        )
     }
 
     private func settingsCard(_ rows: [AnyView]) -> some View {
@@ -161,6 +208,21 @@ struct NotificationsSettingsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+
+    private var sessionReminderLabel: Binding<String> {
+        Binding(
+            get: {
+                sessionMinuteOptions.first(where: { $0.minutes == vm.settings.sessionReminderMinutesBefore })?.label
+                    ?? sessionMinuteOptions[2].label  // default: 30 min
+            },
+            set: { newValue in
+                if let minutes = sessionMinuteOptions.first(where: { $0.label == newValue })?.minutes {
+                    vm.updateSettings { $0.sessionReminderMinutesBefore = minutes }
+                }
+            }
+        )
+    }
+
     private var quizReminderLabel: Binding<String> {
         Binding(
             get: {
@@ -174,14 +236,15 @@ struct NotificationsSettingsView: View {
         )
     }
 
-    private var deadlineReminderLabel: Binding<String> {
+    private var deadlineHourLabel: Binding<String> {
         Binding(
             get: {
-                deadlineOptions.first(where: { $0.days == vm.settings.deadlineReminderDaysBefore })?.label ?? deadlineOptions[0].label
+                deadlineHourOptions.first(where: { $0.hours == vm.settings.deadlineReminderHoursBefore })?.label
+                    ?? deadlineHourOptions[2].label  // default: 24 hours
             },
             set: { newValue in
-                if let days = deadlineOptions.first(where: { $0.label == newValue })?.days {
-                    vm.updateSettings { $0.deadlineReminderDaysBefore = days }
+                if let hours = deadlineHourOptions.first(where: { $0.label == newValue })?.hours {
+                    vm.updateSettings { $0.deadlineReminderHoursBefore = hours }
                 }
             }
         )

@@ -111,6 +111,8 @@ class SettingsViewModel: ObservableObject {
             synced.syncStatus = .synced
             settings = synced
             CoreDataService.shared.cacheSettings(synced)
+
+            NotificationService.shared.rescheduleDailyGoalAlert(settings: synced)
         } catch {
         }
     }
@@ -128,7 +130,6 @@ class SettingsViewModel: ObservableObject {
         updated.username = settingsUser.username
         
         if let avatar = settingsUser.avatarImage {
-            // Save the image locally and get the relative path
             let fileName = "avatar_\(updated.id).jpg"
             if let url = Self.localImageURL(for: fileName), let data = avatar.jpegData(compressionQuality: 0.8) {
                 do {
@@ -142,14 +143,10 @@ class SettingsViewModel: ObservableObject {
         
         do {
             try await UserService.shared.updateProfile(user: updated)
-            // also trigger a cache refresh here
         } catch {
             print("Error saving profile: \(error)")
         }
         
-        // Example: Save UserSettings to Core Data and Firebase
-        // CoreDataService.shared.cacheSettings(self.settings)
-        // try? await UserService.shared.updateSettings(self.settings)
     }
 
     func updateUser(_ user: SettingsUser) {
@@ -159,10 +156,8 @@ class SettingsViewModel: ObservableObject {
         }
     }
 
-    // Helper to get local document directory
     static func localImageURL(for path: String) -> URL? {
         guard let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
-        // If the path is somehow already an absolute string, or just a filename
         let filename = (path as NSString).lastPathComponent
         return documents.appendingPathComponent(filename)
     }

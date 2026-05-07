@@ -13,13 +13,30 @@ class ProgressViewModel: ObservableObject {
     @Published private var allAttempts: [QuizAttempt] = []
     @Published private var allResources: [Resource] = []
 
+    private var userId: String = ""
+    private var userSettings: UserSettings?
+
+    private var thisWeekSessions: [StudySession] {
+        let cal = Calendar.current
+        let weekStart = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())) ?? Date()
+        return completedSessions.filter { $0.scheduledDate >= weekStart }
+    }
+
+    private var perSubjectWeeklyTargetHours: Double {
+        let daily = userSettings?.dailyStudyGoalHours ?? 3.0
+        let count = max(subjects.filter { !$0.isArchived }.count, 1)
+        return (daily * 7.0) / Double(count)
+    }
+
     var stats: [StatItem] {
-        let totalMinutes = completedSessions.reduce(0) {
+        let weekly = thisWeekSessions
+        let totalMinutes = weekly.reduce(0) {
             $0 + ($1.actualDurationMinutes ?? $1.durationMinutes)
         }
         let totalHours = Double(totalMinutes) / 60.0
-        let sessionCount = completedSessions.count
-        let ratedSessions = completedSessions.compactMap(\.rating)
+        let sessionCount = weekly.count
+        let goalHours = (userSettings?.dailyStudyGoalHours ?? 3.0) * 7.0
+        let ratedSessions = weekly.compactMap(\.rating)
         let avgRating = ratedSessions.isEmpty
             ? nil
             : Double(ratedSessions.reduce(0, +)) / Double(ratedSessions.count)
@@ -29,9 +46,9 @@ class ProgressViewModel: ObservableObject {
                 icon: "clock.fill",
                 iconColor: .blue,
                 value: String(format: "%.1f", totalHours),
-                label: "TOTAL HOURS",
-                badge: totalHours >= 1 ? "hrs" : nil,
-                badgeColor: .blue
+                label: "HRS THIS WEEK",
+                badge: String(format: "/ %.0fh goal", goalHours),
+                badgeColor: totalHours >= goalHours ? .green : .blue
             ),
             StatItem(
                 icon: "checkmark.circle.fill",
@@ -57,14 +74,14 @@ class ProgressViewModel: ObservableObject {
     }
 
     var subjectProgressItems: [SubjectProgress] {
-        subjects.filter { !$0.isArchived }.map { subject in
-            let subjectSessions = completedSessions.filter { $0.subjectId == subject.id }
-            let hoursStudied = Double(subjectSessions.reduce(0) {
+        let weeklyTarget = perSubjectWeeklyTargetHours
+        return subjects.filter { !$0.isArchived }.map { subject in
+            let weekSessions = thisWeekSessions.filter { $0.subjectId == subject.id }
+            let hoursStudied = Double(weekSessions.reduce(0) {
                 $0 + ($1.actualDurationMinutes ?? $1.durationMinutes)
             }) / 60.0
 
-            let target = max(subject.targetHoursPerWeek, 1.0)
-            let sessionComponent = min(hoursStudied / target, 1.0)
+            let sessionComponent = min(hoursStudied / max(weeklyTarget, 1.0), 1.0)
 
             let subjectAttempts = allAttempts.filter { $0.subjectId == subject.id }
             let mastery: Double
@@ -83,7 +100,7 @@ class ProgressViewModel: ObservableObject {
             default:      status = .needsFocus
             }
 
-            let subtitle = String(format: "%.1fh / %.0fh weekly", hoursStudied, subject.targetHoursPerWeek)
+            let subtitle = String(format: "%.1fh / %.0fh this week", hoursStudied, weeklyTarget)
 
             return SubjectProgress(
                 name: subject.name,
@@ -102,23 +119,35 @@ class ProgressViewModel: ObservableObject {
         let byWeekday = Dictionary(grouping: completedSessions) {
             cal.component(.weekday, from: $0.scheduledDate)
         }
-        if let best = byWeekday.max(by: { $0.value.count < $1.value.count }) {
+        if let best = byWeekday.max(by: {
+            let minsA = $0.value.reduce(0) { $0 + ($1.actualDurationMinutes ?? $1.durationMinutes) }
+            let minsB = $1.value.reduce(0) { $0 + ($1.actualDurationMinutes ?? $1.durationMinutes) }
+            return minsA < minsB
+        }) {
+            let totalMins = best.value.reduce(0) { $0 + ($1.actualDurationMinutes ?? $1.durationMinutes) }
+            let avgHours = Double(totalMins) / 60.0 / Double(best.value.count)
             let dayName = cal.weekdaySymbols[best.key - 1]
             items.append(InsightItem(
                 tag: "PEAK DAY",
                 tagColor: .blue,
                 title: "\(dayName)s are your strongest",
-                body: "You complete \(best.value.count) sessions on \(dayName)s. Consider scheduling harder topics on this day.",
+                body: String(format: "You average %.1fh of study on \(dayName)s. Consider scheduling harder topics on this day.", avgHours),
                 icon: "calendar.badge.clock"
             ))
         }
 
-        if let top = subjectProgressItems.first, top.mastery > 0 {
+        let bySubject = Dictionary(grouping: thisWeekSessions, by: \.subjectId)
+        if let topEntry = bySubject.max(by: {
+            let minsA = $0.value.reduce(0) { $0 + ($1.actualDurationMinutes ?? $1.durationMinutes) }
+            let minsB = $1.value.reduce(0) { $0 + ($1.actualDurationMinutes ?? $1.durationMinutes) }
+            return minsA < minsB
+        }), let firstSession = topEntry.value.first {
+            let hours = Double(topEntry.value.reduce(0) { $0 + ($1.actualDurationMinutes ?? $1.durationMinutes) }) / 60.0
             items.append(InsightItem(
                 tag: "TOP SUBJECT",
                 tagColor: .green,
-                title: "\(top.name) is leading",
-                body: "Your mastery in \(top.name) is at \(Int(top.mastery * 100))%. Keep the momentum going.",
+                title: "\(firstSession.subjectName) leading this week",
+                body: String(format: "You've put in %.1fh on \(firstSession.subjectName) this week — your most studied subject.", hours),
                 icon: "star.fill"
             ))
         }
@@ -224,6 +253,9 @@ class ProgressViewModel: ObservableObject {
         guard let uid = userId, !uid.isEmpty else { return }
         isLoading = true
         defer { isLoading = false }
+
+        self.userId = uid
+        userSettings = CoreDataService.shared.getCachedSettings(for: uid)
 
         async let sessionsFetch = StudySessionService.shared.fetchAll(userId: uid)
         async let subjectsFetch = SubjectService.shared.fetchSubjects(userId: uid)

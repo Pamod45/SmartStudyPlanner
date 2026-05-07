@@ -102,7 +102,7 @@ struct SubjectWorkspaceView: View {
                     VStack(spacing: theme.spacing.lg) {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: theme.colors.primary))
-                            .scaleEffect(1.5)
+                            .controlSize(.large)
                         
                         Text(generationProgressText)
                             .font(theme.typography.bodyMedium.weight(.semibold))
@@ -324,8 +324,6 @@ struct SubjectWorkspaceView: View {
                 }
                 
                 print("DEBUG: Starting LLM generation...")
-//                let topics = try await
-//                StudyContentOrchestrator.shared.buildStudyPath(from: combinedText)
                 let topics = try await StudyContentOrchestrator.shared.buildStudyPath(from: combinedText)
 
                 await MainActor.run {

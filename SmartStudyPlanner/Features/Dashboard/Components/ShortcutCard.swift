@@ -38,6 +38,7 @@ struct ShortcutCard: View {
             .background(theme.colors.surface)
             .cornerRadius(theme.radius.xl)
         }
+        .accessibilityLabel("Shortcut: \(shortcut.title)")
     }
 }
 

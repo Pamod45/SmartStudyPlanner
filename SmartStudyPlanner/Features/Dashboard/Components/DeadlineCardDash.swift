@@ -48,5 +48,10 @@ struct DeadlineCard: View {
         .padding(theme.spacing.md)
         .background(theme.colors.surface)
         .cornerRadius(theme.radius.xl)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Deadline: \(deadline.name)")
+        .accessibilityValue("Due on \(deadline.month) \(deadline.day), \(deadline.formattedDate)")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { action() }
     }
 }

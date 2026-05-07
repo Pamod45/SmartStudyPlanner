@@ -136,16 +136,6 @@ struct StudyPlanView: View {
                 TextButton(title: "Create Plan", icon: "sparkles", style: .bold) {
                     showCreateStudyPlan = true
                 }
-
-                if !vm.studySessions.isEmpty {
-                    Button {
-                        vm.syncAllToCalendar()
-                    } label: {
-                        Image(systemName: "calendar.badge.plus")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(theme.colors.primary)
-                    }
-                }
             }
         }
     }
@@ -179,7 +169,6 @@ struct StudyPlanView: View {
     }
 
     private func sessions(for slot: AvailabilitySlot) -> [StudySession] {
-        // Resolve which calendar day to filter on
         let slotDate: Date
         switch slot.type {
         case .specificDate:

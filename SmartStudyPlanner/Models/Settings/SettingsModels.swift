@@ -23,10 +23,11 @@ struct UserSettings: Codable, Syncable {
     var quizReminderMinutesAfter: Int
     var deadlineAlertsEnabled: Bool
     var deadlineAlertTime: Date
-    var preferredStudyTime: String // e.g. "Morning", "Evening"
+    var preferredStudyTime: String
     
     var deadlineReminderDaysBefore: Int
-    var sessionReminderMinutesBefore: Int
+    var deadlineReminderHoursBefore: Int
+    var sessionReminderMinutesBefore: Int       
     var theme: AppThemePreference
     var darkModeEnabled: Bool
     var widgetConfiguration: String
@@ -58,7 +59,8 @@ struct UserSettings: Codable, Syncable {
             deadlineAlertsEnabled: true,
             deadlineAlertTime: Self.timeToday(hour: 18, minute: 0),
             preferredStudyTime: "Morning",
-            deadlineReminderDaysBefore: 3,
+            deadlineReminderDaysBefore: 1,
+            deadlineReminderHoursBefore: 24,
             sessionReminderMinutesBefore: 15,
             theme: .system,
             darkModeEnabled: true,
@@ -92,7 +94,8 @@ struct UserSettings: Codable, Syncable {
         deadlineAlertsEnabled: Bool = true,
         deadlineAlertTime: Date = UserSettings.timeToday(hour: 18, minute: 0),
         preferredStudyTime: String = "Morning",
-        deadlineReminderDaysBefore: Int = 3,
+        deadlineReminderDaysBefore: Int = 1,
+        deadlineReminderHoursBefore: Int = 24,
         sessionReminderMinutesBefore: Int = 15,
         theme: AppThemePreference = .system,
         darkModeEnabled: Bool = true,
@@ -124,6 +127,7 @@ struct UserSettings: Codable, Syncable {
         self.deadlineAlertTime = deadlineAlertTime
         self.preferredStudyTime = preferredStudyTime
         self.deadlineReminderDaysBefore = deadlineReminderDaysBefore
+        self.deadlineReminderHoursBefore = deadlineReminderHoursBefore
         self.sessionReminderMinutesBefore = sessionReminderMinutesBefore
         self.theme = theme
         self.darkModeEnabled = darkModeEnabled
@@ -163,6 +167,7 @@ struct UserSettings: Codable, Syncable {
             "deadlineAlertTime": deadlineTime,
             "preferredStudyTime": preferredStudyTime,
             "deadlineReminderDaysBefore": deadlineReminderDaysBefore,
+            "deadlineReminderHoursBefore": deadlineReminderHoursBefore,
             "sessionReminderMinutesBefore": sessionReminderMinutesBefore,
             "theme": theme.rawValue,
             "darkModeEnabled": darkModeEnabled,
@@ -192,7 +197,8 @@ struct UserSettings: Codable, Syncable {
         let quizReminderMinutesAfter = data["quizReminderMinutesAfter"] as? Int ?? Int((data["quizReminderMinutesAfter"] as? Int64) ?? 0)
         let deadlineAlertsEnabled = data["deadlineAlertsEnabled"] as? Bool ?? true
         let preferredStudyTime = data["preferredStudyTime"] as? String ?? "Morning"
-        let deadlineReminderDaysBefore = data["deadlineReminderDaysBefore"] as? Int ?? Int((data["deadlineReminderDaysBefore"] as? Int64) ?? 3)
+        let deadlineReminderDaysBefore = data["deadlineReminderDaysBefore"] as? Int ?? Int((data["deadlineReminderDaysBefore"] as? Int64) ?? 1)
+        let deadlineReminderHoursBefore = data["deadlineReminderHoursBefore"] as? Int ?? Int((data["deadlineReminderHoursBefore"] as? Int64) ?? 24)
         let sessionReminderMinutesBefore = data["sessionReminderMinutesBefore"] as? Int ?? Int((data["sessionReminderMinutesBefore"] as? Int64) ?? 15)
         let theme = AppThemePreference(rawValue: data["theme"] as? String ?? "") ?? .system
         let darkModeEnabled = data["darkModeEnabled"] as? Bool ?? true
@@ -236,6 +242,7 @@ struct UserSettings: Codable, Syncable {
             deadlineAlertTime: deadlineTime,
             preferredStudyTime: preferredStudyTime,
             deadlineReminderDaysBefore: deadlineReminderDaysBefore,
+            deadlineReminderHoursBefore: deadlineReminderHoursBefore,
             sessionReminderMinutesBefore: sessionReminderMinutesBefore,
             theme: theme,
             darkModeEnabled: darkModeEnabled,

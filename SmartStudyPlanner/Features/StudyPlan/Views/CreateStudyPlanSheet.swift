@@ -330,7 +330,7 @@ struct CreateStudyPlanSheet: View {
             VStack(spacing: theme.spacing.lg) {
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle(tint: theme.colors.primary))
-                    .scaleEffect(1.4)
+                    .controlSize(.large)
                 Text("Building your schedule…")
                     .font(theme.typography.bodyMedium)
                     .fontWeight(.semibold)
@@ -345,7 +345,6 @@ struct CreateStudyPlanSheet: View {
         .animation(.easeInOut, value: isScheduling)
     }
 
-    // MARK: - Plan creation
 
     private func createPlan() {
         let entries = buildEntries()

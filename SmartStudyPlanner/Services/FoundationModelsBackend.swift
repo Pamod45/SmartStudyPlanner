@@ -9,14 +9,12 @@ import Foundation
 import FoundationModels
 import Combine
 
-@available(iOS 26.0, *)
 @Generable
 struct FMStudyPathResponse {
     @Guide(description: "Ordered list of study topics covering the material")
     var topics: [FMTopic]
 }
 
-@available(iOS 26.0, *)
 @Generable
 struct FMTopic {
     @Guide(description: "Topic number starting from 1")
@@ -35,14 +33,12 @@ struct FMTopic {
     var weightPercent: Int
 }
 
-@available(iOS 26.0, *)
 @Generable
 struct FMQuizResponse {
     @Guide(description: "List of quiz question-answer pairs")
     var items: [FMQuizItem]
 }
 
-@available(iOS 26.0, *)
 @Generable
 struct FMQuizItem {
     @Guide(description: "A clear, specific question about the topic")
@@ -55,14 +51,12 @@ struct FMQuizItem {
     var keyword: String
 }
 
-@available(iOS 26.0, *)
 @Generable
 struct FMQuizQuestionsResponse {
     @Guide(description: "Ordered list of multiple-choice quiz questions")
     var questions: [FMQuizQuestion]
 }
 
-@available(iOS 26.0, *)
 @Generable
 struct FMQuizQuestion {
     @Guide(description: "The question text")
@@ -84,7 +78,6 @@ struct FMQuizQuestion {
     var keyword: String
 }
 
-@available(iOS 26.0, *)
 struct FoundationModelsBackend: StudyLLMBackend {
 
     func generateStudyPath(from text: String, topicCount: Int) async throws -> GeneratedStudyPath {

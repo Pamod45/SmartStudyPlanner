@@ -76,6 +76,9 @@ class CoreDataService {
                     deadlineAlertTime: cdSettings.deadlineAlertTime,
                     preferredStudyTime: cdSettings.preferredStudyTime,
                     deadlineReminderDaysBefore: cdSettings.deadlineReminderDaysBefore,
+                    deadlineReminderHoursBefore: cdSettings.deadlineReminderHoursBefore == 0
+                        ? 24                                       
+                        : cdSettings.deadlineReminderHoursBefore,
                     sessionReminderMinutesBefore: cdSettings.sessionReminderMinutesBefore,
                     theme: AppThemePreference(rawValue: cdSettings.theme) ?? .system,
                     darkModeEnabled: cdSettings.darkModeEnabled,
@@ -128,6 +131,7 @@ class CoreDataService {
         cdSettings.deadlineAlertTime = settings.deadlineAlertTime
         cdSettings.preferredStudyTime = settings.preferredStudyTime
         cdSettings.deadlineReminderDaysBefore = settings.deadlineReminderDaysBefore
+        cdSettings.deadlineReminderHoursBefore = settings.deadlineReminderHoursBefore
         cdSettings.sessionReminderMinutesBefore = settings.sessionReminderMinutesBefore
         cdSettings.theme = settings.theme.rawValue
         cdSettings.darkModeEnabled = settings.darkModeEnabled

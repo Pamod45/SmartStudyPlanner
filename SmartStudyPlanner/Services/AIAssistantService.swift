@@ -1,9 +1,5 @@
-//
-//  AIAssistantService.swift
-//  SmartStudyPlanner
-//
-import Combine
 import Foundation
+import FoundationModels
 
 struct ChatMessage: Identifiable {
     let id = UUID()
@@ -53,12 +49,20 @@ enum ChatContext: Identifiable, Equatable {
     static func == (lhs: ChatContext, rhs: ChatContext) -> Bool { lhs.id == rhs.id }
 }
 
-final class AIAssistantService {
+
+actor AIAssistantService {
     static let shared = AIAssistantService()
     private init() {}
 
+    private var sessions: [String: LanguageModelSession] = [:]
+
     private let serverURL = URL(string: "http://192.168.1.21:8080/v1/chat/completions")!
     private let timeoutInterval: TimeInterval = 120
+
+    nonisolated var isUsingOnDeviceModel: Bool {
+        if case .available = SystemLanguageModel.default.availability { return true }
+        return false
+    }
 
 
     func resolveContext(
@@ -67,18 +71,118 @@ final class AIAssistantService {
         studyPath: StudyPath?
     ) async -> String {
         switch context {
-
         case .allDocs:
             let text = (try? await ContentExtractionService.shared.extractText(from: allResources)) ?? ""
             let topicText = (studyPath?.topics ?? []).map { topicSummary($0) }.joined(separator: "\n\n")
             return [text, topicText].filter { !$0.isEmpty }.joined(separator: "\n\n")
-
         case .resource(let resource):
             return (try? await ContentExtractionService.shared.extractText(from: resource)) ?? resource.name
-
         case .topic(let topic):
             return topicSummary(topic)
         }
+    }
+
+
+    func clearSession(for contextId: String) {
+        sessions.removeValue(forKey: contextId)
+    }
+
+    func send(
+        userMessage: String,
+        contextText: String,
+        subjectName: String,
+        contextId: String,
+        history: [ChatMessage]
+    ) async throws -> String {
+//        if case .available = SystemLanguageModel.default.availability {
+//            return try await sendViaFoundationModel(
+//                userMessage: userMessage,
+//                contextText: contextText,
+//                subjectName: subjectName,
+//                contextId: contextId
+//            )
+//        }
+        return try await sendViaHTTP(
+            userMessage: userMessage,
+            contextText: contextText,
+            subjectName: subjectName,
+            history: history
+        )
+    }
+
+
+    private func sendViaFoundationModel(
+        userMessage: String,
+        contextText: String,
+        subjectName: String,
+        contextId: String
+    ) async throws -> String {
+
+        let session: LanguageModelSession
+        if let cached = sessions[contextId] {
+            session = cached
+        } else {
+            session = LanguageModelSession(
+                instructions: systemPrompt(subjectName: subjectName, contextText: contextText)
+            )
+            sessions[contextId] = session
+        }
+
+        let response = try await session.respond(to: userMessage)
+        return response.content
+    }
+
+
+    private func sendViaHTTP(
+        userMessage: String,
+        contextText: String,
+        subjectName: String,
+        history: [ChatMessage]
+    ) async throws -> String {
+        var messages: [[String: String]] = [
+            ["role": "system", "content": systemPrompt(subjectName: subjectName, contextText: contextText)]
+        ]
+        for msg in history.suffix(10) {
+            guard msg.role != .error else { continue }
+            messages.append(["role": msg.role == .user ? "user" : "assistant", "content": msg.content])
+        }
+        messages.append(["role": "user", "content": userMessage])
+
+        let body: [String: Any] = ["messages": messages, "temperature": 0.5, "max_tokens": 1024]
+
+        var request = URLRequest(url: serverURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = timeoutInterval
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw URLError(.badServerResponse, userInfo: [NSLocalizedDescriptionKey: "Server returned \(code)"])
+        }
+        guard
+            let json    = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let choices = json["choices"] as? [[String: Any]],
+            let message = choices.first?["message"] as? [String: Any],
+            let content = message["content"] as? String
+        else { throw URLError(.cannotParseResponse) }
+
+        return content.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+
+    private func systemPrompt(subjectName: String, contextText: String) -> String {
+        """
+        You are a helpful AI study assistant for the subject "\(subjectName)".
+        Answer questions clearly and concisely based on the study material provided below.
+        If the answer is not in the material, say so honestly rather than guessing.
+        Be encouraging and student-friendly.
+
+        --- STUDY MATERIAL ---
+        \(String(contextText.prefix(8000)))
+        --- END OF MATERIAL ---
+        """
     }
 
     private func topicSummary(_ topic: StudyPathTopic) -> String {
@@ -86,61 +190,5 @@ final class AIAssistantService {
         if !topic.description.isEmpty { parts.append("Overview: \(topic.description)") }
         if !topic.subtopics.isEmpty   { parts.append("Key concepts: \(topic.subtopics.joined(separator: ", "))") }
         return parts.joined(separator: "\n")
-    }
-
-    func send(
-        userMessage: String,
-        contextText: String,
-        subjectName: String,
-        history: [ChatMessage]
-    ) async throws -> String {
-
-        let system = """
-        You are a helpful AI study assistant for the subject "\(subjectName)".
-        Answer questions clearly and concisely based on the study material provided below.
-        If the answer is not in the material, say so honestly rather than guessing.
-        Be encouraging and student-friendly.
-
-        --- STUDY MATERIAL ---
-        \(String(contextText.prefix(6000)))
-        --- END OF MATERIAL ---
-        """
-        
-        var messages: [[String: String]] = [["role": "system", "content": system]]
-        for msg in history.suffix(10) {
-            guard msg.role != .error else { continue }
-            messages.append(["role": msg.role == .user ? "user" : "assistant", "content": msg.content])
-        }
-        messages.append(["role": "user", "content": userMessage])
-
-        let body: [String: Any] = [
-            "messages":   messages,
-            "temperature": 0.5,
-            "max_tokens":  1024
-        ]
-
-        var request = URLRequest(url: serverURL)
-        request.httpMethod  = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = timeoutInterval
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            let code = (response as? HTTPURLResponse)?.statusCode ?? -1
-            throw URLError(.badServerResponse, userInfo: [NSLocalizedDescriptionKey: "Server returned \(code)"])
-        }
-
-        guard
-            let json    = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let choices = json["choices"] as? [[String: Any]],
-            let message = choices.first?["message"] as? [String: Any],
-            let content = message["content"] as? String
-        else {
-            throw URLError(.cannotParseResponse)
-        }
-
-        return content.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

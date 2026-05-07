@@ -25,15 +25,23 @@ struct NotificationCard: View {
             VStack (alignment: .leading, spacing: theme.spacing.sm ) {
                 HStack {
                     Text(notification.title)
-                        .font(theme.typography.headingMedium.weight(.bold))
+                        .font(theme.typography.headingSmall.weight(.bold))
                         .foregroundColor(theme.colors.textPrimary)
                         .lineLimit(1)
                     
                     Spacer()
                     
-                    Text(notification.dateString)
-                        .font(theme.typography.label)
-                        .foregroundColor(theme.colors.textSecondary)
+                    HStack(spacing: theme.spacing.xs) {
+                        Text(notification.dateString)
+                            .font(theme.typography.label)
+                            .foregroundColor(theme.colors.textSecondary)
+                        
+                        if !notification.isRead {
+                            Circle()
+                                .fill(Color.blue)
+                                .frame(width: 8, height: 8)
+                        }
+                    }
                 }
                 Text(notification.message)
                         .font(theme.typography.bodyMedium)
@@ -47,5 +55,9 @@ struct NotificationCard: View {
         .padding(theme.spacing.lg)
         .background(theme.colors.surface)
         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Notification: \(notification.title)")
+        .accessibilityValue("\(notification.message). \(notification.isRead ? "Read" : "Unread"). Time: \(notification.dateString)")
+        .accessibilityHint("Double tap to view details")
     }
 }

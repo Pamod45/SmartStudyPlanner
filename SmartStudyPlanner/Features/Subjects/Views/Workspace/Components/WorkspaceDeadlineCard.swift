@@ -64,6 +64,7 @@ struct WorkspaceDeadlineCard: View {
             .background(theme.colors.surface)
             .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
         }
+        .accessibilityLabel("Deadline: \(deadline.name). Tag: \(deadline.tag.rawValue). Due on \(deadline.formattedDate)")
         .buttonStyle(.plain)
         .contextMenu {
             Button(role: .destructive) {

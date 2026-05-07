@@ -5,9 +5,10 @@ import SwiftUI
 class DashboardViewModel: ObservableObject {
     @Published var upcomingSessions: [StudySession] = []
     @Published var upcomingDeadlines: [Deadline] = []
-    @Published var notifications: [AppNotification] = []
     @Published var recentSubjects: [Subject] = []
     @Published var isLoading: Bool = false
+
+    var notifications: [AppNotification] { NotificationStore.shared.notifications }
 
     let shortcuts: [Shortcut] = [
         Shortcut(title: "SCAN NOTES",       icon: "doc.viewfinder",      color: .blue),
@@ -26,17 +27,25 @@ class DashboardViewModel: ObservableObject {
         async let deadlinesFetch = DeadlineService.shared.fetchAllDeadlines(userId: userId)
 
         let subjects  = (try? await subjectsFetch)  ?? []
-        let sessions  = (try? await sessionsFetch)  ?? []
+        var sessions  = (try? await sessionsFetch)  ?? []
         let deadlines = (try? await deadlinesFetch) ?? []
 
-        let today       = Calendar.current.startOfDay(for: Date())
+        let now         = Date()
+        let today       = Calendar.current.startOfDay(for: now)
         let weekFromNow = Calendar.current.date(byAdding: .day, value: 7, to: today)!
 
         recentSubjects = subjects
 
+        sessions = await autoResolvePastSessions(sessions, now: now)
+
         upcomingSessions = Array(
             sessions
-                .filter { $0.status != .completed && $0.scheduledDate >= today && $0.scheduledDate <= weekFromNow }
+                .filter { session in
+                    guard session.status == .scheduled || session.status == .inProgress else { return false }
+                    guard session.endTime > now else { return false }
+                    if session.status == .inProgress { return true }
+                    return session.scheduledDate >= today && session.scheduledDate <= weekFromNow
+                }
                 .sorted { $0.scheduledDate < $1.scheduledDate }
                 .prefix(5)
         )
@@ -47,5 +56,39 @@ class DashboardViewModel: ObservableObject {
                 .sorted { $0.dueDate < $1.dueDate }
                 .prefix(5)
         )
+    }
+
+
+    private func autoResolvePastSessions(_ sessions: [StudySession], now: Date) async -> [StudySession] {
+        var updated = sessions
+        var toSave: [StudySession] = []
+
+        for i in updated.indices {
+            guard updated[i].endTime < now else { continue }
+            switch updated[i].status {
+            case .scheduled:
+                updated[i].status = .skipped
+                updated[i].updatedAt = now
+                toSave.append(updated[i])
+            case .inProgress:
+                updated[i].status = .completed
+                updated[i].updatedAt = now
+                toSave.append(updated[i])
+            default:
+                break
+            }
+        }
+
+        for session in toSave {
+            try? await StudySessionService.shared.update(session)
+            if session.status == .completed {
+                if let userId = session.userId.isEmpty ? nil : session.userId {
+                    let settings = CoreDataService.shared.getCachedSettings(for: userId) ?? .default
+                    NotificationService.shared.scheduleQuizReminder(for: session, settings: settings)
+                }
+            }
+        }
+
+        return updated
     }
 }

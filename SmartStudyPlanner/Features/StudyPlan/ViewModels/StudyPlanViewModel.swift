@@ -170,6 +170,8 @@ class StudyPlanViewModel: ObservableObject {
                 }
                 await MainActor.run {
                     self.replaceStudySession(synced)
+                    let settings = CoreDataService.shared.getCachedSettings(for: self.currentUserId) ?? .default
+                    NotificationService.shared.scheduleSessionReminder(session: synced, settings: settings)
                 }
             } catch {
             }
@@ -204,6 +206,8 @@ class StudyPlanViewModel: ObservableObject {
                 }
                 await MainActor.run {
                     synced.forEach { self.replaceStudySession($0) }
+                    let settings = CoreDataService.shared.getCachedSettings(for: self.currentUserId) ?? .default
+                    synced.forEach { NotificationService.shared.scheduleSessionReminder(session: $0, settings: settings) }
                 }
             } catch {
             }
@@ -226,6 +230,8 @@ class StudyPlanViewModel: ObservableObject {
                 try await StudySessionService.shared.update(synced)
                 await MainActor.run {
                     self.replaceStudySession(synced)
+                    let settings = CoreDataService.shared.getCachedSettings(for: self.currentUserId) ?? .default
+                    NotificationService.shared.scheduleSessionReminder(session: synced, settings: settings)
                 }
             } catch {
             }
@@ -233,10 +239,20 @@ class StudyPlanViewModel: ObservableObject {
     }
 
     func removeSession(id: String) {
+        let calendarEventId = studySessions.first(where: { $0.id == id })?.externalCalendarEventId
+
         studySessions.removeAll { $0.id == id }
         CoreDataService.shared.deleteStudySession(id: id)
-        Task { try? await StudySessionService.shared.delete(id: id) }
+        NotificationService.shared.cancelNotifications(ids: ["session-\(id)", "quiz-\(id)"])
+
+        Task {
+            if let eventId = calendarEventId {
+                try? CalendarSyncService.shared.removeEvent(id: eventId)
+            }
+            try? await StudySessionService.shared.delete(id: id)
+        }
     }
+
 
     func syncAllToCalendar() {
         let pending = studySessions.filter { $0.externalCalendarEventId == nil && $0.status == .scheduled }

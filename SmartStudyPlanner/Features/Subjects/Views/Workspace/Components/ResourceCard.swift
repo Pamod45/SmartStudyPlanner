@@ -64,6 +64,7 @@ struct ResourceCard: View {
                                 .frame(width: 32, height: 32)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Edit")
                     }
 
                 if resource.type == .pdf {
@@ -75,6 +76,7 @@ struct ResourceCard: View {
                             .font(theme.typography.bodyMedium)
                             .frame(width: 32, height: 32)
                     }
+                    .accessibilityLabel("Open PDF")
                 }
 
                 if resource.type == .recording {
@@ -86,6 +88,7 @@ struct ResourceCard: View {
                             .font(theme.typography.bodyMedium)
                             .frame(width: 32, height: 32)
                     }
+                    .accessibilityLabel("Play Recording")
                 }
 
                 if resource.type == .link {
@@ -99,6 +102,7 @@ struct ResourceCard: View {
                             .font(theme.typography.bodyMedium)
                             .frame(width: 32, height: 32)
                     }
+                    .accessibilityLabel("Open Link")
                 }
 
                     Button {
@@ -110,6 +114,7 @@ struct ResourceCard: View {
                             .frame(width: 32, height: 32)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Delete")
                 }
             }
             .padding(theme.spacing.md)
@@ -117,6 +122,7 @@ struct ResourceCard: View {
             .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Resource: \(resource.name), Type: \(resource.type.rawValue)")
         .alert("Delete Resource", isPresented: $showDeleteConfirmation) {
             Button("Delete", role: .destructive) { onDelete() }
             Button("Cancel", role: .cancel) {}

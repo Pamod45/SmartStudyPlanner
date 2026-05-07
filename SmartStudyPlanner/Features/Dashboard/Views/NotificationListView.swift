@@ -10,19 +10,21 @@ import SwiftUI
 struct NotificationListView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
-    
+    @EnvironmentObject var notificationStore: NotificationStore
+
     @State private var selectedType: NotificationType = .all
     @State private var searchText: String = ""
     @State private var editMode: EditMode = .inactive
-    @State private var selectedNotifications = Set<AppNotification.ID>()
-
-    @State private var notifications: [AppNotification] = []
+    @State private var selectedIds = Set<AppNotification.ID>()
 
     private var filteredNotifications: [AppNotification] {
-        if selectedType == .all {
-            return notifications
-        } else {
-            return notifications.filter { $0.notificationType == selectedType }
+        let base = selectedType == .all
+            ? notificationStore.notifications
+            : notificationStore.notifications.filter { $0.notificationType == selectedType }
+        if searchText.isEmpty { return base }
+        return base.filter {
+            $0.title.localizedCaseInsensitiveContains(searchText) ||
+            $0.message.localizedCaseInsensitiveContains(searchText)
         }
     }
 
@@ -35,7 +37,7 @@ struct NotificationListView: View {
                     .padding(.horizontal, theme.spacing.sm)
                     .padding(.vertical, theme.spacing.md)
                     .background(theme.colors.background)
-                
+
                 ChipPicker(
                     items: NotificationType.allCases,
                     selection: $selectedType,
@@ -48,10 +50,15 @@ struct NotificationListView: View {
                 Rectangle()
                     .fill(Color.clear)
                     .frame(height: theme.spacing.md)
-                
-                List(selection: $selectedNotifications) {
-                    ForEach(filteredNotifications) { notification in
-                        NotificationCard(notification: notification) {}
+
+                if filteredNotifications.isEmpty {
+                    emptyState
+                } else {
+                    List(selection: $selectedIds) {
+                        ForEach(filteredNotifications) { notification in
+                            NotificationCard(notification: notification) {
+                                notificationStore.markRead(id: notification.id)
+                            }
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                             .listRowInsets(EdgeInsets(
@@ -62,28 +69,37 @@ struct NotificationListView: View {
                             ))
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
-                                    notifications.removeAll { $0.id == notification.id }
+                                    notificationStore.delete(id: notification.id)
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }.tint(Color.red)
                             }
+                            .swipeActions(edge: .leading) {
+                                if !notification.isRead {
+                                    Button {
+                                        notificationStore.markRead(id: notification.id)
+                                    } label: {
+                                        Label("Read", systemImage: "envelope.open")
+                                    }.tint(theme.colors.primary)
+                                }
+                            }
+                        }
                     }
+                    .listStyle(.plain)
+                    .environment(\.editMode, $editMode)
                 }
-                .listStyle(.plain)
-                .environment(\.editMode, $editMode)
-
-                
             }
         }
         .toolbar(.hidden)
     }
+
 
     private var headerSection: some View {
         HStack {
             Button {
                 if editMode == .active {
                     editMode = .inactive
-                    selectedNotifications.removeAll()
+                    selectedIds.removeAll()
                 } else {
                     dismiss()
                 }
@@ -94,32 +110,51 @@ struct NotificationListView: View {
                     .frame(width: 36, height: 36)
                     .glassEffect(.regular, in: Circle())
             }
-            
+
             Spacer()
-            Text(editMode == .active ? "\(selectedNotifications.count) Selected" : "Notifications")
-                .font(theme.typography.headingMedium)
-                .fontWeight(.bold)
-                .foregroundColor(theme.colors.textPrimary)
-                .animation(.default, value: editMode)
-            
-            Spacer()
-            
-            if editMode == .inactive {
-                
-                Button {
-                      withAnimation { editMode = .active }
-                }
-                label: {
-                    Image(systemName: "checkmark.circle")
-                        .fontWeight(.semibold)
+
+            VStack(spacing: 2) {
+                Text(editMode == .active ? "\(selectedIds.count) Selected" : "Notifications")
+                    .font(theme.typography.headingMedium)
+                    .fontWeight(.bold)
+                    .foregroundColor(theme.colors.textPrimary)
+                    .animation(.default, value: editMode)
+                if notificationStore.unreadCount > 0 && editMode == .inactive {
+                    Text("\(notificationStore.unreadCount) unread")
+                        .font(theme.typography.caption)
                         .foregroundColor(theme.colors.primary)
-                        .frame(width: 36, height: 36)
                 }
-                .glassEffect(.regular, in: Circle())
+            }
+
+            Spacer()
+
+            if editMode == .inactive {
+                HStack(spacing: theme.spacing.sm) {
+                    if notificationStore.unreadCount > 0 {
+                        Button {
+                            notificationStore.markAllRead()
+                        } label: {
+                            Image(systemName: "envelope.open")
+                                .fontWeight(.semibold)
+                                .foregroundColor(theme.colors.primary)
+                                .frame(width: 36, height: 36)
+                        }
+                        .glassEffect(.regular, in: Circle())
+                    }
+                    Button {
+                        withAnimation { editMode = .active }
+                    } label: {
+                        Image(systemName: "checkmark.circle")
+                            .fontWeight(.semibold)
+                            .foregroundColor(theme.colors.primary)
+                            .frame(width: 36, height: 36)
+                    }
+                    .glassEffect(.regular, in: Circle())
+                }
             } else {
                 Button {
-                    notifications.removeAll { selectedNotifications.contains($0.id) }
-                    selectedNotifications.removeAll()
+                    notificationStore.delete(ids: selectedIds)
+                    selectedIds.removeAll()
                     editMode = .inactive
                 } label: {
                     Image(systemName: "trash")
@@ -131,9 +166,30 @@ struct NotificationListView: View {
             }
         }
     }
+
+
+    private var emptyState: some View {
+        VStack(spacing: theme.spacing.lg) {
+            Spacer()
+            Image(systemName: "bell.slash")
+                .font(.system(size: 48))
+                .foregroundColor(theme.colors.textSecondary.opacity(0.5))
+            Text("No Notifications")
+                .font(theme.typography.headingMedium)
+                .foregroundColor(theme.colors.textSecondary)
+            Text("Notifications about your sessions,\ndeadlines and quizzes will appear here.")
+                .font(theme.typography.bodyMedium)
+                .foregroundColor(theme.colors.textSecondary.opacity(0.7))
+                .multilineTextAlignment(.center)
+            Spacer()
+        }
+        .padding(theme.spacing.xl)
+    }
 }
 
 #Preview {
     NotificationListView()
+        .environmentObject(NotificationStore.shared)
         .environment(\.theme, AppTheme.defaultTheme)
 }
+

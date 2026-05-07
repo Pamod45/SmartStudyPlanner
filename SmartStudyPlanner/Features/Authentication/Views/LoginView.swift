@@ -138,7 +138,6 @@ struct LoginView: View {
                     }
                 }
             }
-            RoundedIconButton(icon: "apple.logo"){}
             RoundedIconButton(icon: "faceid"){
                 let isFaceIDEnabled = localSettings.faceIDEnabled
                 guard isFaceIDEnabled else {

@@ -5,7 +5,7 @@ struct AddStudySessionSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let slot: AvailabilitySlot
-    var scheduledDate: Date? = nil       // the calendar day tapped (required for dateRange slots)
+    var scheduledDate: Date? = nil       
     var existingSession: StudySession? = nil
     var onSave: (StudySession) -> Void
     var onDelete: (() -> Void)? = nil
@@ -20,7 +20,7 @@ struct AddStudySessionSheet: View {
     @State private var startTime: Date = .now
     @State private var endTime: Date = .now
     @State private var notes: String = ""
-    @State private var hasReminder: Bool = false
+    @State private var hasReminder: Bool = true
     var availableSubjects: [Subject] = []
 
     private var isEditing: Bool { existingSession != nil }
