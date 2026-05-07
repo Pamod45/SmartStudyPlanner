@@ -15,6 +15,8 @@ struct GeneratedStudyPath {
         let description: String
         let subtopics: [String]
         let weightPercent: Int
+        let difficultyLevel: Int
+        let estimatedMinutes: Int
     }
     let topics: [Topic]
 }

@@ -1,5 +1,6 @@
 import Foundation
 import FirebaseFirestore
+import Combine
 
 class ResourceService {
     static let shared = ResourceService()
@@ -50,7 +51,6 @@ class ResourceService {
         
         CoreDataService.shared.upsertResource(resource)
         
-        // Update local subject resourceCount
         if var subject = CoreDataService.shared.getCachedSubject(id: resource.subjectId) {
             subject.resourceCount += 1
             CoreDataService.shared.upsertSubject(subject)
@@ -90,7 +90,16 @@ class ResourceService {
             )
         }
         CoreDataService.shared.cacheResources(resources)
+        updateCachedSubjectResourceCount(subjectId: subjectId, resources: resources)
         return resources
+    }
+
+    private func updateCachedSubjectResourceCount(subjectId: String, resources: [Resource]) {
+        guard var subject = CoreDataService.shared.getCachedSubject(id: subjectId) else { return }
+        subject.resourceCount = resources.count
+        subject.resourceIds = Array(Set(resources.map(\.id)))
+        subject.updatedAt = Date()
+        CoreDataService.shared.upsertSubject(subject)
     }
 
     func updateResource(_ resource: Resource) async throws {

@@ -1,5 +1,4 @@
 // Coordinates NLTextAnalyzer + the best available LLM backend.
-//
 
 import Foundation
 import Combine
@@ -31,15 +30,13 @@ final class StudyContentOrchestrator: ObservableObject {
 
             return result.topics.map { t in
                 StudyPathTopic(
-                    id:                UUID().uuidString,
-                    order:             t.order,
-                    title:             t.title,
-                    description:       t.description,
-                    subtopics:         t.subtopics,
-                    weightPercent:     t.weightPercent,
-                    resourceIds:       [],
-                    completionPercent: 0,
-                    isCompleted:       false
+                    order:            t.order,
+                    title:            t.title,
+                    description:      t.description,
+                    subtopics:        t.subtopics,
+                    weightPercent:    t.weightPercent,
+                    estimatedMinutes: t.estimatedMinutes,
+                    difficultyLevel:  t.difficultyLevel
                 )
             }
         } catch {

@@ -10,7 +10,10 @@ struct StudyPathTopic: Identifiable, Codable {
     var description: String
     var subtopics: [String]
     var weightPercent: Int
-    var estimatedHours: Int
+    var estimatedMinutes: Int   // total study time needed (from LLM); drives scheduler
+    var difficultyLevel: Int    // 1-10, used by scheduler for priority
+
+    var estimatedHours: Int { max(1, estimatedMinutes / 60) }
     var resourceIds: [String]
     var completionPercent: Double
     var isCompleted: Bool
@@ -26,7 +29,8 @@ struct StudyPathTopic: Identifiable, Codable {
         description: String,
         subtopics: [String] = [],
         weightPercent: Int,
-        estimatedHours: Int? = nil,
+        estimatedMinutes: Int? = nil,
+        difficultyLevel: Int = 5,
         resourceIds: [String] = [],
         completionPercent: Double = 0.0,
         isCompleted: Bool = false,
@@ -40,8 +44,9 @@ struct StudyPathTopic: Identifiable, Codable {
         self.title = title
         self.description = description
         self.subtopics = subtopics
-        self.weightPercent = weightPercent
-        self.estimatedHours = estimatedHours ?? max(1, weightPercent / 10)
+        self.weightPercent    = weightPercent
+        self.estimatedMinutes = estimatedMinutes ?? max(30, weightPercent * 6)
+        self.difficultyLevel  = max(1, min(10, difficultyLevel))
         self.resourceIds = resourceIds
         self.completionPercent = completionPercent
         self.isCompleted = isCompleted
@@ -61,7 +66,8 @@ struct StudyPathTopic: Identifiable, Codable {
             "description": description,
             "subtopics": subtopics,
             "weightPercent": weightPercent,
-            "estimatedHours": estimatedHours,
+            "estimatedMinutes": estimatedMinutes,
+            "difficultyLevel": difficultyLevel,
             "resourceIds": resourceIds,
             "completionPercent": completionPercent,
             "isCompleted": isCompleted,
@@ -77,8 +83,9 @@ struct StudyPathTopic: Identifiable, Codable {
         let title = data["title"] as? String ?? ""
         let description = data["description"] as? String ?? ""
         let subtopics = data["subtopics"] as? [String] ?? []
-        let weightPercent = data["weightPercent"] as? Int ?? 0
-        let estimatedHours = data["estimatedHours"] as? Int ?? max(1, weightPercent / 10)
+        let weightPercent    = data["weightPercent"] as? Int ?? 0
+        let estimatedMinutes = data["estimatedMinutes"] as? Int ?? max(30, weightPercent * 6)
+        let difficultyLevel  = data["difficultyLevel"] as? Int ?? 5
         let resourceIds = data["resourceIds"] as? [String] ?? []
         let completionPercent = data["completionPercent"] as? Double ?? 0.0
         let isCompleted = data["isCompleted"] as? Bool ?? false
@@ -103,8 +110,9 @@ struct StudyPathTopic: Identifiable, Codable {
             title: title,
             description: description,
             subtopics: subtopics,
-            weightPercent: weightPercent,
-            estimatedHours: estimatedHours,
+            weightPercent:    weightPercent,
+            estimatedMinutes: estimatedMinutes,
+            difficultyLevel:  difficultyLevel,
             resourceIds: resourceIds,
             completionPercent: completionPercent,
             isCompleted: isCompleted,

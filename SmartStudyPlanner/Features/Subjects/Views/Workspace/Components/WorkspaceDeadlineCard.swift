@@ -11,6 +11,7 @@ struct WorkspaceDeadlineCard: View {
     @Environment(\.theme) var theme
     let deadline: Deadline
     var onTap: () -> Void = {}
+    var onDelete: () -> Void = {}
 
     var body: some View {
         Button(action: onTap) {
@@ -64,5 +65,12 @@ struct WorkspaceDeadlineCard: View {
             .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
     }
 }

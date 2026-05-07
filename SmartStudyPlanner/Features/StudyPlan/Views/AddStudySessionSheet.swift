@@ -5,6 +5,7 @@ struct AddStudySessionSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let slot: AvailabilitySlot
+    var scheduledDate: Date? = nil       // the calendar day tapped (required for dateRange slots)
     var existingSession: StudySession? = nil
     var onSave: (StudySession) -> Void
     var onDelete: (() -> Void)? = nil
@@ -15,6 +16,7 @@ struct AddStudySessionSheet: View {
     @State private var useCustomTopic: Bool = false
     @State private var availableResources: [Resource] = []
     @State private var selectedResourceIDs: Set<String> = []
+    @State private var pendingResourceIDs: Set<String> = []
     @State private var startTime: Date = .now
     @State private var endTime: Date = .now
     @State private var notes: String = ""
@@ -387,10 +389,21 @@ struct AddStudySessionSheet: View {
     private func reloadResources() {
         availableResources = []
         selectedResourceIDs = []
+        guard let subject = selectedSubject else { return }
+        Task {
+            let fetched = (try? await ResourceService.shared.fetchResources(subjectId: subject.id)) ?? []
+            await MainActor.run {
+                availableResources = fetched
+                if !pendingResourceIDs.isEmpty {
+                    selectedResourceIDs = pendingResourceIDs
+                    pendingResourceIDs  = []
+                }
+            }
+        }
     }
 
     private func prefill() {
-        let slotDay = slot.date ?? Date()
+        let slotDay = slot.date ?? scheduledDate ?? Date()
         startTime = Calendar.current.date(
             bySettingHour: Calendar.current.component(.hour, from: slot.startTime),
             minute: Calendar.current.component(.minute, from: slot.startTime),
@@ -404,23 +417,25 @@ struct AddStudySessionSheet: View {
 
         guard let session = existingSession else { return }
 
-        selectedSubject = availableSubjects.first { $0.id == session.subjectId }
-        reloadResources()
+        // Store IDs before setting subject — onChange will clear selectedResourceIDs,
+        // but reloadResources() will restore from pendingResourceIDs once fetch completes.
+        pendingResourceIDs = Set(session.resourceIds)
+        selectedSubject    = availableSubjects.first { $0.id == session.subjectId }
 
-        customTopic = session.topic
+        customTopic    = session.topic
         useCustomTopic = true
-
-        selectedResourceIDs = Set(session.resourceIds)
-        startTime = session.startTime
-        endTime = session.endTime
-        hasReminder = session.hasReminder
+        startTime      = session.startTime
+        endTime        = session.endTime
+        hasReminder    = session.hasReminder
+        notes          = session.notes ?? ""
     }
 
     private func saveSession() {
         guard let subject = selectedSubject else { return }
         let name = topicName.trimmingCharacters(in: .whitespaces)
 
-        let slotDay = slot.date ?? Date()
+        // Editing → preserve original day; adding new → use slot date or calendar selection
+        let slotDay = existingSession?.scheduledDate ?? slot.date ?? scheduledDate ?? Date()
         let cal = Calendar.current
         let s = cal.date(
             bySettingHour: cal.component(.hour, from: startTime),
@@ -440,6 +455,7 @@ struct AddStudySessionSheet: View {
             subjectColorHex: subject.colorHex,
             title: name,
             topic: name,
+            notes: notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes,
             scheduledDate: slotDay,
             startTime: s,
             endTime: e,

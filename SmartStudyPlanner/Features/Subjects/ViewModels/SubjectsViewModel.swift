@@ -20,7 +20,23 @@ class SubjectsViewModel: ObservableObject {
         do {
             let remote = try await SubjectService.shared.fetchSubjects(userId: userId)
             subjects = remote
+            await refreshResourceCountsFromResources(for: remote)
         } catch {
+        }
+    }
+
+    private func refreshResourceCountsFromResources(for loadedSubjects: [Subject]) async {
+        await withTaskGroup(of: (String, Int, [String]).self) { group in
+            for subject in loadedSubjects {
+                group.addTask {
+                    let resources = (try? await ResourceService.shared.fetchResources(subjectId: subject.id)) ?? []
+                    return (subject.id, resources.count, resources.map(\.id))
+                }
+            }
+
+            for await (subjectId, count, resourceIds) in group {
+                setResourceCount(count, for: subjectId, resourceIds: resourceIds)
+            }
         }
     }
 
@@ -98,6 +114,17 @@ class SubjectsViewModel: ObservableObject {
         }
     }
 
+    func setResourceCount(_ count: Int, for subjectId: String, resourceIds: [String]? = nil) {
+        guard let idx = subjects.firstIndex(where: { $0.id == subjectId }) else { return }
+
+        var updated = subjects[idx]
+        updated.resourceCount = count
+        updated.resourceIds = resourceIds ?? Array(Set(CoreDataService.shared.getCachedResources(for: subjectId).map(\.id)))
+        updated.updatedAt = Date()
+        subjects[idx] = updated
+        CoreDataService.shared.upsertSubject(updated)
+    }
+
     func topics(for subject: Subject) -> [StudyTopic] {
         return []
     }
@@ -114,4 +141,3 @@ class SubjectsViewModel: ObservableObject {
         return []
     }
 }
-

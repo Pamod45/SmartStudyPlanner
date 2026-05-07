@@ -1,6 +1,7 @@
 
 import UIKit
 import Vision
+import Combine
 
 class TextRecognitionService {
     static let shared = TextRecognitionService()

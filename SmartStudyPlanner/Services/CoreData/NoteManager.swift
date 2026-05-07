@@ -1,5 +1,6 @@
 
 import Foundation
+import Combine
 
 class NoteManager {
     static let shared = NoteManager()

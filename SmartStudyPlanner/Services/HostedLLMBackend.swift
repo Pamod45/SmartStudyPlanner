@@ -24,9 +24,15 @@ struct HostedLLMBackend: StudyLLMBackend {
             "title": "Topic Title",
             "description": "One sentence description.",
             "subtopics": ["Subtopic A", "Subtopic B"],
-            "weightPercent": 20
+            "weightPercent": 20,
+            "difficultyLevel": 6,
+            "estimatedMinutes": 90
           }
         ]
+        Rules:
+        - difficultyLevel: 1 (very easy) to 10 (very hard).
+        - estimatedMinutes: realistic total study time a student needs to master this topic.
+        - Do NOT include any text outside the JSON array.
         """
 
         let userMessage = "Study material:\n\(String(text.prefix(6000)))\n\nReturn ONLY the JSON array."
@@ -140,6 +146,8 @@ struct HostedLLMBackend: StudyLLMBackend {
             let description: String
             let subtopics: [String]
             let weightPercent: Int?
+            let difficultyLevel: Int?
+            let estimatedMinutes: Int?
         }
 
         guard let data = clean.data(using: .utf8) else {
@@ -148,12 +156,15 @@ struct HostedLLMBackend: StudyLLMBackend {
 
         let decoded = try JSONDecoder().decode([RawTopic].self, from: data)
         return decoded.map {
-            GeneratedStudyPath.Topic(
-                order:         $0.order,
-                title:         $0.title,
-                description:   $0.description,
-                subtopics:     $0.subtopics,
-                weightPercent: $0.weightPercent ?? 0
+            let weight = $0.weightPercent ?? 0
+            return GeneratedStudyPath.Topic(
+                order:            $0.order,
+                title:            $0.title,
+                description:      $0.description,
+                subtopics:        $0.subtopics,
+                weightPercent:    weight,
+                difficultyLevel:  max(1, min(10, $0.difficultyLevel ?? 5)),
+                estimatedMinutes: $0.estimatedMinutes ?? max(30, weight * 6)
             )
         }
     }

@@ -15,6 +15,7 @@ struct StudyPathTabView: View {
     @Binding var studyPath: StudyPath?
     var onRegenerate: () -> Void
     var onGenerate: () -> Void
+    var onTopicsUpdated: (([StudyPathTopic]) -> Void)? = nil
 
     @State private var expandedTopicID: String? = nil
 
@@ -265,31 +266,19 @@ struct StudyPathTabView: View {
             }
 
             if !topic.isCompleted {
-                HStack(spacing: theme.spacing.sm) {
-                    PrimaryButton(
-                        title: "Mark Complete",
-                        action: {
-                            if let idx = studyPath?.topics.firstIndex(where: { $0.id == topic.id }) {
-                                studyPath?.topics[idx].isCompleted = true
-                                studyPath?.topics[idx].completionPercent = 100
-                                expandedTopicID = nil
-                            }
-                        },
-                        font: theme.typography.bodyLarge.weight(.semibold)
-                    )
-                    Button {
-                    } label: {
-                        Text("Take Quiz")
-                            .font(theme.typography.bodyLarge.weight(.semibold))
-                            .foregroundColor(theme.colors.textPrimary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, theme.spacing.md)
-                            .background(theme.colors.onSurface)
-                            .clipShape(Capsule())
-                            .overlay(Capsule().stroke(theme.colors.border.opacity(0.4), lineWidth: 1))
-                    }
-                    .buttonStyle(.plain)
-                }
+                PrimaryButton(
+                    title: "Mark Complete",
+                    action: {
+                        guard let idx = studyPath?.topics.firstIndex(where: { $0.id == topic.id }) else { return }
+                        studyPath?.topics[idx].isCompleted      = true
+                        studyPath?.topics[idx].completionPercent = 100
+                        expandedTopicID = nil
+                        if let updatedTopics = studyPath?.topics {
+                            onTopicsUpdated?(updatedTopics)
+                        }
+                    },
+                    font: theme.typography.bodyLarge.weight(.semibold)
+                )
                 .padding(.horizontal, theme.spacing.md)
             }
         }

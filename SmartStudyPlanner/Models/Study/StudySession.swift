@@ -37,6 +37,7 @@ struct StudySession: Identifiable, Codable, Syncable {
     var resourceIds: [String]
     var topicIds: [String]
     var rating: Int?
+    var externalCalendarEventId: String?
     var createdAt: Date
     var updatedAt: Date
     var syncStatus: SyncStatus
@@ -94,6 +95,7 @@ struct StudySession: Identifiable, Codable, Syncable {
         resourceIds: [String] = [],
         topicIds: [String] = [],
         rating: Int? = nil,
+        externalCalendarEventId: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         syncStatus: SyncStatus = .localOnly
@@ -117,7 +119,8 @@ struct StudySession: Identifiable, Codable, Syncable {
         self.linkedPlanId = linkedPlanId
         self.resourceIds = resourceIds
         self.topicIds = topicIds
-        self.rating = rating
+        self.rating                  = rating
+        self.externalCalendarEventId = externalCalendarEventId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.syncStatus = syncStatus

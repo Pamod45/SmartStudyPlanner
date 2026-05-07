@@ -16,9 +16,33 @@
 		AD53B3E22F8CCC570002309F /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = AD53B3E12F8CCC570002309F /* FirebaseFirestore */; };
 		AD6EE9352FA8F2AC00634F15 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = AD6EE9342FA8F2AC00634F15 /* GoogleSignIn */; };
 		AD6EE9372FA8F2AC00634F15 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = AD6EE9362FA8F2AC00634F15 /* GoogleSignInSwift */; };
+		AD7EDA272FABD25B00B1EB53 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AD7EDA262FABD25B00B1EB53 /* WidgetKit.framework */; };
+		AD7EDA292FABD25B00B1EB53 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AD7EDA282FABD25B00B1EB53 /* SwiftUI.framework */; };
+		AD7EDA3A2FABD25D00B1EB53 /* SmartStudyPlannerWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AD7EDA242FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		AD7EDA382FABD25D00B1EB53 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AD060C5E2F718F47001254E6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AD7EDA232FABD25B00B1EB53;
+			remoteInfo = SmartStudyPlannerWidgetsExtension;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXCopyFilesBuildPhase section */
+		AD7EDA3F2FABD25D00B1EB53 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AD7EDA3A2FABD25D00B1EB53 /* SmartStudyPlannerWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AD94F8742FA9FDB000F6BBBE /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 8;
@@ -33,9 +57,19 @@
 /* Begin PBXFileReference section */
 		AD060C662F718F47001254E6 /* SmartStudyPlanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartStudyPlanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD53B3DA2F8CCADB0002309F /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		AD7EDA242FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SmartStudyPlannerWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD7EDA262FABD25B00B1EB53 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		AD7EDA282FABD25B00B1EB53 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AD7EDA3E2FABD25D00B1EB53 /* Exceptions for "SmartStudyPlannerWidgets" folder in "SmartStudyPlannerWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AD7EDA232FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension */;
+		};
 		AD83D5D42FAA57D800C70697 /* Exceptions for "Resources" folder in "SmartStudyPlanner" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -78,6 +112,14 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		AD7EDA2A2FABD25B00B1EB53 /* SmartStudyPlannerWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AD7EDA3E2FABD25D00B1EB53 /* Exceptions for "SmartStudyPlannerWidgets" folder in "SmartStudyPlannerWidgetsExtension" target */,
+			);
+			path = SmartStudyPlannerWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,6 +138,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AD7EDA212FABD25B00B1EB53 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AD7EDA292FABD25B00B1EB53 /* SwiftUI.framework in Frameworks */,
+				AD7EDA272FABD25B00B1EB53 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -105,6 +156,8 @@
 				AD7EB66D2FAA40DD005AA717 /* Resources */,
 				AD53B3DA2F8CCADB0002309F /* GoogleService-Info.plist */,
 				AD060C682F718F47001254E6 /* SmartStudyPlanner */,
+				AD7EDA2A2FABD25B00B1EB53 /* SmartStudyPlannerWidgets */,
+				AD7EDA252FABD25B00B1EB53 /* Frameworks */,
 				AD060C672F718F47001254E6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -113,8 +166,18 @@
 			isa = PBXGroup;
 			children = (
 				AD060C662F718F47001254E6 /* SmartStudyPlanner.app */,
+				AD7EDA242FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		AD7EDA252FABD25B00B1EB53 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AD7EDA262FABD25B00B1EB53 /* WidgetKit.framework */,
+				AD7EDA282FABD25B00B1EB53 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -128,10 +191,12 @@
 				AD060C632F718F47001254E6 /* Frameworks */,
 				AD060C642F718F47001254E6 /* Resources */,
 				AD94F8742FA9FDB000F6BBBE /* CopyFiles */,
+				AD7EDA3F2FABD25D00B1EB53 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				AD7EDA392FABD25D00B1EB53 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				AD060C682F718F47001254E6 /* SmartStudyPlanner */,
@@ -152,6 +217,28 @@
 			productReference = AD060C662F718F47001254E6 /* SmartStudyPlanner.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AD7EDA232FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AD7EDA3B2FABD25D00B1EB53 /* Build configuration list for PBXNativeTarget "SmartStudyPlannerWidgetsExtension" */;
+			buildPhases = (
+				AD7EDA202FABD25B00B1EB53 /* Sources */,
+				AD7EDA212FABD25B00B1EB53 /* Frameworks */,
+				AD7EDA222FABD25B00B1EB53 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AD7EDA2A2FABD25B00B1EB53 /* SmartStudyPlannerWidgets */,
+			);
+			name = SmartStudyPlannerWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = SmartStudyPlannerWidgetsExtension;
+			productReference = AD7EDA242FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -163,6 +250,9 @@
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					AD060C652F718F47001254E6 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					AD7EDA232FABD25B00B1EB53 = {
 						CreatedOnToolsVersion = 26.2;
 					};
 				};
@@ -187,6 +277,7 @@
 			projectRoot = "";
 			targets = (
 				AD060C652F718F47001254E6 /* SmartStudyPlanner */,
+				AD7EDA232FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -200,6 +291,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AD7EDA222FABD25B00B1EB53 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -210,7 +308,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AD7EDA202FABD25B00B1EB53 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AD7EDA392FABD25D00B1EB53 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AD7EDA232FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension */;
+			targetProxy = AD7EDA382FABD25D00B1EB53 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		AD060C6F2F718F47001254E6 /* Debug */ = {
@@ -412,6 +525,66 @@
 			};
 			name = Release;
 		};
+		AD7EDA3C2FABD25D00B1EB53 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2BCJ5647BL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SmartStudyPlannerWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SmartStudyPlannerWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.003.SmartStudyPlanner.SmartStudyPlannerWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AD7EDA3D2FABD25D00B1EB53 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2BCJ5647BL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SmartStudyPlannerWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SmartStudyPlannerWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.003.SmartStudyPlanner.SmartStudyPlannerWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -429,6 +602,15 @@
 			buildConfigurations = (
 				AD060C722F718F47001254E6 /* Debug */,
 				AD060C732F718F47001254E6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AD7EDA3B2FABD25D00B1EB53 /* Build configuration list for PBXNativeTarget "SmartStudyPlannerWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AD7EDA3C2FABD25D00B1EB53 /* Debug */,
+				AD7EDA3D2FABD25D00B1EB53 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

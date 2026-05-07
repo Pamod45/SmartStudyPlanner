@@ -13,6 +13,7 @@ struct AddDeadlineSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let subjectId: String
+    let userId: String
     var existingDeadline: Deadline? = nil
     var onSave: (Deadline) -> Void
     var onUpdate: ((Deadline) -> Void)? = nil
@@ -206,6 +207,7 @@ struct AddDeadlineSheet: View {
 
         let deadline = Deadline(
             id: existingDeadline?.id ?? UUID().uuidString,
+            userId: existingDeadline?.userId ?? userId,
             subjectId: subjectId,
             name: name,
             dueDate: combined,
@@ -225,6 +227,6 @@ struct AddDeadlineSheet: View {
 }
 
 #Preview {
-    AddDeadlineSheet(subjectId: UUID().uuidString) { _ in }
+    AddDeadlineSheet(subjectId: UUID().uuidString, userId: "preview") { _ in }
         .environment(\.theme, AppTheme.defaultTheme)
 }

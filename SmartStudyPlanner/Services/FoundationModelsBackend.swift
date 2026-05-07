@@ -5,14 +5,9 @@
 //  Created by Pubudu Perera on 2026-05-06.
 //
 
-// FoundationModelsBackend.swift
-// Uses Apple Intelligence on-device LLM (iOS 26+).
-// Structured output via @Generable — no JSON parsing needed.
-
 import Foundation
 import FoundationModels
-
-// MARK: - Generable structs for structured output
+import Combine
 
 @available(iOS 26.0, *)
 @Generable
@@ -89,15 +84,12 @@ struct FMQuizQuestion {
     var keyword: String
 }
 
-// MARK: - Backend
-
 @available(iOS 26.0, *)
 struct FoundationModelsBackend: StudyLLMBackend {
 
     func generateStudyPath(from text: String, topicCount: Int) async throws -> GeneratedStudyPath {
         let session = LanguageModelSession()
 
-        // Trim text to avoid hitting context limits — 4000 chars is safe
         let trimmedText = String(text.prefix(4000))
 
         let prompt = """
@@ -116,11 +108,13 @@ struct FoundationModelsBackend: StudyLLMBackend {
 
         let topics = response.content.topics.map { t in
             GeneratedStudyPath.Topic(
-                order:         t.order,
-                title:         t.title,
-                description:   t.description,
-                subtopics:     t.subtopics,
-                weightPercent: t.weightPercent
+                order:            t.order,
+                title:            t.title,
+                description:      t.description,
+                subtopics:        t.subtopics,
+                weightPercent:    t.weightPercent,
+                difficultyLevel:  5,
+                estimatedMinutes: max(30, t.weightPercent * 6)
             )
         }
 

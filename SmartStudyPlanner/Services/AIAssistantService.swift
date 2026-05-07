@@ -2,7 +2,7 @@
 //  AIAssistantService.swift
 //  SmartStudyPlanner
 //
-
+import Combine
 import Foundation
 
 struct ChatMessage: Identifiable {

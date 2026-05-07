@@ -31,9 +31,10 @@ struct AIAssistantTabView: View {
             contextPickerStrip
                 .padding(.bottom, theme.spacing.sm)
             messageArea
+                .frame(maxHeight: .infinity)
             inputBar
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.bottom, theme.spacing.xl)
     }
 
@@ -94,7 +95,7 @@ struct AIAssistantTabView: View {
                 .padding(.horizontal, theme.spacing.xs)
                 .padding(.vertical, theme.spacing.md)
             }
-            .frame(height: 430)
+            .frame(maxHeight: .infinity)
             .onChange(of: messages.count) { _, _ in
                 withAnimation {
                     if let last = messages.last {

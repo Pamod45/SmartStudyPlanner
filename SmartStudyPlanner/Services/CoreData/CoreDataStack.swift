@@ -121,6 +121,72 @@ public class CDQuizAttempt: NSManagedObject {
     @NSManaged public var syncStatus: String
 }
 
+@objc(CDAvailabilitySlot)
+public class CDAvailabilitySlot: NSManagedObject {
+    @NSManaged public var id: String
+    @NSManaged public var userId: String
+    @NSManaged public var type: String
+    @NSManaged public var startTime: Date
+    @NSManaged public var endTime: Date
+    @NSManaged public var date: Date?
+    @NSManaged public var rangeStart: Date?
+    @NSManaged public var rangeEnd: Date?
+    @NSManaged public var label: String?
+    @NSManaged public var createdAt: Date
+    @NSManaged public var updatedAt: Date
+    @NSManaged public var syncStatus: String
+}
+
+@objc(CDDeadline)
+public class CDDeadline: NSManagedObject {
+    @NSManaged public var id: String
+    @NSManaged public var userId: String
+    @NSManaged public var subjectId: String
+    @NSManaged public var subjectColorHex: String
+    @NSManaged public var name: String
+    @NSManaged public var dueDate: Date
+    @NSManaged public var hasReminder: Bool
+    @NSManaged public var isHighPriority: Bool
+    @NSManaged public var notes: String
+    @NSManaged public var tag: String
+    @NSManaged public var priority: String
+    @NSManaged public var status: String
+    @NSManaged public var reminderDate: Date?
+    @NSManaged public var linkedSessionIds: [String]
+    @NSManaged public var notificationId: String?
+    @NSManaged public var createdAt: Date
+    @NSManaged public var updatedAt: Date
+    @NSManaged public var syncStatus: String
+}
+
+@objc(CDStudySession)
+public class CDStudySession: NSManagedObject {
+    @NSManaged public var id: String
+    @NSManaged public var userId: String
+    @NSManaged public var subjectId: String
+    @NSManaged public var subjectName: String
+    @NSManaged public var subjectColorHex: String
+    @NSManaged public var title: String
+    @NSManaged public var topic: String
+    @NSManaged public var notes: String?
+    @NSManaged public var scheduledDate: Date
+    @NSManaged public var startTime: Date
+    @NSManaged public var endTime: Date
+    @NSManaged public var actualDurationMinutes: NSNumber?
+    @NSManaged public var status: String
+    @NSManaged public var sessionType: String
+    @NSManaged public var hasReminder: Bool
+    @NSManaged public var linkedDeadlineId: String?
+    @NSManaged public var linkedPlanId: String?
+    @NSManaged public var resourceIds: [String]
+    @NSManaged public var topicIds: [String]
+    @NSManaged public var rating: NSNumber?
+    @NSManaged public var externalCalendarEventId: String?
+    @NSManaged public var createdAt: Date
+    @NSManaged public var updatedAt: Date
+    @NSManaged public var syncStatus: String
+}
+
 public class CoreDataStack {
     public static let shared = CoreDataStack()
     
@@ -135,6 +201,20 @@ public class CoreDataStack {
     
     public lazy var persistentContainer: NSPersistentContainer = {
         let model = NSManagedObjectModel()
+
+        func attr(_ name: String, _ type: NSAttributeType, optional: Bool = false) -> NSAttributeDescription {
+            let attribute = NSAttributeDescription()
+            attribute.name = name
+            attribute.attributeType = type
+            attribute.isOptional = optional
+            return attribute
+        }
+
+        func transformableAttr(_ name: String, optional: Bool = false) -> NSAttributeDescription {
+            let attribute = attr(name, .transformableAttributeType, optional: optional)
+            attribute.valueTransformerName = NSValueTransformerName.secureUnarchiveFromDataTransformerName.rawValue
+            return attribute
+        }
         
         let userEntity = NSEntityDescription()
         userEntity.name = "CDUserProfile"
@@ -688,7 +768,89 @@ public class CoreDataStack {
             qaTimeSpentAttr, qaCompletedAtAttr, qaSyncStatusAttr
         ]
 
-        model.entities = [userEntity, settingsEntity, subjectEntity, resourceEntity, pathTopicEntity, quizAttemptEntity]
+        let availabilitySlotEntity = NSEntityDescription()
+        availabilitySlotEntity.name = "CDAvailabilitySlot"
+        availabilitySlotEntity.managedObjectClassName = NSStringFromClass(CDAvailabilitySlot.self)
+        availabilitySlotEntity.properties = [
+            attr("id", .stringAttributeType),
+            attr("userId", .stringAttributeType),
+            attr("type", .stringAttributeType),
+            attr("startTime", .dateAttributeType),
+            attr("endTime", .dateAttributeType),
+            attr("date", .dateAttributeType, optional: true),
+            attr("rangeStart", .dateAttributeType, optional: true),
+            attr("rangeEnd", .dateAttributeType, optional: true),
+            attr("label", .stringAttributeType, optional: true),
+            attr("createdAt", .dateAttributeType),
+            attr("updatedAt", .dateAttributeType),
+            attr("syncStatus", .stringAttributeType)
+        ]
+
+        let studySessionEntity = NSEntityDescription()
+        studySessionEntity.name = "CDStudySession"
+        studySessionEntity.managedObjectClassName = NSStringFromClass(CDStudySession.self)
+        studySessionEntity.properties = [
+            attr("id", .stringAttributeType),
+            attr("userId", .stringAttributeType),
+            attr("subjectId", .stringAttributeType),
+            attr("subjectName", .stringAttributeType),
+            attr("subjectColorHex", .stringAttributeType),
+            attr("title", .stringAttributeType),
+            attr("topic", .stringAttributeType),
+            attr("notes", .stringAttributeType, optional: true),
+            attr("scheduledDate", .dateAttributeType),
+            attr("startTime", .dateAttributeType),
+            attr("endTime", .dateAttributeType),
+            attr("actualDurationMinutes", .integer64AttributeType, optional: true),
+            attr("status", .stringAttributeType),
+            attr("sessionType", .stringAttributeType),
+            attr("hasReminder", .booleanAttributeType),
+            attr("linkedDeadlineId", .stringAttributeType, optional: true),
+            attr("linkedPlanId", .stringAttributeType, optional: true),
+            transformableAttr("resourceIds"),
+            transformableAttr("topicIds"),
+            attr("rating", .integer64AttributeType, optional: true),
+            attr("externalCalendarEventId", .stringAttributeType, optional: true),
+            attr("createdAt", .dateAttributeType),
+            attr("updatedAt", .dateAttributeType),
+            attr("syncStatus", .stringAttributeType)
+        ]
+
+        let deadlineEntity = NSEntityDescription()
+        deadlineEntity.name = "CDDeadline"
+        deadlineEntity.managedObjectClassName = NSStringFromClass(CDDeadline.self)
+        deadlineEntity.properties = [
+            attr("id", .stringAttributeType),
+            attr("userId", .stringAttributeType),
+            attr("subjectId", .stringAttributeType),
+            attr("subjectColorHex", .stringAttributeType),
+            attr("name", .stringAttributeType),
+            attr("dueDate", .dateAttributeType),
+            attr("hasReminder", .booleanAttributeType),
+            attr("isHighPriority", .booleanAttributeType),
+            attr("notes", .stringAttributeType),
+            attr("tag", .stringAttributeType),
+            attr("priority", .stringAttributeType),
+            attr("status", .stringAttributeType),
+            attr("reminderDate", .dateAttributeType, optional: true),
+            transformableAttr("linkedSessionIds"),
+            attr("notificationId", .stringAttributeType, optional: true),
+            attr("createdAt", .dateAttributeType),
+            attr("updatedAt", .dateAttributeType),
+            attr("syncStatus", .stringAttributeType)
+        ]
+
+        model.entities = [
+            userEntity,
+            settingsEntity,
+            subjectEntity,
+            resourceEntity,
+            pathTopicEntity,
+            quizAttemptEntity,
+            availabilitySlotEntity,
+            studySessionEntity,
+            deadlineEntity
+        ]
         
         let container = NSPersistentContainer(name: "SmartStudyPlanner", managedObjectModel: model)
         

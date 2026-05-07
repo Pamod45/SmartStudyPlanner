@@ -362,7 +362,7 @@ class CoreDataService {
                     description: cdTopic.description_,
                     subtopics: cdTopic.subtopics,
                     weightPercent: Int(cdTopic.weightPercent),
-                    estimatedHours: Int(cdTopic.estimatedHours),
+                    estimatedMinutes: Int(cdTopic.estimatedHours),
                     resourceIds: cdTopic.resourceIds,
                     completionPercent: cdTopic.completionPercent,
                     isCompleted: cdTopic.isCompleted,
@@ -398,7 +398,7 @@ class CoreDataService {
         cdTopic.description_ = topic.description
         cdTopic.subtopics = topic.subtopics
         cdTopic.weightPercent = Int32(topic.weightPercent)
-        cdTopic.estimatedHours = Int32(topic.estimatedHours)
+        cdTopic.estimatedHours = Int32(topic.estimatedMinutes)
         cdTopic.resourceIds = topic.resourceIds
         cdTopic.completionPercent = topic.completionPercent
         cdTopic.isCompleted = topic.isCompleted
@@ -420,7 +420,274 @@ class CoreDataService {
         try? context.execute(deleteRequest)
         CoreDataStack.shared.saveContext()
     }
+
+    func getCachedAvailabilitySlots(for userId: String) -> [AvailabilitySlot] {
+        let request = NSFetchRequest<CDAvailabilitySlot>(entityName: "CDAvailabilitySlot")
+        request.predicate = NSPredicate(format: "userId == %@", userId)
+        request.sortDescriptors = [NSSortDescriptor(key: "startTime", ascending: true)]
+
+        do {
+            let results = try CoreDataStack.shared.context.fetch(request)
+            return results.compactMap { cdSlot in
+                guard let type = AvailabilityType(rawValue: cdSlot.type) else { return nil }
+                return AvailabilitySlot(
+                    id: cdSlot.id,
+                    userId: cdSlot.userId,
+                    type: type,
+                    startTime: cdSlot.startTime,
+                    endTime: cdSlot.endTime,
+                    date: cdSlot.date,
+                    rangeStart: cdSlot.rangeStart,
+                    rangeEnd: cdSlot.rangeEnd,
+                    label: cdSlot.label,
+                    createdAt: cdSlot.createdAt,
+                    updatedAt: cdSlot.updatedAt,
+                    syncStatus: SyncStatus(rawValue: cdSlot.syncStatus) ?? .localOnly
+                )
+            }
+        } catch {
+            print("Failed to fetch cached availability slots: \(error)")
+            return []
+        }
+    }
+
+    func upsertAvailabilitySlot(_ slot: AvailabilitySlot) {
+        let context = CoreDataStack.shared.context
+
+        let request = NSFetchRequest<CDAvailabilitySlot>(entityName: "CDAvailabilitySlot")
+        request.predicate = NSPredicate(format: "id == %@", slot.id)
+        request.fetchLimit = 1
+
+        let cdSlot: CDAvailabilitySlot
+        if let existing = try? context.fetch(request).first {
+            cdSlot = existing
+        } else {
+            cdSlot = CDAvailabilitySlot(context: context)
+        }
+
+        cdSlot.id = slot.id
+        cdSlot.userId = slot.userId
+        cdSlot.type = slot.type.rawValue
+        cdSlot.startTime = slot.startTime
+        cdSlot.endTime = slot.endTime
+        cdSlot.date = slot.date
+        cdSlot.rangeStart = slot.rangeStart
+        cdSlot.rangeEnd = slot.rangeEnd
+        cdSlot.label = slot.label
+        cdSlot.createdAt = slot.createdAt
+        cdSlot.updatedAt = slot.updatedAt
+        cdSlot.syncStatus = slot.syncStatus.rawValue
+
+        CoreDataStack.shared.saveContext()
+    }
+
+    func cacheAvailabilitySlots(_ slots: [AvailabilitySlot]) {
+        slots.forEach { upsertAvailabilitySlot($0) }
+    }
+
+    func deleteAvailabilitySlot(id: String) {
+        let context = CoreDataStack.shared.context
+        let request = NSFetchRequest<CDAvailabilitySlot>(entityName: "CDAvailabilitySlot")
+        request.predicate = NSPredicate(format: "id == %@", id)
+        if let existing = try? context.fetch(request).first {
+            context.delete(existing)
+            CoreDataStack.shared.saveContext()
+        }
+    }
+
+    func getCachedStudySessions(for userId: String) -> [StudySession] {
+        let request = NSFetchRequest<CDStudySession>(entityName: "CDStudySession")
+        request.predicate = NSPredicate(format: "userId == %@", userId)
+        request.sortDescriptors = [NSSortDescriptor(key: "startTime", ascending: true)]
+
+        do {
+            let results = try CoreDataStack.shared.context.fetch(request)
+            return results.map { cdSession in
+                StudySession(
+                    id: cdSession.id,
+                    userId: cdSession.userId,
+                    subjectId: cdSession.subjectId,
+                    subjectName: cdSession.subjectName,
+                    subjectColorHex: cdSession.subjectColorHex,
+                    title: cdSession.title,
+                    topic: cdSession.topic,
+                    notes: cdSession.notes,
+                    scheduledDate: cdSession.scheduledDate,
+                    startTime: cdSession.startTime,
+                    endTime: cdSession.endTime,
+                    actualDurationMinutes: cdSession.actualDurationMinutes?.intValue,
+                    status: SessionStatus(rawValue: cdSession.status) ?? .scheduled,
+                    sessionType: SessionType(rawValue: cdSession.sessionType) ?? .focused,
+                    hasReminder: cdSession.hasReminder,
+                    linkedDeadlineId: cdSession.linkedDeadlineId,
+                    linkedPlanId: cdSession.linkedPlanId,
+                    resourceIds: cdSession.resourceIds,
+                    topicIds: cdSession.topicIds,
+                    rating: cdSession.rating?.intValue,
+                    externalCalendarEventId: cdSession.externalCalendarEventId,
+                    createdAt: cdSession.createdAt,
+                    updatedAt: cdSession.updatedAt,
+                    syncStatus: SyncStatus(rawValue: cdSession.syncStatus) ?? .localOnly
+                )
+            }
+        } catch {
+            print("Failed to fetch cached study sessions: \(error)")
+            return []
+        }
+    }
+
+    func upsertStudySession(_ session: StudySession) {
+        let context = CoreDataStack.shared.context
+
+        let request = NSFetchRequest<CDStudySession>(entityName: "CDStudySession")
+        request.predicate = NSPredicate(format: "id == %@", session.id)
+        request.fetchLimit = 1
+
+        let cdSession: CDStudySession
+        if let existing = try? context.fetch(request).first {
+            cdSession = existing
+        } else {
+            cdSession = CDStudySession(context: context)
+        }
+
+        cdSession.id = session.id
+        cdSession.userId = session.userId
+        cdSession.subjectId = session.subjectId
+        cdSession.subjectName = session.subjectName
+        cdSession.subjectColorHex = session.subjectColorHex
+        cdSession.title = session.title
+        cdSession.topic = session.topic
+        cdSession.notes = session.notes
+        cdSession.scheduledDate = session.scheduledDate
+        cdSession.startTime = session.startTime
+        cdSession.endTime = session.endTime
+        cdSession.actualDurationMinutes = session.actualDurationMinutes.map { NSNumber(value: $0) }
+        cdSession.status = session.status.rawValue
+        cdSession.sessionType = session.sessionType.rawValue
+        cdSession.hasReminder = session.hasReminder
+        cdSession.linkedDeadlineId = session.linkedDeadlineId
+        cdSession.linkedPlanId = session.linkedPlanId
+        cdSession.resourceIds = session.resourceIds
+        cdSession.topicIds = session.topicIds
+        cdSession.rating = session.rating.map { NSNumber(value: $0) }
+        cdSession.externalCalendarEventId = session.externalCalendarEventId
+        cdSession.createdAt = session.createdAt
+        cdSession.updatedAt = session.updatedAt
+        cdSession.syncStatus = session.syncStatus.rawValue
+
+        CoreDataStack.shared.saveContext()
+    }
+
+    func cacheStudySessions(_ sessions: [StudySession]) {
+        sessions.forEach { upsertStudySession($0) }
+    }
+
+    func deleteStudySession(id: String) {
+        let context = CoreDataStack.shared.context
+        let request = NSFetchRequest<CDStudySession>(entityName: "CDStudySession")
+        request.predicate = NSPredicate(format: "id == %@", id)
+        if let existing = try? context.fetch(request).first {
+            context.delete(existing)
+            CoreDataStack.shared.saveContext()
+        }
+    }
+
+    func deleteStudySessions(ids: [String]) {
+        guard !ids.isEmpty else { return }
+        let context = CoreDataStack.shared.context
+        let request = NSFetchRequest<NSFetchRequestResult>(entityName: "CDStudySession")
+        request.predicate = NSPredicate(format: "id IN %@", ids)
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: request)
+        try? context.execute(deleteRequest)
+        CoreDataStack.shared.saveContext()
+    }
     
+    func getCachedDeadlines(for subjectId: String) -> [Deadline] {
+        let request = NSFetchRequest<CDDeadline>(entityName: "CDDeadline")
+        request.predicate = NSPredicate(format: "subjectId == %@", subjectId)
+        request.sortDescriptors = [NSSortDescriptor(key: "dueDate", ascending: true)]
+        do {
+            let results = try CoreDataStack.shared.context.fetch(request)
+            return results.compactMap { cd in
+                guard let tag = DeadlineTag(rawValue: cd.tag),
+                      let priority = DeadlinePriority(rawValue: cd.priority),
+                      let status = DeadlineStatus(rawValue: cd.status) else { return nil }
+                return Deadline(
+                    id: cd.id,
+                    userId: cd.userId,
+                    subjectId: cd.subjectId,
+                    subjectColorHex: cd.subjectColorHex,
+                    name: cd.name,
+                    dueDate: cd.dueDate,
+                    hasReminder: cd.hasReminder,
+                    isHighPriority: cd.isHighPriority,
+                    notes: cd.notes,
+                    tag: tag,
+                    priority: priority,
+                    status: status,
+                    reminderDate: cd.reminderDate,
+                    linkedSessionIds: cd.linkedSessionIds,
+                    notificationId: cd.notificationId,
+                    createdAt: cd.createdAt,
+                    updatedAt: cd.updatedAt,
+                    syncStatus: SyncStatus(rawValue: cd.syncStatus) ?? .localOnly
+                )
+            }
+        } catch {
+            print("Failed to fetch cached deadlines: \(error)")
+            return []
+        }
+    }
+
+    func upsertDeadline(_ deadline: Deadline) {
+        let context = CoreDataStack.shared.context
+        let request = NSFetchRequest<CDDeadline>(entityName: "CDDeadline")
+        request.predicate = NSPredicate(format: "id == %@", deadline.id)
+        request.fetchLimit = 1
+
+        let cd: CDDeadline
+        if let existing = try? context.fetch(request).first {
+            cd = existing
+        } else {
+            cd = CDDeadline(context: context)
+        }
+
+        cd.id = deadline.id
+        cd.userId = deadline.userId
+        cd.subjectId = deadline.subjectId
+        cd.subjectColorHex = deadline.subjectColorHex
+        cd.name = deadline.name
+        cd.dueDate = deadline.dueDate
+        cd.hasReminder = deadline.hasReminder
+        cd.isHighPriority = deadline.isHighPriority
+        cd.notes = deadline.notes
+        cd.tag = deadline.tag.rawValue
+        cd.priority = deadline.priority.rawValue
+        cd.status = deadline.status.rawValue
+        cd.reminderDate = deadline.reminderDate
+        cd.linkedSessionIds = deadline.linkedSessionIds
+        cd.notificationId = deadline.notificationId
+        cd.createdAt = deadline.createdAt
+        cd.updatedAt = deadline.updatedAt
+        cd.syncStatus = deadline.syncStatus.rawValue
+
+        CoreDataStack.shared.saveContext()
+    }
+
+    func cacheDeadlines(_ deadlines: [Deadline]) {
+        deadlines.forEach { upsertDeadline($0) }
+    }
+
+    func deleteDeadline(id: String) {
+        let context = CoreDataStack.shared.context
+        let request = NSFetchRequest<CDDeadline>(entityName: "CDDeadline")
+        request.predicate = NSPredicate(format: "id == %@", id)
+        if let existing = try? context.fetch(request).first {
+            context.delete(existing)
+            CoreDataStack.shared.saveContext()
+        }
+    }
+
     func clearCache() {
         let context = CoreDataStack.shared.context
         let request = NSFetchRequest<NSFetchRequestResult>(entityName: "CDUserProfile")
@@ -443,10 +710,20 @@ class CoreDataService {
         let studyPathDeleteRequest = NSBatchDeleteRequest(fetchRequest: studyPathRequest)
         try? context.execute(studyPathDeleteRequest)
 
+        let availabilityRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CDAvailabilitySlot")
+        let availabilityDeleteRequest = NSBatchDeleteRequest(fetchRequest: availabilityRequest)
+        try? context.execute(availabilityDeleteRequest)
+
+        let studySessionRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CDStudySession")
+        let studySessionDeleteRequest = NSBatchDeleteRequest(fetchRequest: studySessionRequest)
+        try? context.execute(studySessionDeleteRequest)
+
+        let deadlineRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CDDeadline")
+        let deadlineDeleteRequest = NSBatchDeleteRequest(fetchRequest: deadlineRequest)
+        try? context.execute(deadlineDeleteRequest)
+
         CoreDataStack.shared.saveContext()
     }
-
-    // MARK: - Quiz Attempts
 
     func getCachedAttempts(for subjectId: String) -> [QuizAttempt] {
         let request = NSFetchRequest<CDQuizAttempt>(entityName: "CDQuizAttempt")

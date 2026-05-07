@@ -63,7 +63,8 @@ struct SubjectWorkspaceView: View {
                     deadlines: $deadlines,
                     isExpanded: $isDeadlinesExpanded,
                     onAdd: { showAddDeadline = true },
-                    onCardTap: { deadline in selectedDeadline = deadline }
+                    onCardTap: { deadline in selectedDeadline = deadline },
+                    onDelete: { deadline in deleteDeadline(deadline) }
                 )
                 .padding(.horizontal, theme.spacing.sm)
                 .padding(.bottom, theme.spacing.md)
@@ -84,9 +85,14 @@ struct SubjectWorkspaceView: View {
                     
                 }
 
-                ScrollView(showsIndicators: false) {
+                if selectedTab == .aiAssistant {
                     tabContent
                         .padding(.horizontal, theme.spacing.sm)
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        tabContent
+                            .padding(.horizontal, theme.spacing.sm)
+                    }
                 }
             }
             
@@ -113,19 +119,36 @@ struct SubjectWorkspaceView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showAddDeadline) {
-            AddDeadlineSheet(subjectId: subject.id) { newDeadline in
-                deadlines.append(newDeadline)
+            AddDeadlineSheet(subjectId: subject.id, userId: subject.userId) { newDeadline in
+                var deadline = newDeadline
+                deadline.subjectColorHex = subject.colorHex
+                deadlines.append(deadline)
+                Task {
+                    do {
+                        try await DeadlineService.shared.createDeadline(deadline)
+                    } catch {
+                        print("Failed to save deadline: \(error)")
+                    }
+                }
             }
             .environment(\.theme, theme)
         }
         .sheet(item: $selectedDeadline) { deadline in
             AddDeadlineSheet(
                 subjectId: subject.id,
+                userId: subject.userId,
                 existingDeadline: deadline,
                 onSave: { _ in },
                 onUpdate: { updated in
                     if let index = deadlines.firstIndex(where: { $0.id == updated.id }) {
                         deadlines[index] = updated
+                    }
+                    Task {
+                        do {
+                            try await DeadlineService.shared.updateDeadline(updated)
+                        } catch {
+                            print("Failed to update deadline: \(error)")
+                        }
                     }
                 }
             )
@@ -137,12 +160,15 @@ struct SubjectWorkspaceView: View {
                 resource.subjectId = subject.id
                 resource.userId = subject.userId
                 resources.append(resource)
+                subjectsVM?.setResourceCount(resources.count, for: subject.id, resourceIds: resources.map(\.id))
                 
                 Task {
                     do {
                         try await ResourceService.shared.createResource(resource)
+                        let fetchedResources = try await ResourceService.shared.fetchResources(subjectId: subject.id)
                         await MainActor.run {
-                            subjectsVM?.refreshSubjectCounts(for: subject.id)
+                            resources = fetchedResources
+                            subjectsVM?.setResourceCount(fetchedResources.count, for: subject.id, resourceIds: fetchedResources.map(\.id))
                         }
                     } catch {
                         print("Failed to save resource: \(error)")
@@ -219,6 +245,7 @@ struct SubjectWorkspaceView: View {
         .onAppear {
             loadResources()
             loadStudyPath()
+            loadDeadlines()
         }
     }
     
@@ -240,6 +267,29 @@ struct SubjectWorkspaceView: View {
         }
     }
 
+    private func loadDeadlines() {
+        deadlines = CoreDataService.shared.getCachedDeadlines(for: subject.id)
+        Task {
+            do {
+                let fetched = try await DeadlineService.shared.fetchDeadlines(subjectId: subject.id)
+                await MainActor.run { deadlines = fetched }
+            } catch {
+                print("Failed to fetch deadlines: \(error)")
+            }
+        }
+    }
+
+    private func deleteDeadline(_ deadline: Deadline) {
+        deadlines.removeAll { $0.id == deadline.id }
+        Task {
+            do {
+                try await DeadlineService.shared.deleteDeadline(id: deadline.id, subjectId: subject.id)
+            } catch {
+                print("Failed to delete deadline: \(error)")
+            }
+        }
+    }
+
     private func loadResources() {
         resources = CoreDataService.shared.getCachedResources(for: subject.id)
         
@@ -248,6 +298,7 @@ struct SubjectWorkspaceView: View {
                 let fetchedResources = try await ResourceService.shared.fetchResources(subjectId: subject.id)
                 await MainActor.run {
                     resources = fetchedResources
+                    subjectsVM?.setResourceCount(fetchedResources.count, for: subject.id, resourceIds: fetchedResources.map(\.id))
                 }
             } catch {
                 print("Failed to fetch resources: \(error)")
@@ -355,7 +406,7 @@ struct SubjectWorkspaceView: View {
 
     private var tabContentHeader: some View {
         HStack {
-            Text(selectedTab == .resources ? "Your Resources" : selectedTab.rawValue)
+            Text(selectedTab == .resources ? "Your Resources (\(resources.count))" : selectedTab.rawValue)
                 .font(theme.typography.headingMedium)
                 .fontWeight(.bold)
                 .foregroundColor(theme.colors.textPrimary)

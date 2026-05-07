@@ -1,6 +1,7 @@
 import Foundation
 import PDFKit
 import UIKit
+import Combine
 
 class ContentExtractionService {
     static let shared = ContentExtractionService()

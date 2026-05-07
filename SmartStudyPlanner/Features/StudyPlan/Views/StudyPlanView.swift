@@ -2,12 +2,14 @@ import SwiftUI
 
 struct StudyPlanView: View {
     @Environment(\.theme) var theme
+    @EnvironmentObject private var sessionVM: SessionViewModel
     @StateObject private var vm = StudyPlanViewModel()
     @State private var selectedDate: DateComponents? = nil
     @State private var showManageAvailability: Bool = false
     @State private var showCreateStudyPlan: Bool = false
     @State private var selectedDeadline: Deadline? = nil
     @State private var sessionSheetSlot: AvailabilitySlot? = nil
+    @State private var sessionSheetDate: Date? = nil
     @State private var editingSession: (slot: AvailabilitySlot, session: StudySession)? = nil
 
     var slotsForSelectedDate: [AvailabilitySlot] {
@@ -71,8 +73,10 @@ struct StudyPlanView: View {
         .sheet(isPresented: $showCreateStudyPlan) {
             CreateStudyPlanSheet(
                 availabilitySlots: vm.availabilitySlots,
+                subjects:          vm.subjects,
+                studyPathTopics:   vm.studyPathTopics,
                 onPlanCreated: { sessions in
-                    sessions.forEach { vm.addSession($0) }
+                    vm.addSessions(sessions)
                 }
             )
             .environment(\.theme, theme)
@@ -80,6 +84,7 @@ struct StudyPlanView: View {
         .sheet(item: $selectedDeadline) { deadline in
             AddDeadlineSheet(
                 subjectId: deadline.subjectId,
+                userId: deadline.userId,
                 existingDeadline: deadline,
                 onSave: { _ in },
                 onUpdate: { _ in }
@@ -87,9 +92,12 @@ struct StudyPlanView: View {
             .environment(\.theme, theme)
         }
         .sheet(item: $sessionSheetSlot) { slot in
-            AddStudySessionSheet(slot: slot) { newSession in
-                vm.addSession(newSession)
-            }
+            AddStudySessionSheet(
+                slot: slot,
+                scheduledDate: sessionSheetDate,
+                onSave: { newSession in vm.addSession(newSession) },
+                availableSubjects: vm.subjects
+            )
             .environment(\.theme, theme)
         }
         .sheet(item: Binding(
@@ -100,12 +108,14 @@ struct StudyPlanView: View {
                 slot: item.slot,
                 existingSession: item.session,
                 onSave: { updated in vm.updateSession(updated) },
-                onDelete: { vm.removeSession(id: item.session.id) }
+                onDelete: { vm.removeSession(id: item.session.id) },
+                availableSubjects: vm.subjects
             )
             .environment(\.theme, theme)
         }
         .onAppear {
             selectedDate = Calendar.current.dateComponents([.year, .month, .day], from: .now)
+            Task { await vm.load(userId: sessionVM.currentUser?.id) }
         }
     }
 
@@ -125,6 +135,16 @@ struct StudyPlanView: View {
 
                 TextButton(title: "Create Plan", icon: "sparkles", style: .bold) {
                     showCreateStudyPlan = true
+                }
+
+                if !vm.studySessions.isEmpty {
+                    Button {
+                        vm.syncAllToCalendar()
+                    } label: {
+                        Image(systemName: "calendar.badge.plus")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(theme.colors.primary)
+                    }
                 }
             }
         }
@@ -159,15 +179,33 @@ struct StudyPlanView: View {
     }
 
     private func sessions(for slot: AvailabilitySlot) -> [StudySession] {
-        guard let slotDate = slot.type == .date ? slot.date : {
-            guard let selected = selectedDate else { return nil }
-            return Calendar.current.date(from: selected)
-        }() else { return [] }
+        // Resolve which calendar day to filter on
+        let slotDate: Date
+        switch slot.type {
+        case .specificDate:
+            guard let d = slot.date else { return [] }
+            slotDate = d
+        case .dateRange:
+            guard let selected = selectedDate,
+                  let d = Calendar.current.date(from: selected) else { return [] }
+            slotDate = d
+        }
+
+        let cal = Calendar.current
+        let slotStartMins = cal.component(.hour, from: slot.startTime) * 60
+                          + cal.component(.minute, from: slot.startTime)
+        let slotEndMins   = cal.component(.hour, from: slot.endTime) * 60
+                          + cal.component(.minute, from: slot.endTime)
 
         return vm.studySessions.filter { session in
-            Calendar.current.isDate(session.startTime, inSameDayAs: slotDate) &&
-            session.startTime >= slot.startTime &&
-            session.endTime   <= slot.endTime
+            let sessionStartMins = cal.component(.hour,   from: session.startTime) * 60
+                                 + cal.component(.minute, from: session.startTime)
+            let sessionEndMins = cal.component(.hour, from: session.endTime) * 60
+                               + cal.component(.minute, from: session.endTime)
+            return cal.isDate(session.startTime, inSameDayAs: slotDate)
+                && sessionStartMins >= slotStartMins
+                && sessionEndMins <= slotEndMins
+                && session.endTime > session.startTime
         }
     }
 
@@ -186,7 +224,7 @@ struct StudyPlanView: View {
                         .fontWeight(.semibold)
                         .foregroundColor(theme.colors.textPrimary)
 
-                    Text(slot.type.rawValue)
+                    Text(verbatim: slot.type.rawValue)
                         .font(theme.typography.bodySmall)
                         .foregroundColor(theme.colors.textSecondary)
                 }
@@ -235,6 +273,7 @@ struct StudyPlanView: View {
 
             Button {
                 sessionSheetSlot = slot
+                sessionSheetDate = selectedDate.flatMap { Calendar.current.date(from: $0) }
             } label: {
                 HStack(spacing: theme.spacing.sm) {
                     Image(systemName: "plus.circle.fill")
