@@ -17,6 +17,7 @@ struct AddDeadlineSheet: View {
     var existingDeadline: Deadline? = nil
     var onSave: (Deadline) -> Void
     var onUpdate: ((Deadline) -> Void)? = nil
+    var onDelete: ((Deadline) -> Void)? = nil
 
     @State private var name: String = ""
     @State private var date: Date = .now
@@ -154,7 +155,26 @@ struct AddDeadlineSheet: View {
                             selection: $selectedTag,
                             labelProvider: { $0.rawValue }
                         )
-                        
+
+                        if isEditing, let deadline = existingDeadline {
+                            Button(role: .destructive) {
+                                onDelete?(deadline)
+                                dismiss()
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    Image(systemName: "trash")
+                                    Text("Delete Deadline")
+                                    Spacer()
+                                }
+                                .font(theme.typography.bodyMedium.weight(.bold))
+                                .foregroundColor(.red)
+                                .padding()
+                                .background(Color.red.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))
+                            }
+                            .padding(.top, theme.spacing.sm)
+                        }
 
                     }
                     .padding(theme.spacing.lg)

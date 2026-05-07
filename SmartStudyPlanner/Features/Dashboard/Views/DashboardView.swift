@@ -13,6 +13,14 @@ struct DashboardView: View {
     @State private var shortcutFlow: ShortcutFlow? = nil
     @State private var sessionToRate: StudySession? = nil
 
+    private var visibleUpcomingSessions: [StudySession] {
+        Array(vm.upcomingSessions.prefix(3))
+    }
+
+    private var visibleUpcomingDeadlines: [Deadline] {
+        Array(vm.upcomingDeadlines.prefix(3))
+    }
+
     var body: some View {
         ZStack {
             theme.colors.background
@@ -66,6 +74,15 @@ struct DashboardView: View {
                         vm.upcomingDeadlines[idx] = updated
                     }
                     Task { try? await DeadlineService.shared.updateDeadline(updated) }
+                },
+                onDelete: { deleted in
+                    vm.upcomingDeadlines.removeAll { $0.id == deleted.id }
+                    Task {
+                        try? await DeadlineService.shared.deleteDeadline(
+                            id: deleted.id,
+                            subjectId: deleted.subjectId
+                        )
+                    }
                 }
             )
             .environment(\.theme, theme)
@@ -175,7 +192,7 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
             SectionHeader(title: "Upcoming Study Sessions", actionTitle: "ACTIVE")
 
-            if vm.upcomingSessions.isEmpty {
+            if visibleUpcomingSessions.isEmpty {
                 Text("No sessions in the next 7 days")
                     .font(theme.typography.bodyMedium)
                     .foregroundColor(theme.colors.textSecondary)
@@ -184,7 +201,7 @@ struct DashboardView: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: theme.spacing.md) {
-                        ForEach(vm.upcomingSessions) { session in
+                        ForEach(visibleUpcomingSessions) { session in
                             StudySessionCard(
                                 session: session,
                                 onStart: {
@@ -241,7 +258,7 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
             SectionHeader(title: "Upcoming Deadlines", actionTitle: "View Calendar") {}
 
-            if vm.upcomingDeadlines.isEmpty {
+            if visibleUpcomingDeadlines.isEmpty {
                 Text("No upcoming deadlines")
                     .font(theme.typography.bodyMedium)
                     .foregroundColor(theme.colors.textSecondary)
@@ -249,10 +266,23 @@ struct DashboardView: View {
                     .padding(.vertical, theme.spacing.sm)
             } else {
                 VStack(spacing: theme.spacing.md) {
-                    ForEach(vm.upcomingDeadlines) { deadline in
+                    ForEach(visibleUpcomingDeadlines) { deadline in
                         DeadlineCard(deadline: deadline, action: {
                             editingDeadline = deadline
                         })
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                vm.upcomingDeadlines.removeAll { $0.id == deadline.id }
+                                Task {
+                                    try? await DeadlineService.shared.deleteDeadline(
+                                        id: deadline.id,
+                                        subjectId: deadline.subjectId
+                                    )
+                                }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                     }
                 }
             }

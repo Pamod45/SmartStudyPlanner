@@ -249,6 +249,27 @@ struct QuizzesTabView: View {
             )
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button(role: .destructive) {
+                deleteQuizGroup(group)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+
+    private func deleteQuizGroup(_ group: QuizGroup) {
+        let attemptIds = group.attempts.map(\.id)
+        attempts.removeAll { attemptIds.contains($0.id) }
+        attemptIds.forEach { CoreDataService.shared.deleteAttempt(id: $0) }
+
+        Task {
+            do {
+                try await QuizService.shared.deleteAttempts(ids: attemptIds)
+            } catch {
+                print("[QuizzesTabView] Failed to delete quiz group: \(error)")
+            }
+        }
     }
     
     private var emptyView: some View {

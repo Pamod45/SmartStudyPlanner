@@ -9,6 +9,9 @@ final class StudyContentOrchestrator: ObservableObject {
     static let shared = StudyContentOrchestrator()
 
     private let hostedServerURL = URL(string: "http://192.168.1.21:8080/v1/chat/completions")!
+//    private let hostedServerURL = URL(string: "http://192.168.1.21:8080/v1/chat/completions")!
+//    private let ragStudyPathURL = URL(string: "http://192.168.1.21:8081/generate/study-path")!
+//    private let ragQuizURL = URL(string: "http://192.168.1.21:8081/generate/quiz")!
 
     @Published private(set) var isGenerating = false
     @Published private(set) var error: Error?

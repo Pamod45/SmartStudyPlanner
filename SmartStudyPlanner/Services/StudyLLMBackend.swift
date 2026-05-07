@@ -64,10 +64,10 @@ protocol StudyLLMBackend {
 
 enum LLMBackendSelector {
     static func resolve(hostedURL: URL) -> StudyLLMBackend {
-//        if case .available = SystemLanguageModel.default.availability {
-//            print("[LLM] Using FoundationModels (Apple Intelligence)")
-//            return FoundationModelsBackend()
-//        }
+        if case .available = SystemLanguageModel.default.availability {
+            print("[LLM] Using FoundationModels (Apple Intelligence)")
+            return FoundationModelsBackend()
+        }
         print("[LLM] FoundationModels unavailable — falling back to hosted LLM at \(hostedURL)")
         return HostedLLMBackend(serverURL: hostedURL)
     }

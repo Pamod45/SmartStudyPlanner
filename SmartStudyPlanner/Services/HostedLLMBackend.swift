@@ -10,13 +10,15 @@ import Foundation
 struct HostedLLMBackend: StudyLLMBackend {
 
     let serverURL: URL
-    private let temperature: Double = 0.3
+    private let temperature: Double = 0.1
     private let timeoutInterval: TimeInterval = 120
+    private let studyPathInputWordLimit = 1_400
+    private let quizInputWordLimit = 1_200
 
     func generateStudyPath(from text: String, topicCount: Int) async throws -> GeneratedStudyPath {
         let systemPrompt = """
         You are an expert tutor. Create a study path from the provided text.
-        Output MUST be ONLY valid JSON — no markdown fences, no explanation.
+        Output MUST be ONLY valid JSON — no markdown fences, no explanation. MAKE SURE YOU ONLY PROVIDE THE CURRENT GIVEN OUTPUT FORMAT. THAT IS THE ONE AND ONLY ACCEPTABLE OUTPUT.
         Use exactly this schema (array of \(topicCount) objects, weightPercent must sum to 100):
         [
           {
@@ -32,12 +34,15 @@ struct HostedLLMBackend: StudyLLMBackend {
         Rules:
         - difficultyLevel: 1 (very easy) to 10 (very hard).
         - estimatedMinutes: realistic total study time a student needs to master this topic.
+        - The first character of your response must be "[".
+        - The last character of your response must be "]".
+        - Do NOT write notes, comments, explanations, apologies, summaries, or follow-up text after the JSON.
         - Do NOT include any text outside the JSON array.
         """
 
-        let userMessage = "Study material:\n\(String(text.prefix(6000)))\n\nReturn ONLY the JSON array."
+        let userMessage = "Study material:\n\(limitedWords(from: text, maxWords: studyPathInputWordLimit))\n\nReturn ONLY the JSON array."
 
-        let raw = try await callServer(system: systemPrompt, user: userMessage)
+        let raw = try await callServer(system: systemPrompt, user: userMessage, maxTokens: 1_400)
 
         print("🔵 [HostedLLM] Study path raw response:\n\(raw)")
 
@@ -59,9 +64,9 @@ struct HostedLLMBackend: StudyLLMBackend {
         ]
         """
 
-        let userMessage = "Study material:\n\(String(text.prefix(6000)))\n\nReturn ONLY the JSON array."
+        let userMessage = "Study material:\n\(limitedWords(from: text, maxWords: quizInputWordLimit))\n\nReturn ONLY the JSON array."
 
-        let raw = try await callServer(system: systemPrompt, user: userMessage)
+        let raw = try await callServer(system: systemPrompt, user: userMessage, maxTokens: 2048)
 
         print("🔵 [HostedLLM] Quiz raw response:\n\(raw)")
 
@@ -79,7 +84,7 @@ struct HostedLLMBackend: StudyLLMBackend {
         [
           {
             "questionText": "What is ...?",
-            "options": ["A. First option", "B. Second option", "C. Third option", "D. Fourth option"],
+            "options": ["A. Subject-specific answer", "B. Plausible wrong answer", "C. Plausible wrong answer", "D. Plausible wrong answer"],
             "correctOptionIndex": 0,
             "category": "\(category)",
             "expertTip": "One-line hint about the concept.",
@@ -88,20 +93,26 @@ struct HostedLLMBackend: StudyLLMBackend {
         ]
         Rules:
         - options must contain EXACTLY 4 strings.
+        - Every option MUST be a real, subject-specific answer choice based on the study material.
+        - NEVER use placeholder option text like "First option", "Second option", "Third option", "Fourth option", "Subject-specific answer", or "Plausible wrong answer".
+        - The correct option must be one of the 4 options.
         - correctOptionIndex must be 0, 1, 2, or 3.
+        - The first character of your response must be "[".
+        - The last character of your response must be "]".
+        - Do NOT write notes, comments, explanations, apologies, summaries, or follow-up text after the JSON.
         - Do NOT include any text outside the JSON array.
         """
 
-        let userMessage = "Study material:\n\(String(text.prefix(6000)))\n\nReturn ONLY the JSON array."
+        let userMessage = "Study material:\n\(limitedWords(from: text, maxWords: quizInputWordLimit))\n\nReturn ONLY the JSON array."
 
-        let raw = try await callServer(system: systemPrompt, user: userMessage)
+        let raw = try await callServer(system: systemPrompt, user: userMessage, maxTokens: 2_048)
 
         print("🔵 [HostedLLM] Quiz questions raw response:\n\(raw)")
 
         return try parseQuizQuestions(from: raw, fallbackCategory: category)
     }
 
-    private func callServer(system: String, user: String) async throws -> String {
+    private func callServer(system: String, user: String, maxTokens: Int) async throws -> String {
         var request = URLRequest(url: serverURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -113,7 +124,7 @@ struct HostedLLMBackend: StudyLLMBackend {
                 ["role": "user",      "content": user]
             ],
             "temperature": temperature,
-            "max_tokens": 2048
+            "max_tokens": maxTokens
         ]
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -138,7 +149,7 @@ struct HostedLLMBackend: StudyLLMBackend {
     }
 
     private func parseTopics(from raw: String) throws -> [GeneratedStudyPath.Topic] {
-        let clean = stripMarkdown(raw)
+        let clean = jsonArrayString(from: stripMarkdown(raw))
 
         struct RawTopic: Decodable {
             let order: Int
@@ -154,7 +165,15 @@ struct HostedLLMBackend: StudyLLMBackend {
             throw LLMError.invalidJSON("Cannot encode string to data")
         }
 
-        let decoded = try JSONDecoder().decode([RawTopic].self, from: data)
+        let decoded: [RawTopic]
+        do {
+            decoded = try JSONDecoder().decode([RawTopic].self, from: data)
+        } catch {
+            print("[HostedLLM] Study path decode failed. Attempting salvage…")
+            let salvaged = salvageCompleteObjects(RawTopic.self, from: clean)
+            guard !salvaged.isEmpty else { throw error }
+            decoded = salvaged
+        }
         return decoded.map {
             let weight = $0.weightPercent ?? 0
             return GeneratedStudyPath.Topic(
@@ -225,6 +244,7 @@ struct HostedLLMBackend: StudyLLMBackend {
 
         let questions = decoded.compactMap { item -> QuizMCQItem? in
             guard !item.questionText.isEmpty, item.options.count == 4 else { return nil }
+            guard !containsPlaceholderOptions(item.options) else { return nil }
             return QuizMCQItem(
                 questionText:       item.questionText,
                 options:            item.options,
@@ -239,6 +259,22 @@ struct HostedLLMBackend: StudyLLMBackend {
             throw LLMError.invalidJSON("Parsed zero valid questions from response")
         }
         return QuizGenerationResult(questions: questions)
+    }
+
+    private func containsPlaceholderOptions(_ options: [String]) -> Bool {
+        let placeholders = [
+            "first option",
+            "second option",
+            "third option",
+            "fourth option",
+            "subject-specific answer",
+            "plausible wrong answer"
+        ]
+
+        return options.contains { option in
+            let normalized = option.lowercased()
+            return placeholders.contains { normalized.contains($0) }
+        }
     }
 
     private func salvageCompleteObjects<T: Decodable>(_ type: T.Type, from raw: String) -> [T] {
@@ -278,6 +314,22 @@ struct HostedLLMBackend: StudyLLMBackend {
         else if s.hasPrefix("```") { s = String(s.dropFirst(3)) }
         if s.hasSuffix("```") { s = String(s.dropLast(3)) }
         return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func jsonArrayString(from raw: String) -> String {
+        var clean = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let start = clean.firstIndex(of: "["),
+           let end = clean.lastIndex(of: "]") {
+            clean = String(clean[start...end])
+        }
+        return clean
+    }
+
+    private func limitedWords(from text: String, maxWords: Int) -> String {
+        let words = text
+            .split { $0.isWhitespace || $0.isNewline }
+            .prefix(maxWords)
+        return words.joined(separator: " ")
     }
 
     enum LLMError: LocalizedError {

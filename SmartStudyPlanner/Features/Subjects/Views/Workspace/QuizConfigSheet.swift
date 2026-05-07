@@ -67,7 +67,7 @@ struct QuizConfigSheet: View {
                 ZStack {
                     Color.black.opacity(0.45).ignoresSafeArea()
                     VStack(spacing: theme.spacing.lg) {
-                        ProgressView()
+                        SwiftUI.ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: theme.colors.primary))
                             .controlSize(.large)
                         Text("Generating quiz questions…")
@@ -351,7 +351,7 @@ struct QuizConfigSheet: View {
 
     private var startButton: some View {
         VStack(spacing: 0) {
-            PrimaryButton(title: isGenerating ? "Generating…" : "Start Quiz", icon: "play.fill") {
+            PrimaryButton(title: "Start Quiz", icon: "play.fill") {
                 guard !isGenerating else { return }
                 isGenerating = true
                 generationError = nil
@@ -368,18 +368,14 @@ struct QuizConfigSheet: View {
                         var allQuestions: [QuizQuestion] = []
 
                         if configTab == .topics {
-                            for topic in selTopics {
-                                var parts: [String] = [topic.title]
-                                if !topic.description.isEmpty { parts.append(topic.description) }
-                                parts.append(contentsOf: topic.subtopics)
-                                let topicText = parts.joined(separator: ". ")
-                                let qs = try await StudyContentOrchestrator.shared.buildQuizQuestions(
-                                    from: topicText,
-                                    questionCount: clamped,
-                                    category: topic.title
-                                )
-                                allQuestions.append(contentsOf: qs)
-                            }
+                            let topicText = try await quizText(for: selTopics)
+                            let category = selTopics.count == 1 ? selTopics[0].title : subject.name
+                            let qs = try await StudyContentOrchestrator.shared.buildQuizQuestions(
+                                from: topicText,
+                                questionCount: clamped,
+                                category: category
+                            )
+                            allQuestions.append(contentsOf: qs)
                         } else {
                             let extractedText = try await ContentExtractionService.shared.extractText(from: selResources)
                             let qs = try await StudyContentOrchestrator.shared.buildQuizQuestions(
@@ -422,5 +418,39 @@ struct QuizConfigSheet: View {
             .background(theme.colors.background)
         }
     }
-}
 
+    private func quizText(for selectedTopics: [StudyPathTopic]) async throws -> String {
+        let topicFocus = selectedTopics.map { topic in
+            var lines = ["Topic: \(topic.title)"]
+            if !topic.description.isEmpty {
+                lines.append("Description: \(topic.description)")
+            }
+            if !topic.subtopics.isEmpty {
+                lines.append("Subtopics: \(topic.subtopics.joined(separator: ", "))")
+            }
+            return lines.joined(separator: "\n")
+        }.joined(separator: "\n\n")
+
+        let topicResourceIds = Set(selectedTopics.flatMap { $0.resourceIds })
+        let fallbackResourceIds = Set(studyPath?.generatedFromResourceIds ?? [])
+        let relevantResourceIds = topicResourceIds.isEmpty ? fallbackResourceIds : topicResourceIds
+        let relevantResources = resources.filter { relevantResourceIds.contains($0.id) }
+
+        guard !relevantResources.isEmpty else {
+            return topicFocus
+        }
+
+        let resourceText = try await ContentExtractionService.shared.extractText(from: relevantResources)
+        guard !resourceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return topicFocus
+        }
+
+        return """
+        Focus quiz on these selected topics:
+        \(topicFocus)
+
+        Source study material:
+        \(resourceText)
+        """
+    }
+}

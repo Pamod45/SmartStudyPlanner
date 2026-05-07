@@ -8,8 +8,6 @@ class QuizService {
 
     private init() {}
 
-    // MARK: - Save
-
     func saveAttempt(_ attempt: QuizAttempt, userId: String) async throws {
         let questionsEncoded = try attempt.questions.map { q -> [String: Any] in
             [
@@ -132,5 +130,17 @@ class QuizService {
     func deleteAttempt(id: String) async throws {
         try await db.collection("quizAttempts").document(id).delete()
         CoreDataService.shared.deleteAttempt(id: id)
+    }
+
+    func deleteAttempts(ids: [String]) async throws {
+        guard !ids.isEmpty else { return }
+
+        let batch = db.batch()
+        for id in ids {
+            batch.deleteDocument(db.collection("quizAttempts").document(id))
+        }
+        try await batch.commit()
+
+        ids.forEach { CoreDataService.shared.deleteAttempt(id: $0) }
     }
 }

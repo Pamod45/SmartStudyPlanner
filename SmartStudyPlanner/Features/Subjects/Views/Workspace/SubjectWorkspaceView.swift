@@ -19,7 +19,7 @@ struct SubjectWorkspaceView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
 
-    let subject: Subject
+    @State var subject: Subject
     var subjectsVM: SubjectsViewModel? = nil
 
     @State private var selectedTab: WorkspaceTab = .resources
@@ -43,6 +43,7 @@ struct SubjectWorkspaceView: View {
     
     @State private var isGeneratingAIPath: Bool = false
     @State private var generationProgressText: String = "Analyzing resources..."
+    @State private var showEditSubject: Bool = false
 
     private var filteredResources: [Resource] {
         if searchText.isEmpty { return resources }
@@ -100,7 +101,7 @@ struct SubjectWorkspaceView: View {
                 ZStack {
                     Color.black.opacity(0.4).ignoresSafeArea()
                     VStack(spacing: theme.spacing.lg) {
-                        ProgressView()
+                        SwiftUI.ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: theme.colors.primary))
                             .controlSize(.large)
                         
@@ -133,6 +134,17 @@ struct SubjectWorkspaceView: View {
             }
             .environment(\.theme, theme)
         }
+        .sheet(isPresented: $showEditSubject) {
+            AddSubjectSheet(
+                editingSubject: subject,
+                onSave: { _ in },
+                onUpdate: { updated in
+                    subject = updated
+                    subjectsVM?.updateSubject(updated)
+                }
+            )
+            .environment(\.theme, theme)
+        }
         .sheet(item: $selectedDeadline) { deadline in
             AddDeadlineSheet(
                 subjectId: subject.id,
@@ -150,6 +162,9 @@ struct SubjectWorkspaceView: View {
                             print("Failed to update deadline: \(error)")
                         }
                     }
+                },
+                onDelete: { deadlineToDelete in
+                    deleteDeadline(deadlineToDelete)
                 }
             )
             .environment(\.theme, theme)
@@ -373,7 +388,13 @@ struct SubjectWorkspaceView: View {
 
             Spacer()
 
-            Color.clear.frame(width: 36, height: 36)
+            Button { showEditSubject = true } label: {
+                Image(systemName: "pencil")
+                    .fontWeight(.semibold)
+                    .foregroundColor(theme.colors.textPrimary)
+                    .frame(width: 36, height: 36)
+                    .glassEffect(.regular, in: Circle())
+            }
         }
     }
 

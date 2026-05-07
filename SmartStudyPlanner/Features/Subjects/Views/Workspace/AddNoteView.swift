@@ -27,6 +27,8 @@ struct AddNoteView: View {
         }
         .navigationBarHidden(true)
         .onAppear {
+            ttsManager.stop()
+
             if let existing = existingResource {
                 title = existing.name
                 if let content = existing.content {
@@ -37,11 +39,15 @@ struct AddNoteView: View {
                 title = "Scanned Note"
             }
         }
+        .onDisappear {
+            ttsManager.stop()
+        }
     }
 
     private var topBar: some View {
         HStack {
             Button("Cancel") {
+                ttsManager.stop()
                 dismiss()
             }
             .font(theme.typography.bodyMedium)
@@ -132,6 +138,7 @@ struct AddNoteView: View {
         }
         
         onSave(resource)
+        ttsManager.stop()
         dismiss()
     }
 }

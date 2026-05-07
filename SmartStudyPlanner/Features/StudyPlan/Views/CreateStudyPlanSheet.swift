@@ -328,7 +328,7 @@ struct CreateStudyPlanSheet: View {
         ZStack {
             Color.black.opacity(0.45).ignoresSafeArea()
             VStack(spacing: theme.spacing.lg) {
-                ProgressView()
+                SwiftUI.ProgressView()
                     .progressViewStyle(CircularProgressViewStyle(tint: theme.colors.primary))
                     .controlSize(.large)
                 Text("Building your schedule…")

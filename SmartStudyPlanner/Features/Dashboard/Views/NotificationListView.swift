@@ -17,6 +17,8 @@ struct NotificationListView: View {
     @State private var editMode: EditMode = .inactive
     @State private var selectedIds = Set<AppNotification.ID>()
 
+    private let visibleTypes: [NotificationType] = [.all, .study, .quiz, .general]
+
     private var filteredNotifications: [AppNotification] {
         let base = selectedType == .all
             ? notificationStore.notifications
@@ -39,7 +41,7 @@ struct NotificationListView: View {
                     .background(theme.colors.background)
 
                 ChipPicker(
-                    items: NotificationType.allCases,
+                    items: visibleTypes,
                     selection: $selectedType,
                     labelProvider: { $0.rawValue }
                 )
@@ -192,4 +194,3 @@ struct NotificationListView: View {
         .environmentObject(NotificationStore.shared)
         .environment(\.theme, AppTheme.defaultTheme)
 }
-

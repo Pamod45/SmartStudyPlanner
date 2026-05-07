@@ -59,7 +59,7 @@ struct ContentView: View {
             .tag(AppTab.plan)
 
             NavigationStack {
-                ProgressView()
+                UserProgressView()
             }
             .tabItem {
                 Label(AppTab.progress.title, systemImage: AppTab.progress.icon)

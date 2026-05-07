@@ -198,7 +198,7 @@ struct ScannerView: View {
                 if isProcessing && page.recognizedText == nil {
                     ZStack {
                         Color.black.opacity(0.6)
-                        ProgressView()
+                        SwiftUI.ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     }
                     .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg))

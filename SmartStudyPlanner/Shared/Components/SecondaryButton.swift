@@ -35,7 +35,7 @@ struct SecondaryButton: View {
                 .foregroundColor(theme.colors.primary)
 
                 if isLoading {
-                    ProgressView()
+                    SwiftUI.ProgressView()
                         .tint(theme.colors.textOnPrimary)
                 }
             }
@@ -49,4 +49,3 @@ struct SecondaryButton: View {
         .disabled(isLoading)
     }
 }
-

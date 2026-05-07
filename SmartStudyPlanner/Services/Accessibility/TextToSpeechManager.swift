@@ -16,7 +16,9 @@ class TextToSpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
     }
     
     func speak(text: String) {
-        // Configure AVAudioSession for playback
+        let cleanText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanText.isEmpty else { return }
+
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: .duckOthers)
             try AVAudioSession.sharedInstance().setActive(true)
@@ -24,22 +26,24 @@ class TextToSpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
             print("Failed to set audio session category: \(error.localizedDescription)")
         }
         
-        let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-        // Optional tuning based on preferences
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
-        
-        // Stop any ongoing speech before starting new
-        if synthesizer.isSpeaking {
+        if synthesizer.isSpeaking || synthesizer.isPaused {
             synthesizer.stopSpeaking(at: .immediate)
         }
+
+        let utterance = AVSpeechUtterance(string: cleanText)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         
         synthesizer.speak(utterance)
     }
     
     func stop() {
-        if synthesizer.isSpeaking {
+        if synthesizer.isSpeaking || synthesizer.isPaused {
             synthesizer.stopSpeaking(at: .immediate)
+        }
+        DispatchQueue.main.async {
+            self.isSpeaking = false
+            self.isPaused = false
         }
     }
     
@@ -54,9 +58,7 @@ class TextToSpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
             synthesizer.continueSpeaking()
         }
     }
-    
-    // MARK: - AVSpeechSynthesizerDelegate
-    
+        
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
         DispatchQueue.main.async {
             self.isSpeaking = true

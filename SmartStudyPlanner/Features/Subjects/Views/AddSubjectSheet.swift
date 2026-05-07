@@ -16,7 +16,11 @@ struct AddSubjectSheet: View {
     @State private var selectedColor: Color = .blue
     @State private var notes: String = ""
 
+    var editingSubject: Subject? = nil
     var onSave: (Subject) -> Void
+    var onUpdate: ((Subject) -> Void)? = nil
+
+    private var isEditing: Bool { editingSubject != nil }
 
     var body: some View {
         ZStack {
@@ -32,21 +36,30 @@ struct AddSubjectSheet: View {
 
                     Spacer()
 
-                    Text("Add Subject")
+                    Text(isEditing ? "Edit Subject" : "Add Subject")
                         .font(theme.typography.headingMedium)
                         .fontWeight(.bold)
                         .foregroundColor(theme.colors.textPrimary)
 
                     Spacer()
                     
-                    TextButton(title:"Save", style: .bold){
+                    TextButton(title: "Save", style: .bold) {
                         guard !subjectName.isEmpty else { return }
-                        let newSubject = Subject(
-                            name: subjectName,
-                            colorHex: selectedColor.toHex() ?? "#3B82F6",
-                            notes: notes
-                        )
-                        onSave(newSubject)
+                        if let existing = editingSubject {
+                            var updated = existing
+                            updated.name = subjectName
+                            updated.colorHex = selectedColor.toHex() ?? existing.colorHex
+                            updated.notes = notes
+                            updated.updatedAt = Date()
+                            onUpdate?(updated)
+                        } else {
+                            let newSubject = Subject(
+                                name: subjectName,
+                                colorHex: selectedColor.toHex() ?? "#3B82F6",
+                                notes: notes
+                            )
+                            onSave(newSubject)
+                        }
                         dismiss()
                     }
                 }
@@ -67,7 +80,7 @@ struct AddSubjectSheet: View {
                                     .foregroundColor(theme.colors.textSecondary)
                             )
                             .font(theme.typography.bodyMedium)
-                            .frame(minHeight: 28 )
+                            .frame(minHeight: 28)
                             .foregroundColor(theme.colors.textPrimary)
                             .tint(theme.colors.primary)
                             .padding(theme.spacing.md)
@@ -81,10 +94,7 @@ struct AddSubjectSheet: View {
 
                         FieldSection(title: "ADDITIONAL NOTES") {
                             ZStack(alignment: .topLeading) {
-                                
-                            
                                 if notes.isEmpty {
-                                   
                                     Text("Add specific requirements or sub-tasks...")
                                         .font(theme.typography.bodyMedium)
                                         .foregroundColor(theme.colors.textSecondary)
@@ -111,6 +121,13 @@ struct AddSubjectSheet: View {
             }
             .padding(.vertical, theme.spacing.lg)
             .background(theme.colors.surface.opacity(0.2))
+        }
+        .onAppear {
+            if let editing = editingSubject {
+                subjectName = editing.name
+                selectedColor = Color(hex: editing.colorHex) ?? .blue
+                notes = editing.notes
+            }
         }
     }
 }

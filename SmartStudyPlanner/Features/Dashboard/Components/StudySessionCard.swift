@@ -37,6 +37,7 @@ struct StudySessionCard: View {
                 .font(theme.typography.bodySmall)
                 .fontWeight(.semibold)
                 .foregroundColor(session.subjectColor)
+                .lineLimit(1)
                 .padding(.horizontal, theme.spacing.sm)
                 .padding(.vertical, theme.spacing.xs)
                 .background(session.subjectColor.opacity(0.2))
@@ -48,10 +49,12 @@ struct StudySessionCard: View {
                     .font(theme.typography.headingMedium)
                     .foregroundColor(theme.colors.textPrimary)
                     .lineLimit(2)
+                    .frame(height: 58, alignment: .topLeading)
 
                 Text(session.timeRange)
                     .font(theme.typography.caption)
                     .foregroundColor(session.subjectColor)
+                    .lineLimit(1)
 
                 HStack(spacing: 4) {
                     Image(systemName: isRunning ? "timer" : "clock")
@@ -68,6 +71,8 @@ struct StudySessionCard: View {
             .accessibilityLabel("Study Session: \(session.title)")
             .accessibilityValue("Time: \(timeLabel), from \(session.timeRange). Status: \(isRunning ? "Running" : isPaused ? "Paused" : "Not Started")")
 
+            Spacer(minLength: 0)
+
             if isRunning {
                 runningButtons
             } else if isPaused || isInterrupted {
@@ -77,7 +82,7 @@ struct StudySessionCard: View {
             }
         }
         .padding(theme.spacing.md)
-        .frame(width: 270)
+        .frame(width: 270, height: 230, alignment: .topLeading)
         .background(theme.colors.surface)
         .cornerRadius(theme.radius.xl)
         .overlay(

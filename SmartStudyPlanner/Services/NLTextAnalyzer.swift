@@ -13,7 +13,6 @@ struct NLTextAnalyzer {
         let opts: NLTagger.Options = [.omitPunctuation, .omitWhitespace,
                                       .omitOther, .joinNames]
 
-        // Pass 1 — named entities (highest signal)
         tagger.enumerateTags(in: text.startIndex..<text.endIndex,
                              unit: .word,
                              scheme: .nameType,
@@ -25,7 +24,6 @@ struct NLTextAnalyzer {
             return true
         }
 
-        // Pass 2 — content words (nouns, verbs)
         tagger.enumerateTags(in: text.startIndex..<text.endIndex,
                              unit: .word,
                              scheme: .lexicalClass,
@@ -41,9 +39,6 @@ struct NLTextAnalyzer {
         return Array(results.prefix(max))
     }
 
-    // MARK: - Sentence Splitting
-
-    /// Returns every sentence in `text` as a trimmed string.
     static func sentences(from text: String) -> [String] {
         var result = [String]()
         let tokenizer = NLTokenizer(unit: .sentence)
@@ -56,10 +51,6 @@ struct NLTextAnalyzer {
         return result
     }
 
-    // MARK: - Paragraph Chunking
-
-    /// Split `text` into roughly `targetCount` equal-length chunks,
-    /// always breaking on sentence boundaries (never mid-sentence).
     static func chunks(from text: String,
                        targetCount: Int) -> [String] {
         let sents = sentences(from: text)
@@ -72,15 +63,10 @@ struct NLTextAnalyzer {
         }
     }
 
-    // MARK: - Keyword Clustering
-
-    /// Distribute `keywords` into `bucketCount` ordered buckets.
-    /// Simple stride-based grouping — fast and deterministic.
     static func clusterKeywords(_ keywords: [String],
                                  into bucketCount: Int) -> [[String]] {
         guard !keywords.isEmpty, bucketCount > 0 else { return [] }
         guard keywords.count >= bucketCount else {
-            // Pad short lists: one keyword per bucket, repeat last if needed
             return (0..<bucketCount).map { i in
                 [keywords[min(i, keywords.count - 1)]]
             }
@@ -91,11 +77,6 @@ struct NLTextAnalyzer {
         }
     }
 
-    // MARK: - Important Sentences (extractive summary)
-
-    /// Returns up to `count` of the most "important" sentences from `text`
-    /// ranked by how many extracted keywords they contain.
-    /// Used to build a compact summary without calling the LLM at all.
     static func importantSentences(from text: String,
                                     count: Int = 3) -> [String] {
         let keywords = Set(extractKeywords(from: text, max: 40).map { $0.lowercased() })
@@ -112,8 +93,6 @@ struct NLTextAnalyzer {
             .prefix(count)
             .map { $0.0 }
     }
-
-    // MARK: - Language Detection
 
     static func dominantLanguage(of text: String) -> NLLanguage {
         let r = NLLanguageRecognizer()

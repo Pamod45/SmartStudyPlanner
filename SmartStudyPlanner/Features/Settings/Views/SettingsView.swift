@@ -14,7 +14,6 @@ struct SettingsView: View {
     @StateObject private var vm = SettingsViewModel()
 
     @State private var showStudyGoals: Bool = false
-    @State private var showIntegrations: Bool = false
     @State private var showSecurity: Bool = false
     @State private var showAccessibility: Bool = false
     @State private var showFAQ: Bool = false
@@ -59,7 +58,6 @@ struct SettingsView: View {
                 NavigationLink(destination: ProfileEditView(user: Binding(get: { vm.settingsUser }, set: { vm.updateUser($0) })), isActive: $showProfile) { EmptyView() }
                 NavigationLink(destination: StudyGoalsView().environmentObject(vm), isActive: $showStudyGoals) { EmptyView() }
                 NavigationLink(destination: NotificationsSettingsView().environmentObject(vm), isActive: $showGeneralNotifications) { EmptyView() }
-                NavigationLink(destination: IntegrationsView().environmentObject(vm), isActive: $showIntegrations) { EmptyView() }
                 NavigationLink(destination: SecurityView(), isActive: $showSecurity) { EmptyView() }
                 NavigationLink(destination: AccessibilityView().environmentObject(vm), isActive: $showAccessibility) { EmptyView() }
                 NavigationLink(destination: FAQView(), isActive: $showFAQ) { EmptyView() }
@@ -184,13 +182,6 @@ struct SettingsView: View {
                 title: "Study Goals"
             ) {
                 showStudyGoals = true
-            }),
-            AnyView(settingsNavRow(
-                icon: "puzzlepiece",
-                iconColor: theme.colors.textSecondary,
-                title: "Integrations & Widgets"
-            ) {
-                showIntegrations = true
             }),
             AnyView(settingsNavRow(
                 icon: "lock",
