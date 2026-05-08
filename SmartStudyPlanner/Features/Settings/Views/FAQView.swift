@@ -20,8 +20,8 @@ struct FAQView: View {
                             answer: "Go to your Subject Workspace and tap the 'Scanner' icon. You can scan physical notes, and our system will use OCR to extract the text and save it as a digital, editable Note."
                         )
                         faqItem(
-                            question: "How can I add resources to a Deadline?",
-                            answer: "When you create or edit a Deadline inside a Subject Workspace, you can link existing PDFs, URLs, and Notes directly to it so everything is in one place."
+                            question: "How can I add resources to a study session?",
+                            answer: "When you create or edit a Study Session inside a study planner, you can link existing PDFs, URLs, and Notes directly to it so everything is in one place."
                         )
                         faqItem(
                             question: "How do Study Paths work?",

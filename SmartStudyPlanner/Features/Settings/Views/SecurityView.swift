@@ -13,6 +13,10 @@ struct SecurityView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var localSettings: LocalSettingsManager
 
+    @State private var showChangePassword: Bool = false
+    @State private var newPassword: String = ""
+    @State private var confirmPassword: String = ""
+    @State private var securityMessage: SecurityMessage? = nil
 
     var body: some View {
         ZStack {
@@ -54,7 +58,9 @@ struct SecurityView: View {
 
                             rowDivider
 
-                            navRow(title: "Change Password") {}
+                            navRow(title: "Change Password") {
+                                showChangePassword = true
+                            }
 
                         }
                         .background(theme.colors.surface)
@@ -67,6 +73,25 @@ struct SecurityView: View {
             }
         }
         .navigationBarHidden(true)
+        .alert("Change Password", isPresented: $showChangePassword) {
+            SecureField("New password", text: $newPassword)
+            SecureField("Confirm password", text: $confirmPassword)
+            Button("Update") {
+                Task { await submitPasswordChange() }
+            }
+            Button("Cancel", role: .cancel) {
+                clearPasswordFields()
+            }
+        } message: {
+            Text("Enter a new password with at least 6 characters.")
+        }
+        .alert(item: $securityMessage) { message in
+            Alert(
+                title: Text(message.title),
+                message: Text(message.body),
+                dismissButton: .default(Text("OK"))
+            )
+        }
     }
 
     private var header: some View {
@@ -101,6 +126,43 @@ struct SecurityView: View {
     private var rowDivider: some View {
         Divider().background(theme.colors.border.opacity(0.4)).padding(.leading, theme.spacing.md)
     }
+
+    private func submitPasswordChange() async {
+        let password = newPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+        let confirmation = confirmPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard password.count >= 6 else {
+            securityMessage = SecurityMessage(title: "Password Too Short", body: "Please use at least 6 characters.")
+            return
+        }
+
+        guard password == confirmation else {
+            securityMessage = SecurityMessage(title: "Passwords Do Not Match", body: "Please confirm the same password.")
+            return
+        }
+
+        do {
+            try await AuthService.shared.changePassword(newPassword: password)
+            clearPasswordFields()
+            securityMessage = SecurityMessage(title: "Password Updated", body: "Your password has been changed successfully.")
+        } catch {
+            securityMessage = SecurityMessage(
+                title: "Could Not Change Password",
+                body: "\(error.localizedDescription)\n\nIf Firebase asks for a recent login, log out, sign in again, and retry."
+            )
+        }
+    }
+
+    private func clearPasswordFields() {
+        newPassword = ""
+        confirmPassword = ""
+    }
+}
+
+private struct SecurityMessage: Identifiable {
+    let id = UUID()
+    let title: String
+    let body: String
 }
 
 #Preview {

@@ -5,6 +5,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @Environment(\.theme) var theme
+    @Environment(\.openURL) private var openURL
     @EnvironmentObject var sessionVM: SessionViewModel
     @EnvironmentObject var notificationStore: NotificationStore
     @StateObject private var vm = DashboardViewModel()
@@ -22,6 +23,10 @@ struct DashboardView: View {
 
     private var visibleUpcomingDeadlines: [Deadline] {
         Array(vm.upcomingDeadlines.prefix(3))
+    }
+
+    private var unreadNotificationCount: Int {
+        notificationStore.unreadCount(for: sessionVM.activeUserId)
     }
 
     var body: some View {
@@ -130,8 +135,8 @@ struct DashboardView: View {
                     Image(systemName: "bell")
                         .font(.system(size: 20))
                         .foregroundColor(theme.colors.primary)
-                    if notificationStore.unreadCount > 0 {
-                        Text("\(min(notificationStore.unreadCount, 99))")
+                    if unreadNotificationCount > 0 {
+                        Text("\(min(unreadNotificationCount, 99))")
                             .font(.caption2.bold())
                             .foregroundColor(.white)
                             .frame(minWidth: 16, minHeight: 16)
@@ -259,7 +264,9 @@ struct DashboardView: View {
 
     private var upcomingDeadlinesSection: some View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
-            SectionHeader(title: "Upcoming Deadlines", actionTitle: "View Calendar") {}
+            SectionHeader(title: "Upcoming Deadlines", actionTitle: "View Calendar") {
+                openCalendarApp()
+            }
 
             if visibleUpcomingDeadlines.isEmpty {
                 Text("No upcoming deadlines")
@@ -290,6 +297,11 @@ struct DashboardView: View {
                 }
             }
         }
+    }
+
+    private func openCalendarApp() {
+        guard let calendarURL = URL(string: "calshow://") else { return }
+        openURL(calendarURL)
     }
 
     private var shortcutsSection: some View {

@@ -28,6 +28,7 @@ class SessionViewModel: ObservableObject {
     }
 
     func continueAsGuest() {
+        NotificationService.shared.cancelAllPendingNotifications()
         session = .guest
     }
 
@@ -42,6 +43,7 @@ class SessionViewModel: ObservableObject {
             print("Error signing out: \(error)")
         }
         AIMessageStore.shared.clearAll()
+        NotificationService.shared.cancelAllPendingNotifications()
         session = .unauthenticated
     }
 }

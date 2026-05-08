@@ -69,7 +69,7 @@ struct UserSettings: Codable, Syncable {
             siriIntegrationEnabled: true,
             accessibilityFontSize: 1.0,
             reduceMotionEnabled: true,
-            highContrastEnabled: true,
+            highContrastEnabled: false,
             hapticFeedbackEnabled: true,
             soundEnabled: true,
             calendarSyncEnabled: false,
@@ -104,7 +104,7 @@ struct UserSettings: Codable, Syncable {
         siriIntegrationEnabled: Bool = true,
         accessibilityFontSize: Double = 1.0,
         reduceMotionEnabled: Bool = true,
-        highContrastEnabled: Bool = true,
+        highContrastEnabled: Bool = false,
         hapticFeedbackEnabled: Bool = true,
         soundEnabled: Bool = true,
         calendarSyncEnabled: Bool = false,
@@ -209,7 +209,7 @@ struct UserSettings: Codable, Syncable {
         let siriIntegrationEnabled = data["siriIntegrationEnabled"] as? Bool ?? true
         let accessibilityFontSize = data["accessibilityFontSize"] as? Double ?? 1.0
         let reduceMotionEnabled = data["reduceMotionEnabled"] as? Bool ?? true
-        let highContrastEnabled = data["highContrastEnabled"] as? Bool ?? true
+        let highContrastEnabled = data["highContrastEnabled"] as? Bool ?? false
         let hapticFeedbackEnabled = data["hapticFeedbackEnabled"] as? Bool ?? true
         let soundEnabled = data["soundEnabled"] as? Bool ?? true
         let calendarSyncEnabled = data["calendarSyncEnabled"] as? Bool ?? false

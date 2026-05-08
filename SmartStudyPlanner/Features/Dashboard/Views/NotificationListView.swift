@@ -13,19 +13,28 @@ struct NotificationListView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var notificationStore: NotificationStore
+    @EnvironmentObject var sessionVM: SessionViewModel
 
     @State private var selectedType: NotificationType = .all
     @State private var searchText: String = ""
     @State private var editMode: EditMode = .inactive
     @State private var selectedIds = Set<AppNotification.ID>()
 
-    private let visibleTypes: [NotificationType] = [.all, .study, .quiz, .general]
+    private let visibleTypes: [NotificationType] = [.all, .study, .deadline, .quiz]
+
+    private var userNotifications: [AppNotification] {
+        notificationStore.notifications(for: sessionVM.activeUserId)
+    }
+
+    private var userUnreadCount: Int {
+        notificationStore.unreadCount(for: sessionVM.activeUserId)
+    }
 
     // Applies the selected notification type and search text without changing the stored history.
     private var filteredNotifications: [AppNotification] {
         let base = selectedType == .all
-            ? notificationStore.notifications
-            : notificationStore.notifications.filter { $0.notificationType == selectedType }
+            ? userNotifications
+            : userNotifications.filter { $0.notificationType == selectedType }
         if searchText.isEmpty { return base }
         return base.filter {
             $0.title.localizedCaseInsensitiveContains(searchText) ||
@@ -124,8 +133,8 @@ struct NotificationListView: View {
                     .fontWeight(.bold)
                     .foregroundColor(theme.colors.textPrimary)
                     .animation(.default, value: editMode)
-                if notificationStore.unreadCount > 0 && editMode == .inactive {
-                    Text("\(notificationStore.unreadCount) unread")
+                if userUnreadCount > 0 && editMode == .inactive {
+                    Text("\(userUnreadCount) unread")
                         .font(theme.typography.caption)
                         .foregroundColor(theme.colors.primary)
                 }
@@ -135,9 +144,9 @@ struct NotificationListView: View {
 
             if editMode == .inactive {
                 HStack(spacing: theme.spacing.sm) {
-                    if notificationStore.unreadCount > 0 {
+                    if userUnreadCount > 0 {
                         Button {
-                            notificationStore.markAllRead()
+                            notificationStore.markAllRead(userId: sessionVM.activeUserId)
                         } label: {
                             Image(systemName: "envelope.open")
                                 .fontWeight(.semibold)
@@ -195,5 +204,6 @@ struct NotificationListView: View {
 #Preview {
     NotificationListView()
         .environmentObject(NotificationStore.shared)
+        .environmentObject(SessionViewModel())
         .environment(\.theme, AppTheme.defaultTheme)
 }

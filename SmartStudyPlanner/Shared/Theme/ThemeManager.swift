@@ -15,7 +15,7 @@ class ThemeManager: ObservableObject {
     
     func update(highContrast: Bool, darkMode: Bool, fontSize: Double) {
         let baseTheme: AppTheme
-        if highContrast {
+        if highContrast && darkMode {
             baseTheme = .highContrastTheme
         } else if !darkMode {
             baseTheme = .lightTheme

@@ -76,9 +76,17 @@ class AuthViewModel: ObservableObject {
         }
     }
 
-    func resetPassword(email: String) async {
+    func resetPassword(email: String) async -> Bool {
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
+        do {
+            try await AuthService.shared.resetPassword(email: email)
+            isLoading = false
+            return true
+        } catch {
+            isLoading = false
+            errorMessage = error.localizedDescription
+            return false
+        }
     }
 }

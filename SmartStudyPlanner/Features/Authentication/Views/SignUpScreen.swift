@@ -39,7 +39,7 @@ struct SignUpView: View {
                     InputField(
                         icon: "envelope",
                         placeholder: "Email Address",
-                        fieldType: .text,
+                        fieldType: .email,
                         value: $email
                     )
 

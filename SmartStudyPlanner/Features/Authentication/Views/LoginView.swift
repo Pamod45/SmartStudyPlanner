@@ -16,6 +16,7 @@ struct LoginView: View {
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var showSignUp = false
+    @State private var showPasswordResetConfirmation = false
 
     var body: some View {
         ZStack {
@@ -69,6 +70,11 @@ struct LoginView: View {
         .navigationDestination(isPresented: $showSignUp){
             SignUpView()
         }
+        .alert("Password Reset", isPresented: $showPasswordResetConfirmation) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("If an account exists for this email, Firebase will send a password reset link.")
+        }
         .navigationBarHidden(true)
         
     }
@@ -96,7 +102,7 @@ struct LoginView: View {
 
     private var inputSection: some View {
         VStack(spacing: theme.spacing.md) {
-            InputField(icon: "envelope", placeholder: "Email Address", fieldType: .text, value: $email)
+            InputField(icon: "envelope", placeholder: "Email Address", fieldType: .email, value: $email)
             
             InputField(icon: "lock", placeholder: "Password", fieldType: .password, value: $password)
         }
@@ -105,7 +111,20 @@ struct LoginView: View {
     private var forgotPasswordButton: some View {
         HStack {
             Spacer()
-            TextButton(title: "Forgot the password?", ){}
+            TextButton(title: "Forgot the password?") {
+                let resetEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard resetEmail.contains("@"), resetEmail.contains(".") else {
+                    vm.errorMessage = "Please enter your email address first."
+                    return
+                }
+
+                Task {
+                    let didSend = await vm.resetPassword(email: resetEmail)
+                    if didSend {
+                        showPasswordResetConfirmation = true
+                    }
+                }
+            }
         }
     }
 

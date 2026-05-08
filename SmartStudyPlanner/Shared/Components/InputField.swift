@@ -10,6 +10,7 @@ import SwiftUI
 enum InputFieldType {
     case password
     case text
+    case email
 }
 
 struct InputField: View {
@@ -53,11 +54,19 @@ struct InputField: View {
                 .font(theme.typography.bodyMedium)
                 .foregroundColor(theme.colors.textPrimary)
                 .autocorrectionDisabled()
+
+        case .email:
+            TextField("", text: $value, prompt: Text(placeholder)
+                .foregroundColor(theme.colors.textSecondary))
+                .font(theme.typography.bodyMedium)
+                .foregroundColor(theme.colors.textPrimary)
+                .keyboardType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
         }
     }
     
     
     
 }
-
 

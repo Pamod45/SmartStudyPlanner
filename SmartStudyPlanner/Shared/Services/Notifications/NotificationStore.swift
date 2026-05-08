@@ -22,6 +22,15 @@ final class NotificationStore: ObservableObject {
 
     var unreadCount: Int { notifications.filter { !$0.isRead }.count }
 
+    func notifications(for userId: String?) -> [AppNotification] {
+        guard let userId, !userId.isEmpty else { return [] }
+        return notifications.filter { $0.userId == userId }
+    }
+
+    func unreadCount(for userId: String?) -> Int {
+        notifications(for: userId).filter { !$0.isRead }.count
+    }
+
 
     private let storageKey = "notificationHistory"
     private let maxEntries = 200
@@ -64,6 +73,17 @@ final class NotificationStore: ObservableObject {
         var changed = false
         for idx in notifications.indices where !notifications[idx].isRead {
             notifications[idx].isRead    = true
+            notifications[idx].updatedAt = Date()
+            changed = true
+        }
+        if changed { persist() }
+    }
+
+    func markAllRead(userId: String?) {
+        guard let userId, !userId.isEmpty else { return }
+        var changed = false
+        for idx in notifications.indices where notifications[idx].userId == userId && !notifications[idx].isRead {
+            notifications[idx].isRead = true
             notifications[idx].updatedAt = Date()
             changed = true
         }

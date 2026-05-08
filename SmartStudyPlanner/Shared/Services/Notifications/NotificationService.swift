@@ -47,6 +47,10 @@ final class NotificationService {
         center.removePendingNotificationRequests(withIdentifiers: ids)
     }
 
+    func cancelAllPendingNotifications() {
+        center.removeAllPendingNotificationRequests()
+    }
+
 
 
     func scheduleSessionReminder(session: StudySession, settings: UserSettings) {
@@ -168,7 +172,7 @@ final class NotificationService {
         content.sound = .default
         content.userInfo = [
             "type":   NotificationType.general.rawValue,
-            "userId": ""
+            "userId": settings.userId
         ]
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
@@ -180,7 +184,7 @@ final class NotificationService {
 
 
     func rescheduleAll(sessions: [StudySession], deadlines: [Deadline], settings: UserSettings) {
-        center.removeAllPendingNotificationRequests()
+        cancelAllPendingNotifications()
 
         rescheduleDailyGoalAlert(settings: settings)
 

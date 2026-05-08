@@ -117,6 +117,11 @@ class AuthService {
         }
         try await user.updatePassword(to: newPassword)
     }
+
+    // Sends Firebase's reset-password email. The actual password change happens from the link in that email.
+    func resetPassword(email: String) async throws {
+        try await Auth.auth().sendPasswordReset(withEmail: email)
+    }
     
     // Currently returns only this device. A real multi-device list would need saved
     // session records in Firestore.

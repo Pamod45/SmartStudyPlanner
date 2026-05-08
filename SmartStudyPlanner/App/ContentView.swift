@@ -31,6 +31,11 @@ struct ContentView: View {
         .environment(\.theme, themeManager.current)
         .tint(themeManager.current.colors.primary)
         .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
+        .onChange(of: sessionViewModel.isAuthenticated) { _, isAuthenticated in
+            if isAuthenticated {
+                selectedTab = .dashboard
+            }
+        }
     }
 
     // Each tab gets its own NavigationStack so navigation history stays separate between sections.

@@ -79,22 +79,6 @@
 			);
 			target = AD7EDA232FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension */;
 		};
-		AD83D5D42FAA57D800C70697 /* Exceptions for "Resources" folder in "SmartStudyPlanner" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				smollm2_135m_instruct_only_logits.mlmodelc,
-				tokenizer/chat_template.jinja,
-				tokenizer/merges.txt,
-				tokenizer/special_tokens_map.json,
-				tokenizer/tiny_tokenizer_config.json,
-				tokenizer/tiny_tokenizer.json,
-				tokenizer/token_decoder.json,
-				tokenizer/tokenizer_config.json,
-				tokenizer/tokenizer.json,
-				tokenizer/vocab.json,
-			);
-			target = AD060C652F718F47001254E6 /* SmartStudyPlanner */;
-		};
 		AD94F9A72FAA0FB200F6BBBE /* Exceptions for "SmartStudyPlanner" folder in "SmartStudyPlanner" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -111,14 +95,6 @@
 				AD94F9A72FAA0FB200F6BBBE /* Exceptions for "SmartStudyPlanner" folder in "SmartStudyPlanner" target */,
 			);
 			path = SmartStudyPlanner;
-			sourceTree = "<group>";
-		};
-		AD7EB66D2FAA40DD005AA717 /* Resources */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				AD83D5D42FAA57D800C70697 /* Exceptions for "Resources" folder in "SmartStudyPlanner" target */,
-			);
-			path = Resources;
 			sourceTree = "<group>";
 		};
 		AD7EDA2A2FABD25B00B1EB53 /* SmartStudyPlannerWidgets */ = {
@@ -175,7 +151,6 @@
 			isa = PBXGroup;
 			children = (
 				ADB3B5632FAE26560045D957 /* SmartStudyPlanner.xctestplan */,
-				AD7EB66D2FAA40DD005AA717 /* Resources */,
 				AD53B3DA2F8CCADB0002309F /* GoogleService-Info.plist */,
 				AD060C682F718F47001254E6 /* SmartStudyPlanner */,
 				AD7EDA2A2FABD25B00B1EB53 /* SmartStudyPlannerWidgets */,
@@ -224,7 +199,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				AD060C682F718F47001254E6 /* SmartStudyPlanner */,
-				AD7EB66D2FAA40DD005AA717 /* Resources */,
 			);
 			name = SmartStudyPlanner;
 			packageProductDependencies = (

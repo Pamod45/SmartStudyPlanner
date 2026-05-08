@@ -45,8 +45,8 @@ struct AccessibilityView: View {
                             VStack(spacing: 0) {
                                 sliderRow
                                 rowDivider
-                                toggleRow(title: "Reduce Motion", isOn: vm.binding(for: \.reduceMotionEnabled))
-                                rowDivider
+//                                toggleRow(title: "Reduce Motion", isOn: vm.binding(for: \.reduceMotionEnabled))
+//                                rowDivider
                                 toggleRow(title: "High Contrast Colors", isOn: Binding(
                                     get: { vm.settings.highContrastEnabled },
                                     set: { newValue in

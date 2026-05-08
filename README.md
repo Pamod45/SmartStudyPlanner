@@ -134,7 +134,7 @@ SmartStudyPlanner/
 
 ## Getting Started
 
-Full setup instructions including Firebase configuration, Google Sign-In, and LLM server setup are in [SETUP.md](SETUP.md).
+Full setup instructions including Firebase configuration, Google Sign-In, and LLM server setup are in [SETUP.md](Documentation/SETUP.md).
 
 ### Quick summary
 
@@ -156,7 +156,7 @@ Cmd + U
 
 Two test classes (`AuthenticationTests`, `SubjectWorkspaceTests`) write to a real Firebase project and are skipped automatically unless `AUTH_TEST_EMAIL` and `AUTH_TEST_PASSWORD` are set as environment variables in the Xcode test scheme.
 
-Full test coverage details and run commands are in [TESTING.md](TESTING.md).
+Full test coverage details and run commands are in [TESTING.md](Documentation/TESTING.md).
 
 ---
 
@@ -164,9 +164,9 @@ Full test coverage details and run commands are in [TESTING.md](TESTING.md).
 
 | File | Contents |
 |---|---|
-| [SETUP.md](SETUP.md) | Step-by-step setup for Firebase, Google Sign-In, LLM server, and test credentials |
-| [FEATURES.md](FEATURES.md) | Feature descriptions, data flows, and formulas for every module |
-| [TESTING.md](TESTING.md) | Test coverage by module, what each test checks, and how to run subsets |
+| [SETUP.md](Documentation/SETUP.md) | Step-by-step setup for Firebase, Google Sign-In, LLM server, and test credentials |
+| [FEATURES.md](Documentation/FEATURES.md) | Feature descriptions, data flows, and formulas for every module |
+| [TESTING.md](Documentation/TESTING.md) | Test coverage by module, what each test checks, and how to run subsets |
 
 ---
 

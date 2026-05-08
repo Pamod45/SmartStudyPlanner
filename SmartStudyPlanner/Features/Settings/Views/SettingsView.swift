@@ -52,6 +52,11 @@ struct SettingsView: View {
         }
         .task(id: sessionViewModel.activeUserId) {
             await vm.load(userId: sessionViewModel.activeUserId)
+            themeManager.update(
+                highContrast: vm.settings.highContrastEnabled,
+                darkMode: vm.settings.darkModeEnabled,
+                fontSize: vm.settings.accessibilityFontSize
+            )
         }
         .navigationBarHidden(true)
         .background(
