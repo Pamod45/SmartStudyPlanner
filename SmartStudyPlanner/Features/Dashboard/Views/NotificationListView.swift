@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+// Full notification history view with filtering, search, read state, and bulk delete controls.
+
 struct NotificationListView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
@@ -19,6 +21,7 @@ struct NotificationListView: View {
 
     private let visibleTypes: [NotificationType] = [.all, .study, .quiz, .general]
 
+    // Applies the selected notification type and search text without changing the stored history.
     private var filteredNotifications: [AppNotification] {
         let base = selectedType == .all
             ? notificationStore.notifications

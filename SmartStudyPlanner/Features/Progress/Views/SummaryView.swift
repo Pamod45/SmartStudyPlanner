@@ -1,5 +1,6 @@
 import SwiftUI
 
+// Displays the calculated progress summary: weekly stats, subject mastery, and generated insights.
 struct SummaryView: View {
     @Environment(\.theme) var theme
     @ObservedObject var vm: ProgressViewModel

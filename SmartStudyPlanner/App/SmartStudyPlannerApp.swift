@@ -13,6 +13,7 @@ import UserNotifications
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
+    // Sets up Firebase and notification handling before any SwiftUI screens start using those services.
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -23,9 +24,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             print("Availability: \(model.availability)")
             switch model.availability {
             case .available:
-                print("✅ Model is fully ready")
+                print("Model is fully ready")
             case .unavailable(let reason):
-                print("❌ Reason: \(reason)")
+                print("Reason: \(reason)")
             @unknown default:
                 print("❓ Unknown")
             }
@@ -58,6 +59,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        // Keep foreground notifications visible and also store them for the in-app notification list.
         recordDelivered(notification.request)
         completionHandler([.banner, .sound, .badge])
     }
@@ -67,11 +69,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        // A tapped notification is also recorded so the notification history stays consistent.
         recordDelivered(response.notification.request)
         completionHandler()
     }
 
 
+    // Converts the system notification payload back into the app's notification model.
     private func recordDelivered(_ request: UNNotificationRequest) {
         let content    = request.content
         let id         = request.identifier
@@ -116,6 +120,7 @@ struct SmartStudyPlannerApp: App {
                 .environmentObject(notificationStore)
                 .environment(\.theme, themeManager.current)
                 .task {
+                    // Restore Firebase/local session first, then load user-specific settings and reminder schedules.
                     await sessionViewModel.restoreSession()
 
                     if let userId = sessionViewModel.activeUserId, !userId.isEmpty {

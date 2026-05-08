@@ -1,5 +1,6 @@
 import SwiftUI
 
+// Main study plan screen: shows the calendar, availability, sessions, deadlines, and opens the plan-management sheets.
 struct StudyPlanView: View {
     @Environment(\.theme) var theme
     @EnvironmentObject private var sessionVM: SessionViewModel
@@ -168,6 +169,7 @@ struct StudyPlanView: View {
         }
     }
 
+    // Shows only the sessions that belong to this slot on the currently selected calendar day.
     private func sessions(for slot: AvailabilitySlot) -> [StudySession] {
         let slotDate: Date
         switch slot.type {

@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// Stores integration preferences that other app surfaces can read later, such as widget content choice.
 struct IntegrationsView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss

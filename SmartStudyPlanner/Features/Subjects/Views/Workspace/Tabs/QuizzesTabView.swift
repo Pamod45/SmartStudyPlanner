@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// Shows quiz history for a subject and coordinates creating, running, saving, and deleting quiz attempts.
 struct QuizzesTabView: View {
     @Environment(\.theme) var theme
 
@@ -20,6 +21,7 @@ struct QuizzesTabView: View {
     @State private var selectedGroup: QuizGroup? = nil
     @State private var isLoadingAttempts: Bool = false
 
+    // Attempts are grouped by quiz name so repeated attempts appear under one quiz history card.
     private var quizGroups: [QuizGroup] {
         var dict: [String: [QuizAttempt]] = [:]
         for a in attempts {
@@ -43,8 +45,6 @@ struct QuizzesTabView: View {
         return attempts.reduce(0) { $0 + $1.scorePercent } / attempts.count
     }
 
-    // MARK: - Body
-
     var body: some View {
         VStack(spacing: theme.spacing.md) {
             if !attempts.isEmpty {
@@ -56,7 +56,6 @@ struct QuizzesTabView: View {
             }
         }
         .padding(.bottom, theme.spacing.xl)
-        // New quiz config sheet
         .sheet(isPresented: $showConfig) {
             QuizConfigSheet(
                 subject: subject,
@@ -67,7 +66,6 @@ struct QuizzesTabView: View {
             }
             .environment(\.theme, theme)
         }
-        // Active quiz session (new attempt or reattempt)
         .fullScreenCover(item: $activeAttempt) { attempt in
             QuizSessionView(attempt: attempt) { completed in
                 attempts.insert(completed, at: 0)
@@ -103,6 +101,7 @@ struct QuizzesTabView: View {
             .environment(\.theme, theme)
         }
         .onAppear {
+            // Show cached attempts immediately, then refresh from Firebase.
             let cached = CoreDataService.shared.getCachedAttempts(for: subject.id)
             if !cached.isEmpty { attempts = cached }
             guard !isLoadingAttempts else { return }
@@ -258,6 +257,7 @@ struct QuizzesTabView: View {
         }
     }
 
+    // Deleting a quiz group removes every attempt for that quiz from UI, Core Data, and Firebase.
     private func deleteQuizGroup(_ group: QuizGroup) {
         let attemptIds = group.attempts.map(\.id)
         attempts.removeAll { attemptIds.contains($0.id) }

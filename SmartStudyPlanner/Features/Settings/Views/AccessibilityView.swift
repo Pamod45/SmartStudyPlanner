@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// Updates accessibility-related settings and immediately refreshes the active theme when visual settings change.
 struct AccessibilityView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
@@ -14,6 +15,7 @@ struct AccessibilityView: View {
 
     @EnvironmentObject var themeManager: ThemeManager
 
+    // The model stores font scale as 0.75...1.5, while the UI shows it as 75...150 percent.
     private var textSizePercent: Binding<Double> {
         Binding(
             get: { vm.settings.accessibilityFontSize * 100 },

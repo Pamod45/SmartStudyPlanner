@@ -1,0 +1,44 @@
+{
+  "configurations" : [
+    {
+      "id" : "734DFEE8-B0DD-4F3B-BACC-0CCFC86A197B",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "environmentVariableEntries" : [
+      {
+        "key" : "AUTH_TEST_PASSWORD",
+        "value" : "Test123"
+      },
+      {
+        "key" : "LLVM_STACK_SIZE",
+        "value" : "8388608"
+      },
+      {
+        "key" : "AUTH_TEST_EMAIL",
+        "value" : "Test@gmail.com"
+      }
+    ],
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:SmartStudyPlanner.xcodeproj",
+      "identifier" : "AD060C652F718F47001254E6",
+      "name" : "SmartStudyPlanner"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:SmartStudyPlanner.xcodeproj",
+        "identifier" : "ADB3B54D2FAE0A010045D957",
+        "name" : "SmartStudyPlannerTests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -5,6 +5,7 @@ enum ProgressTab: String, CaseIterable {
     case charts  = "Charts"
 }
 
+// Entry screen for progress. It owns the progress view model and switches between summary cards and charts.
 struct UserProgressView: View {
     @Environment(\.theme) var theme
     @EnvironmentObject var sessionVM: SessionViewModel

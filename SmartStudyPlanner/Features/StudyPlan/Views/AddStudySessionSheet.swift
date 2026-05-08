@@ -1,5 +1,7 @@
 import SwiftUI
 
+// Adds or edits one manual study session inside a selected availability slot.
+// Resource choices are loaded from the selected subject so sessions can stay linked to study material.
 struct AddStudySessionSheet: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
@@ -386,6 +388,7 @@ struct AddStudySessionSheet: View {
         .padding(theme.spacing.md)
     }
 
+    // Reloads subject resources after a subject change and restores saved resource IDs when editing an existing session.
     private func reloadResources() {
         availableResources = []
         selectedResourceIDs = []
@@ -402,6 +405,7 @@ struct AddStudySessionSheet: View {
         }
     }
 
+    // Seeds the form from the slot for new sessions, or from the existing session when editing.
     private func prefill() {
         let slotDay = slot.date ?? scheduledDate ?? Date()
         startTime = Calendar.current.date(
@@ -417,8 +421,8 @@ struct AddStudySessionSheet: View {
 
         guard let session = existingSession else { return }
 
-        // Store IDs before setting subject — onChange will clear selectedResourceIDs,
-        // but reloadResources() will restore from pendingResourceIDs once fetch completes.
+        // Store IDs before setting subject because onChange clears selectedResourceIDs.
+        // reloadResources() restores them after fetch completes.
         pendingResourceIDs = Set(session.resourceIds)
         selectedSubject    = availableSubjects.first { $0.id == session.subjectId }
 
@@ -430,11 +434,12 @@ struct AddStudySessionSheet: View {
         notes          = session.notes ?? ""
     }
 
+    // Rebuilds the selected date with the chosen start/end times before sending the session to the view model.
     private func saveSession() {
         guard let subject = selectedSubject else { return }
         let name = topicName.trimmingCharacters(in: .whitespaces)
 
-        // Editing → preserve original day; adding new → use slot date or calendar selection
+        // Editing preserves the original day; new sessions use the slot date or selected calendar date.
         let slotDay = existingSession?.scheduledDate ?? slot.date ?? scheduledDate ?? Date()
         let cal = Calendar.current
         let s = cal.date(

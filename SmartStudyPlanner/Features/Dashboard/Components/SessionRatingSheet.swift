@@ -1,5 +1,7 @@
 import SwiftUI
 
+// Shown after a session is completed so the dashboard can save an optional session rating.
+
 struct SessionRatingSheet: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss

@@ -19,6 +19,7 @@ enum TimePeriodFilter: String, CaseIterable {
     case all   = "All Time"
 }
 
+// Shows chart views based on the same calculated progress data from ProgressViewModel.
 struct ChartsView: View {
     @Environment(\.theme) var theme
     @ObservedObject var vm: ProgressViewModel
@@ -36,6 +37,7 @@ struct ChartsView: View {
     var quarterActivity: [DailyActivity]    { vm.quarterActivity }
     var distribution: [SubjectDistribution] { vm.subjectDistribution }
 
+    // Activity chart data changes by date range first, then optionally filters to one subject.
     var activityData: [DailyActivity] {
         let base: [DailyActivity]
         switch dateRange {
@@ -47,6 +49,7 @@ struct ChartsView: View {
         return base.filter { $0.subject == subject }
     }
 
+    // Distribution currently starts from completed-study share per subject and adjusts the displayed period view.
     var distributionData: [SubjectDistribution] {
         switch timePeriod {
         case .week:
@@ -210,6 +213,7 @@ struct ChartsView: View {
         let hours: Double
     }
 
+    // Combines multiple subject entries on the same day/week into one total so the line chart shows total study hours.
     private var aggregatedActivity: [DailyTotal] {
         let data = activityData
         let grouped = Dictionary(grouping: data, by: \.day)
@@ -321,6 +325,7 @@ struct ChartsView: View {
     }
 
 
+    // Pie chart uses each subject's percentage of completed study minutes.
     private var subjectDistChart: some View {
         let data = distributionData
         return VStack(alignment: .leading, spacing: theme.spacing.md) {
@@ -387,6 +392,7 @@ struct ChartsView: View {
 }
 
 
+// Reusable bottom sheet for chart filters.
 struct FilterSheetView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss

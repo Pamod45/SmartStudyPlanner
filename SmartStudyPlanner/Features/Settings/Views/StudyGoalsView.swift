@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// Updates goal settings used by Progress calculations and reminder scheduling.
 struct StudyGoalsView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss

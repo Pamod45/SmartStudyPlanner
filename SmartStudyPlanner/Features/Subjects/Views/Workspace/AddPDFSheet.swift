@@ -1,6 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+// Adds or edits a PDF resource. The picker copies the file locally, and this sheet saves the resource metadata.
 struct AddPDFSheet: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
@@ -144,6 +145,7 @@ struct AddPDFSheet: View {
         }
     }
 
+    // Keeps the local file path from FilePickerView and passes a Resource back to the workspace for persistence.
     private func save() {
         let resource = Resource(
             id: existingResource?.id ?? UUID().uuidString,

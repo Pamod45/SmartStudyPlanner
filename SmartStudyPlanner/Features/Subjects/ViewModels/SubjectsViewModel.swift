@@ -2,11 +2,15 @@ import Combine
 import SwiftUI
 import FirebaseFirestore
 
+// Owns the subject list shown outside the workspace.
+// It loads cached subjects first, then refreshes Firestore data and derived resource counts.
+
 @MainActor
 class SubjectsViewModel: ObservableObject {
     @Published var subjects: [Subject] = []
     @Published var isLoading: Bool = false
 
+    // Loads subjects for the signed-in user and refreshes resource counts from actual resources.
     func load(userId: String?) async {
         guard let userId = userId else { return }
         isLoading = true
@@ -25,6 +29,8 @@ class SubjectsViewModel: ObservableObject {
         }
     }
 
+    // Resource counts are derived from resource documents so the list stays correct
+    // even if the stored subject count is stale.
     private func refreshResourceCountsFromResources(for loadedSubjects: [Subject]) async {
         await withTaskGroup(of: (String, Int, [String]).self) { group in
             for subject in loadedSubjects {
@@ -40,6 +46,7 @@ class SubjectsViewModel: ObservableObject {
         }
     }
 
+    // Optimistically adds the subject locally, then syncs it to Firestore.
     func addSubject(_ subject: Subject, userId: String?) {
         guard let userId = userId else { return }
         var newSubject = subject
@@ -68,6 +75,7 @@ class SubjectsViewModel: ObservableObject {
         }
     }
 
+    // Updates the UI and local cache immediately, then marks the subject synced after Firestore succeeds.
     func updateSubject(_ subject: Subject) {
         updateSubject(subject, syncStatus: .pendingUpdate)
         Task {
@@ -91,6 +99,7 @@ class SubjectsViewModel: ObservableObject {
         }
     }
     
+    // Pulls the latest count fields from Firestore after related workspace data changes.
     func refreshSubjectCounts(for subjectId: String) {
         Task {
             do {
@@ -114,6 +123,7 @@ class SubjectsViewModel: ObservableObject {
         }
     }
 
+    // Keeps the subject list and Core Data cache in sync after resources are loaded or changed.
     func setResourceCount(_ count: Int, for subjectId: String, resourceIds: [String]? = nil) {
         guard let idx = subjects.firstIndex(where: { $0.id == subjectId }) else { return }
 

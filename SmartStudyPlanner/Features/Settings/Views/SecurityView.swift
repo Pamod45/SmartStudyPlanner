@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// Handles security preferences that are local to this device, like Face ID unlock.
 struct SecurityView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
@@ -30,7 +31,23 @@ struct SecurityView: View {
                                     .font(theme.typography.bodyLarge.weight(.semibold))
                                     .foregroundColor(theme.colors.textPrimary)
                                 Spacer()
-                                Toggle("", isOn: $localSettings.faceIDEnabled).labelsHidden().tint(theme.colors.primary)
+                                Toggle("", isOn: Binding(
+                                    get: { localSettings.faceIDEnabled },
+                                    set: { newValue in
+                                        if newValue {
+                                            // Turning Face ID on requires a successful biometric check first.
+                                            localSettings.requestBiometricAuth { success in
+                                                if success {
+                                                    localSettings.faceIDEnabled = true
+                                                }
+                                            }
+                                        } else {
+                                            localSettings.faceIDEnabled = false
+                                        }
+                                    }
+                                ))
+                                    .labelsHidden()
+                                    .tint(theme.colors.primary)
                             }
                             .padding(.horizontal, theme.spacing.md)
                             .padding(.vertical, theme.spacing.md)

@@ -1,6 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+// Wraps the document picker in a dismissing SwiftUI view.
 struct FilePickerWrapper: View {
     @Environment(\.dismiss) private var dismiss
     var onSave: (Resource) -> Void
@@ -14,6 +15,7 @@ struct FilePickerWrapper: View {
     }
 }
 
+// Imports one PDF into the app sandbox and returns a Resource pointing at the copied file.
 struct FilePickerView: UIViewControllerRepresentable {
     var onSave: (Resource) -> Void
 
@@ -37,6 +39,7 @@ struct FilePickerView: UIViewControllerRepresentable {
             self.onSave = onSave
         }
 
+        // Security-scoped access is needed for files outside the sandbox; the selected file is copied into Documents.
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
             guard let url = urls.first else { return }
 

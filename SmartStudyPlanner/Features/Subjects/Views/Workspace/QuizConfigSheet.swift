@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+// Builds a quiz attempt from either selected study path topics or selected resources.
+// Topic quizzes include topic metadata plus linked resource text when available; resource quizzes use extracted resource text directly.
 struct QuizConfigSheet: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
@@ -349,6 +351,7 @@ struct QuizConfigSheet: View {
         .overlay(RoundedRectangle(cornerRadius: theme.radius.xl).stroke(theme.colors.primary.opacity(0.2), lineWidth: 1))
     }
 
+    // Generates questions through StudyContentOrchestrator, shuffles the result, numbers the final questions, and creates a local attempt.
     private var startButton: some View {
         VStack(spacing: 0) {
             PrimaryButton(title: "Start Quiz", icon: "play.fill") {
@@ -419,6 +422,7 @@ struct QuizConfigSheet: View {
         }
     }
 
+    // Topic quizzes work best when the prompt contains both the topic focus and the source resources linked to those topics.
     private func quizText(for selectedTopics: [StudyPathTopic]) async throws -> String {
         let topicFocus = selectedTopics.map { topic in
             var lines = ["Topic: \(topic.title)"]

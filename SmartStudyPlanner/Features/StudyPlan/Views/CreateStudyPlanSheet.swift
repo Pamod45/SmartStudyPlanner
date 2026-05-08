@@ -1,5 +1,6 @@
 import SwiftUI
 
+// Lets the user choose a date range and topics, then asks the scheduler to build sessions only inside available slots.
 struct CreateStudyPlanSheet: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
@@ -346,6 +347,7 @@ struct CreateStudyPlanSheet: View {
     }
 
 
+    // Validates selection, available time, and final scheduled minutes before handing sessions back to the view model.
     private func createPlan() {
         let entries = buildEntries()
         let period = selectedPeriod()
@@ -416,6 +418,7 @@ struct CreateStudyPlanSheet: View {
         }
     }
 
+    // Converts selected subjects/topics into the lightweight input shape expected by StudyScheduleService.
     private func buildEntries() -> [StudyScheduleService.SubjectEntry] {
         subjects.compactMap { subject in
             guard selectedSubjectIDs.contains(subject.id) else { return nil }
@@ -429,6 +432,7 @@ struct CreateStudyPlanSheet: View {
         }
     }
 
+    // Uses the full end day by ending one second before the next day starts.
     private func selectedPeriod() -> DateInterval {
         let cal = Calendar.current
         let start = cal.startOfDay(for: startDate)
@@ -438,6 +442,7 @@ struct CreateStudyPlanSheet: View {
         return DateInterval(start: start, end: end)
     }
 
+    // Checks whether a slot has at least one usable day inside the chosen planning period.
     private func slotApplies(_ slot: AvailabilitySlot, during period: DateInterval) -> Bool {
         let cal = Calendar.current
         var current = cal.startOfDay(for: period.start)
@@ -460,6 +465,7 @@ struct CreateStudyPlanSheet: View {
         }
     }
 
+    // Defensive validation after scheduling so sessions cannot be saved outside the user's available time.
     private func sessionFits(_ session: StudySession, in slot: AvailabilitySlot) -> Bool {
         let cal = Calendar.current
 

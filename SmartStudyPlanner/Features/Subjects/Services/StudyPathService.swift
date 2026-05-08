@@ -1,6 +1,9 @@
 import Foundation
 import FirebaseFirestore
 
+// Saves and loads generated study path topics for a subject.
+// The cloud copy lives under the subject document, while Core Data keeps the local cache.
+
 class StudyPathService {
     static let shared = StudyPathService()
     private let db = Firestore.firestore()
@@ -10,6 +13,7 @@ class StudyPathService {
         db.collection("subjects").document(subjectId).collection("studyPath")
     }
 
+    // Replaces the subject's existing generated path with the new topics and updates topicCount.
     func saveStudyPath(_ topics: [StudyPathTopic], for subjectId: String) async throws {
         let batch = db.batch()
         
@@ -41,6 +45,7 @@ class StudyPathService {
         print("[StudyPathService] Saved \(topics.count) topics for subject \(subjectId)")
     }
 
+    // Uses cached topics first for fast workspace loading, then falls back to Firestore.
     func fetchStudyPath(for subjectId: String) async throws -> [StudyPathTopic] {
         let cached = CoreDataService.shared.getCachedStudyPath(for: subjectId)
         if !cached.isEmpty {
@@ -67,6 +72,7 @@ class StudyPathService {
         CoreDataService.shared.upsertStudyPathTopic(topic)
     }
 
+    // Removes all generated topics for a subject and resets the subject topic count.
     func deleteStudyPath(for subjectId: String) async throws {
         let ref = collection(for: subjectId)
         let docs = try await ref.getDocuments()
@@ -81,7 +87,6 @@ class StudyPathService {
 
         CoreDataService.shared.deleteStudyPath(for: subjectId)
         
-        // Update local subject topicCount
         if var subject = CoreDataService.shared.getCachedSubject(id: subjectId) {
             subject.topicCount = 0
             CoreDataService.shared.upsertSubject(subject)

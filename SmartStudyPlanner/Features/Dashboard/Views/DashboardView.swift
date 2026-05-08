@@ -1,5 +1,8 @@
 import SwiftUI
 
+// Home dashboard for the signed-in user.
+// It surfaces near-term sessions/deadlines and provides shortcuts into subject resource creation.
+
 struct DashboardView: View {
     @Environment(\.theme) var theme
     @EnvironmentObject var sessionVM: SessionViewModel
@@ -308,6 +311,7 @@ struct DashboardView: View {
     }
 
 
+    // Opens the right resource creation flow after the user chooses which subject it belongs to.
     @ViewBuilder
     private func resourceSheet(for action: ResourceAction, subject: Subject) -> some View {
         let save: (Resource) -> Void = { resource in

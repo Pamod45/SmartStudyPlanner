@@ -15,6 +15,9 @@ enum WorkspaceTab: String, CaseIterable {
     case aiAssistant = "AI Assistant"
 }
 
+// Main workspace for a single subject. It coordinates resources, deadlines,
+// generated study paths, quizzes, and the subject list counts.
+
 struct SubjectWorkspaceView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
@@ -264,6 +267,7 @@ struct SubjectWorkspaceView: View {
         }
     }
     
+    // Loads cached topics immediately, then refreshes the generated study path from the service.
     private func loadStudyPath() {
         let cachedTopics = CoreDataService.shared.getCachedStudyPath(for: subject.id)
         if !cachedTopics.isEmpty {
@@ -282,6 +286,7 @@ struct SubjectWorkspaceView: View {
         }
     }
 
+    // Shows cached deadlines first so the workspace is usable while Firestore refreshes.
     private func loadDeadlines() {
         deadlines = CoreDataService.shared.getCachedDeadlines(for: subject.id)
         Task {
@@ -294,6 +299,7 @@ struct SubjectWorkspaceView: View {
         }
     }
 
+    // Removes the deadline from the UI immediately, then deletes it remotely and locally.
     private func deleteDeadline(_ deadline: Deadline) {
         deadlines.removeAll { $0.id == deadline.id }
         Task {
@@ -305,6 +311,7 @@ struct SubjectWorkspaceView: View {
         }
     }
 
+    // Loads resources from Core Data first, then refreshes from Firestore and updates subject counts.
     private func loadResources() {
         resources = CoreDataService.shared.getCachedResources(for: subject.id)
         
@@ -321,6 +328,8 @@ struct SubjectWorkspaceView: View {
         }
     }
     
+    // Builds a study path from the selected resources by extracting text, asking the
+    // content orchestrator for topics, then saving the generated topics for this subject.
     private func generateStudyPath(with basePath: StudyPath) {
         isGeneratingAIPath = true
         generationProgressText = "Extracting text from resources..."
@@ -351,7 +360,6 @@ struct SubjectWorkspaceView: View {
                         do {
                             try await StudyPathService.shared.saveStudyPath(topics, for: subject.id)
                             print("✅ Study path saved")
-                            // Refresh subject counts in the list
                             await MainActor.run {
                                 subjectsVM?.refreshSubjectCounts(for: subject.id)
                             }

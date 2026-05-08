@@ -1,6 +1,9 @@
 import CoreData
 import Foundation
 
+// Local cache layer for app data stored in Core Data.
+// Authentication uses it mainly to restore the cached AppUser profile quickly.
+
 class CoreDataService {
     static let shared = CoreDataService()
     private init() {}

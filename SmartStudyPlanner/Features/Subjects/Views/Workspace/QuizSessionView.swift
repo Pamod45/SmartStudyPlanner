@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// Runs one quiz attempt, tracks selected answers and elapsed time, then returns a completed QuizAttempt.
 struct QuizSessionView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
@@ -54,6 +55,7 @@ struct QuizSessionView: View {
         }.background(theme.colors.surface.opacity(0.2))
     }
     
+    // Reattempts reuse the same questions but clear answers, time, and IDs so the result saves as a new attempt.
     private func resetForReattempt() {
         let fresh = QuizAttempt(
             id: UUID().uuidString,
@@ -221,6 +223,7 @@ struct QuizSessionView: View {
         }
     }
 
+    // Saves the current answer before moving forward; on the final question it calculates time spent and completes the attempt.
     private var bottomBar: some View {
         VStack(spacing: 0) {
             if let q = currentQuestion, !q.expertTip.isEmpty {

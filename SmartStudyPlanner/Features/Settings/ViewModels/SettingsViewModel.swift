@@ -2,6 +2,8 @@ import Foundation
 import SwiftUI
 import Combine
 
+// Coordinates the Settings screens with the cached profile, Firebase profile, and user settings.
+// Most settings save immediately when a toggle, slider, or menu changes.
 @MainActor
 class SettingsViewModel: ObservableObject {
     @Published var settings: UserSettings = .default
@@ -34,6 +36,7 @@ class SettingsViewModel: ObservableObject {
         }
     }
 
+    // Creates a SwiftUI binding that updates the local settings object and then persists the change.
     func binding<T>(for keyPath: WritableKeyPath<UserSettings, T>) -> Binding<T> {
         Binding(
             get: { self.settings[keyPath: keyPath] },
@@ -53,6 +56,8 @@ class SettingsViewModel: ObservableObject {
         Task { await saveSettings() }
     }
 
+    // Loads profile/settings from cache first when possible, then refreshes settings from Firebase.
+    // If no remote settings exist yet, it creates a default settings object for this user.
     func load(userId: String?) async {
         guard let uid = userId else { return }
         isLoading = true
@@ -97,6 +102,8 @@ class SettingsViewModel: ObservableObject {
         }
     }
 
+    // Saves settings optimistically to Core Data, then marks them synced after Firebase accepts the update.
+    // Daily goal notifications are rescheduled after a successful save because their timing may have changed.
     func saveSettings() async {
         guard !settings.userId.isEmpty else { return }
         var updated = settings
@@ -117,6 +124,7 @@ class SettingsViewModel: ObservableObject {
         }
     }
 
+    // Saves editable profile fields and stores the selected avatar image locally before updating the Firebase profile.
     func save() async {
         isLoading = true
         defer { isLoading = false }
@@ -156,6 +164,7 @@ class SettingsViewModel: ObservableObject {
         }
     }
 
+    // Profile images are stored in the app's documents directory and the filename is saved on the user profile.
     static func localImageURL(for path: String) -> URL? {
         guard let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
         let filename = (path as NSString).lastPathComponent

@@ -8,6 +8,7 @@
 import SwiftUI
 import UserNotifications
 
+// Lets the user configure reminder timing. The actual notification scheduling is handled by NotificationService after settings save.
 struct NotificationsSettingsView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
@@ -84,6 +85,7 @@ struct NotificationsSettingsView: View {
         }
         .navigationBarHidden(true)
         .task {
+            // This screen only reports permission state; iOS Settings controls denied permissions.
             authStatus = await NotificationService.shared.checkAuthorizationStatus()
         }
     }
@@ -209,6 +211,7 @@ struct NotificationsSettingsView: View {
     }
 
 
+    // Maps friendly menu labels to the minute values stored in UserSettings.
     private var sessionReminderLabel: Binding<String> {
         Binding(
             get: {
@@ -236,6 +239,7 @@ struct NotificationsSettingsView: View {
         )
     }
 
+    // Maps friendly menu labels to the hour values used when scheduling deadline alerts.
     private var deadlineHourLabel: Binding<String> {
         Binding(
             get: {

@@ -5,13 +5,12 @@
 
 import SwiftUI
 
-// MARK: - QuizGroup (grouping model)
-
+// Groups repeated attempts for the same quiz so the workspace can show latest, best, and average scores together.
 struct QuizGroup: Identifiable {
-    let id: String                    // = quizName (unique per quiz)
+    let id: String
     let quizName: String
     let topicName: String
-    var attempts: [QuizAttempt]       // sorted newest-first
+    var attempts: [QuizAttempt]
 
     var latestAttempt: QuizAttempt? { attempts.first }
     var latestScore: Int              { latestAttempt?.scorePercent ?? 0 }
@@ -29,14 +28,13 @@ struct QuizGroup: Identifiable {
     }
 }
 
-// MARK: - QuizHistorySheet
-
+// Shows all attempts for one quiz and lets the user open past results or start a fresh reattempt.
 struct QuizHistorySheet: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
 
     let group: QuizGroup
-    var onReattempt: (QuizAttempt) -> Void   // passes the template attempt back to parent
+    var onReattempt: (QuizAttempt) -> Void
 
     @State private var selectedAttempt: QuizAttempt? = nil
 
@@ -45,7 +43,6 @@ struct QuizHistorySheet: View {
             theme.colors.background.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // ── Header ───────────────────────────────────────────────
                 header
                     .padding(.horizontal, theme.spacing.lg)
                     .padding(.top, theme.spacing.lg)
@@ -60,11 +57,9 @@ struct QuizHistorySheet: View {
                     .padding(.bottom, 100)
                 }
 
-                // ── Bottom bar ───────────────────────────────────────────
                 bottomBar
             }
         }
-        // View full results for a single attempt
         .sheet(item: $selectedAttempt) { attempt in
             QuizResultsView(
                 attempt: attempt,
@@ -72,7 +67,7 @@ struct QuizHistorySheet: View {
                 onReattempt: {
                     selectedAttempt = nil
                     dismiss()
-                    // Small delay to let both sheets close before parent fires fullScreenCover
+                    // Let both sheets close before the parent presents the full-screen quiz session.
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         onReattempt(attempt)
                     }
@@ -81,8 +76,6 @@ struct QuizHistorySheet: View {
             .environment(\.theme, theme)
         }
     }
-
-    // MARK: - Header
 
     private var header: some View {
         HStack(alignment: .top) {
@@ -112,8 +105,6 @@ struct QuizHistorySheet: View {
         }
     }
 
-    // MARK: - Stats row
-
     private var statsRow: some View {
         HStack(spacing: theme.spacing.sm) {
             statCard(label: "BEST SCORE",    value: "\(group.bestScore)%",    accent: .green)
@@ -138,8 +129,6 @@ struct QuizHistorySheet: View {
         .clipShape(RoundedRectangle(cornerRadius: theme.radius.xl))
         .overlay(RoundedRectangle(cornerRadius: theme.radius.xl).stroke(theme.colors.border.opacity(0.3), lineWidth: 1))
     }
-
-    // MARK: - Attempts list
 
     private var attemptsList: some View {
         VStack(alignment: .leading, spacing: theme.spacing.md) {
@@ -166,7 +155,6 @@ struct QuizHistorySheet: View {
             selectedAttempt = attempt
         } label: {
             HStack(spacing: theme.spacing.md) {
-                // Score badge
                 ZStack {
                     RoundedRectangle(cornerRadius: theme.radius.lg)
                         .fill(scoreColor.opacity(0.15))
@@ -203,7 +191,6 @@ struct QuizHistorySheet: View {
 
                 Spacer()
 
-                // Correct / total
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("\(attempt.correctCount)/\(attempt.questions.count)")
                         .font(theme.typography.bodySmall.weight(.bold))
@@ -225,8 +212,7 @@ struct QuizHistorySheet: View {
         .animation(.easeInOut(duration: 0.15), value: isLatest)
     }
 
-    // MARK: - Bottom bar
-
+    // Uses the latest attempt as the template because it has the most recent generated questions.
     private var bottomBar: some View {
         VStack(spacing: 0) {
             Divider()
