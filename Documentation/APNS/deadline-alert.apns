@@ -1,0 +1,14 @@
+{
+  "Simulator Target Bundle": "com.003.SmartStudyPlanner",
+  "aps": {
+    "alert": {
+      "title": "Deadline Approaching",
+      "body": "\"Math Assignment\" is due tomorrow. Stay on track!"
+    },
+    "sound": "default",
+    "badge": 1
+  },
+  "type": "Deadline",
+  "userId": "REPLACE_WITH_ACTIVE_USER_ID",
+  "referenceId": "sample-deadline-001"
+}

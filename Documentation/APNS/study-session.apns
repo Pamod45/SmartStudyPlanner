@@ -1,0 +1,14 @@
+{
+  "Simulator Target Bundle": "com.003.SmartStudyPlanner",
+  "aps": {
+    "alert": {
+      "title": "Study Session Starting Soon",
+      "body": "\"Physics Revision\" starts in 15 min. Get ready!"
+    },
+    "sound": "default",
+    "badge": 1
+  },
+  "type": "Study",
+  "userId": "REPLACE_WITH_ACTIVE_USER_ID",
+  "referenceId": "sample-study-session-001"
+}

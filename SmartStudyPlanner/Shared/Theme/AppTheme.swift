@@ -1,0 +1,161 @@
+//
+//  AppTheme.swift
+//  SmartStudyPlanner
+//
+//  Created by Pubudu Perera on 2026-03-31.
+//
+
+import SwiftUI
+
+struct AppTheme {
+    let colors: ThemeColors
+    let typography: ThemeTypography
+    let spacing: ThemeSpacing
+    let radius: ThemeRadius
+}
+
+struct ThemeColors {
+    let primary: Color
+    let secondary: Color
+    let background: Color
+    let surface: Color
+    let onSurface: Color
+    let error: Color
+    let textPrimary: Color
+    let textSecondary: Color
+    let textOnPrimary: Color
+    let border: Color
+    let success: Color
+}
+
+struct ThemeTypography {
+    let displayLarge: Font
+    let displayMedium: Font
+    let headingLarge: Font
+    let headingMd: Font
+    let headingMedium: Font
+    let headingSmall: Font
+    let bodyLarge: Font
+    let bodyMedium: Font
+    let bodySmall: Font
+    let caption: Font
+    let label: Font
+    let labelSmall: Font
+}
+
+struct ThemeSpacing {
+    let xs: CGFloat
+    let sm: CGFloat
+    let m: CGFloat
+    let md: CGFloat
+    let lg: CGFloat
+    let xl: CGFloat
+    let xxl: CGFloat
+}
+
+struct ThemeRadius {
+    let sm: CGFloat
+    let md: CGFloat
+    let lg: CGFloat
+    let xl: CGFloat
+    let full: CGFloat
+}
+
+extension AppTheme {
+    static let defaultTheme = AppTheme(
+        colors: ThemeColors(
+            primary: Color(hex: "#44A5FF"),
+            secondary: Color(hex: "#1F1F23"),
+            background: Color(hex: "#0A0A0B"),
+            surface: Color(hex: "#1F1F23"),
+            onSurface: Color(hex: "#292931"),
+            error: Color(hex: "#EF4444"),
+            textPrimary: Color(hex: "#E7E5E4"),
+            textSecondary: Color(hex: "#ACABAA"),
+            textOnPrimary: Color(hex: "#002442"),
+            border: Color(hex: "#444444"),
+            success: Color(hex: "#22C55E")
+        ),
+        typography: ThemeTypography(
+            displayLarge: .custom("SF Pro Display", size: 40, weight: .bold),
+            displayMedium: .custom("SF Pro Display", size: 32, weight: .bold),
+            headingLarge: .custom("SF Pro Display", size: 28, weight: .semibold),
+            headingMd: .custom("SF Pro Display", size: 24, weight: .medium),
+            headingMedium: .custom("SF Pro Display", size: 22, weight: .semibold),
+            headingSmall: .custom("SF Pro Display", size: 18, weight: .semibold),
+            bodyLarge: .custom("SF Pro Text", size: 16, weight: .regular),
+            bodyMedium: .custom("SF Pro Text", size: 14, weight: .regular),
+            bodySmall: .custom("SF Pro Text", size: 13, weight: .regular),
+            caption: .custom("SF Pro Text", size: 12, weight: .regular),
+            label: .custom("SF Pro Text", size: 11, weight: .medium),
+            labelSmall: .custom("SF Pro Text", size: 10, weight: .medium)
+        ),
+        spacing: ThemeSpacing(xs: 4, sm: 8, m: 12, md: 16, lg: 24, xl: 32,  xxl: 48),
+        radius: ThemeRadius(sm: 8, md: 12, lg: 16, xl: 24, full: 999)
+    )
+    
+    static let highContrastTheme = AppTheme(
+        colors: ThemeColors(
+            primary: Color(hex: "#0088FF"), // More saturated blue
+            secondary: Color(hex: "#000000"),
+            background: Color(hex: "#000000"), // Pure black
+            surface: Color(hex: "#111111"), // Very dark grey
+            onSurface: Color(hex: "#222222"),
+            error: Color(hex: "#FF0000"), // Pure red
+            textPrimary: Color(hex: "#FFFFFF"), // Pure white
+            textSecondary: Color(hex: "#CCCCCC"), // Lighter grey for better contrast
+            textOnPrimary: Color(hex: "#000000"),
+            border: Color(hex: "#666666"),
+            success: Color(hex: "#00FF00") // Pure green
+        ),
+        typography: defaultTheme.typography,
+        spacing: defaultTheme.spacing,
+        radius: defaultTheme.radius
+    )
+    
+    static let lightTheme = AppTheme(
+        colors: ThemeColors(
+            primary: Color(hex: "#44A5FF"),
+            secondary: Color(hex: "#F3F4F6"),
+            background: Color(hex: "#FFFFFF"),
+            surface: Color(hex: "#F9FAFB"),
+            onSurface: Color(hex: "#E5E7EB"),
+            error: Color(hex: "#EF4444"),
+            textPrimary: Color(hex: "#111827"),
+            textSecondary: Color(hex: "#6B7280"),
+            textOnPrimary: Color(hex: "#FFFFFF"),
+            border: Color(hex: "#D1D5DB"),
+            success: Color(hex: "#22C55E")
+        ),
+        typography: defaultTheme.typography,
+        spacing: defaultTheme.spacing,
+        radius: defaultTheme.radius
+    )
+    
+    func scaled(by factor: Double) -> AppTheme {
+        guard factor != 1.0 else { return self }
+        
+        let scaledTypography = ThemeTypography(
+            displayLarge: .custom("SF Pro Display", size: 40 * factor, weight: .bold),
+            displayMedium: .custom("SF Pro Display", size: 32 * factor, weight: .bold),
+            headingLarge: .custom("SF Pro Display", size: 28 * factor, weight: .semibold),
+            headingMd: .custom("SF Pro Display", size: 24 * factor, weight: .medium),
+            headingMedium: .custom("SF Pro Display", size: 22 * factor, weight: .semibold),
+            headingSmall: .custom("SF Pro Display", size: 18 * factor, weight: .semibold),
+            bodyLarge: .custom("SF Pro Text", size: 16 * factor, weight: .regular),
+            bodyMedium: .custom("SF Pro Text", size: 14 * factor, weight: .regular),
+            bodySmall: .custom("SF Pro Text", size: 13 * factor, weight: .regular),
+            caption: .custom("SF Pro Text", size: 12 * factor, weight: .regular),
+            label: .custom("SF Pro Text", size: 11 * factor, weight: .medium),
+            labelSmall: .custom("SF Pro Text", size: 10 * factor, weight: .medium)
+        )
+        
+        return AppTheme(
+            colors: self.colors,
+            typography: scaledTypography,
+            spacing: self.spacing,
+            radius: self.radius
+        )
+    }
+
+}

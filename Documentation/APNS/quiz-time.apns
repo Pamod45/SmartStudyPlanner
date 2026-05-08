@@ -1,0 +1,14 @@
+{
+  "Simulator Target Bundle": "com.003.SmartStudyPlanner",
+  "aps": {
+    "alert": {
+      "title": "Quiz Time!",
+      "body": "You just finished Biology. Test your knowledge with a quick quiz!"
+    },
+    "sound": "default",
+    "badge": 1
+  },
+  "type": "Quizzes",
+  "userId": "REPLACE_WITH_ACTIVE_USER_ID",
+  "referenceId": "sample-quiz-session-001"
+}
