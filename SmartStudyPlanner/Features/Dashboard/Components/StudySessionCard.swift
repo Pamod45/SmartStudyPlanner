@@ -1,5 +1,7 @@
 import SwiftUI
 
+// Dashboard card for starting, pausing, resuming, and completing a scheduled study session.
+
 struct StudySessionCard: View {
     @Environment(\.theme) var theme
     @ObservedObject private var timerService = StudyTimerService.shared

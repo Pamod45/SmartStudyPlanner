@@ -11,6 +11,9 @@ import UIKit
 import GoogleSignIn
 import FirebaseCore
 
+// Handles authentication with Firebase Auth and Google Sign-In.
+// Firestore/Core Data profile work is delegated to UserService.
+
 struct ActiveDeviceSession: Identifiable {
     let id: String
     let userId: String
@@ -25,6 +28,8 @@ class AuthService {
     
     private init() {}
     
+    // Signs in with Firebase Auth, then loads the matching app profile.
+    // If the Auth user exists but the Firestore profile is missing, a basic profile is created.
     func signIn(email: String, password: String) async throws -> AppUser {
         let authResult = try await Auth.auth().signIn(withEmail: email, password: password)
         let user = authResult.user
@@ -43,6 +48,7 @@ class AuthService {
         }
     }
     
+    // Creates a Firebase Auth account and then creates the app profile used by the rest of the app.
     func signUp(email: String, password: String, name: String) async throws -> AppUser {
         let authResult = try await Auth.auth().createUser(withEmail: email, password: password)
         let user = authResult.user
@@ -62,6 +68,8 @@ class AuthService {
     }
     
     @MainActor
+    // Opens the Google Sign-In UI, converts the Google tokens into a Firebase credential,
+    // then loads or creates the app profile for that Firebase user.
     func signInWithGoogle(presentingViewController: UIViewController) async throws -> AppUser {
         guard let clientID = FirebaseApp.app()?.options.clientID else {
             throw NSError(domain: "AuthService", code: -1, userInfo: [NSLocalizedDescriptionKey: "No Client ID found"])
@@ -97,6 +105,7 @@ class AuthService {
         }
     }
 
+    // Ends the Firebase session and clears local cached data for the signed-out user.
     func signOut() throws {
         try Auth.auth().signOut()
         CoreDataService.shared.clearCache()
@@ -109,6 +118,8 @@ class AuthService {
         try await user.updatePassword(to: newPassword)
     }
     
+    // Currently returns only this device. A real multi-device list would need saved
+    // session records in Firestore.
     func fetchActiveSessions() async throws -> [ActiveDeviceSession] {
         guard let user = Auth.auth().currentUser else { return [] }
         return [
@@ -127,6 +138,8 @@ class AuthService {
         try signOut()
     }
     
+    // Restores the app user from Firebase's current local auth session.
+    // The profile is read from Core Data first, then Firestore if the cache is missing.
     func getCurrentUser() async -> AppUser? {
         guard let user = Auth.auth().currentUser else {
             return nil

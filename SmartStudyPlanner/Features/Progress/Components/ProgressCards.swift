@@ -1,5 +1,6 @@
 import SwiftUI
 
+// Small display cards used by the Progress summary screen.
 struct StatCard: View {
     @Environment(\.theme) var theme
     let item: StatItem
@@ -52,6 +53,7 @@ struct StatCard: View {
     }
 }
 
+// Shows one subject's calculated mastery value and status label.
 struct SubjectProgressCard: View {
     @Environment(\.theme) var theme
     let item: SubjectProgress
@@ -122,6 +124,7 @@ struct SubjectProgressCard: View {
     }
 }
 
+// Shows one generated insight from ProgressViewModel in a readable card.
 struct InsightCard: View {
     @Environment(\.theme) var theme
     let item: InsightItem

@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// Main Settings hub. Child screens share SettingsViewModel so changes save through one path.
 struct SettingsView: View {
     @Environment(\.theme) var theme
     @EnvironmentObject var sessionViewModel: SessionViewModel
@@ -54,6 +55,7 @@ struct SettingsView: View {
         }
         .navigationBarHidden(true)
         .background(
+            // Hidden links keep the custom settings rows while still using NavigationStack destinations.
             Group {
                 NavigationLink(destination: ProfileEditView(user: Binding(get: { vm.settingsUser }, set: { vm.updateUser($0) })), isActive: $showProfile) { EmptyView() }
                 NavigationLink(destination: StudyGoalsView().environmentObject(vm), isActive: $showStudyGoals) { EmptyView() }

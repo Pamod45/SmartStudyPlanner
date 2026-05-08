@@ -1,6 +1,8 @@
 import Combine
 import SwiftUI
 
+// Keeps the study plan screen in sync with Core Data, Firebase, Calendar, and reminders.
+// Availability is the source of truth for where sessions are allowed to exist.
 @MainActor
 class StudyPlanViewModel: ObservableObject {
     @Published var studyPlans: [StudyPlan] = []
@@ -12,6 +14,8 @@ class StudyPlanViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     private(set) var currentUserId: String = ""
 
+    // Loads cached data first so the screen opens quickly, then replaces it with Firebase data.
+    // After loading, sessions are checked against availability so deleted or changed slots do not leave orphan sessions behind.
     func load(userId: String?) async {
         guard let userId, !userId.isEmpty else { return }
         currentUserId = userId
@@ -44,6 +48,7 @@ class StudyPlanViewModel: ObservableObject {
         await loadStudyPathTopics()
     }
 
+    // Fetches study path topics per subject in parallel because generated plans need topic duration and resource IDs.
     private func loadStudyPathTopics() async {
         var map: [String: [StudyPathTopic]] = [:]
         await withTaskGroup(of: (String, [StudyPathTopic]).self) { group in
@@ -60,8 +65,7 @@ class StudyPlanViewModel: ObservableObject {
         studyPathTopics = map
     }
 
-    // MARK: - Availability slots
-
+    // Date ranges are stored as individual daily slots so each day can be deleted independently later.
     func addAvailabilitySlot(_ slot: AvailabilitySlot) {
         if slot.type == .dateRange {
             addAvailabilitySlots(expandRangeSlot(slot))
@@ -75,6 +79,7 @@ class StudyPlanViewModel: ObservableObject {
         slots.forEach { addSingleAvailabilitySlot($0) }
     }
 
+    // Adds a slot optimistically to local state/Core Data, then uploads it to Firebase in the background.
     private func addSingleAvailabilitySlot(_ slot: AvailabilitySlot) {
         guard !isPastAvailabilitySlot(slot) else { return }
 
@@ -97,6 +102,8 @@ class StudyPlanViewModel: ObservableObject {
         }
     }
 
+    // Converts a date-range availability into one specific-date slot per valid day.
+    // Past dates are dropped here, so old availability cannot be created from the range picker.
     private func expandRangeSlot(_ slot: AvailabilitySlot) -> [AvailabilitySlot] {
         guard let rangeStart = slot.rangeStart, let rangeEnd = slot.rangeEnd else { return [slot] }
 
@@ -128,6 +135,7 @@ class StudyPlanViewModel: ObservableObject {
         }
     }
 
+    // Removing availability also removes sessions inside that slot from UI, Core Data, Firebase, Calendar, and notifications.
     func removeAvailabilitySlot(id: String) {
         guard let slot = availabilitySlots.first(where: { $0.id == id }) else { return }
         let sessionsToDelete = studySessions.filter { sessionBelongs($0, to: slot) }
@@ -150,6 +158,8 @@ class StudyPlanViewModel: ObservableObject {
         }
     }
 
+    // Manual sessions are accepted only when they fit inside an availability slot.
+    // The local cache updates immediately, then Firebase, Calendar, and reminders are updated asynchronously.
     func addSession(_ session: StudySession) {
         guard sessionFitsAnyAvailabilitySlot(session) else { return }
 
@@ -178,6 +188,7 @@ class StudyPlanViewModel: ObservableObject {
         }
     }
 
+    // Generated plans can contain many sessions, so this filters invalid sessions before doing one bulk cache/upload path.
     func addSessions(_ sessions: [StudySession]) {
         let validSessions = sessions.filter { sessionFitsAnyAvailabilitySlot($0) }
         guard !validSessions.isEmpty else { return }
@@ -214,6 +225,7 @@ class StudyPlanViewModel: ObservableObject {
         }
     }
 
+    // Marks the session as pending locally first, then writes the final synced version after Firebase accepts it.
     func updateSession(_ session: StudySession) {
         var stamped = session
         if stamped.userId.isEmpty { stamped.userId = currentUserId }
@@ -238,6 +250,7 @@ class StudyPlanViewModel: ObservableObject {
         }
     }
 
+    // Deletes a session from every place that can keep a copy: screen state, Core Data, Firebase, Calendar, and reminders.
     func removeSession(id: String) {
         let calendarEventId = studySessions.first(where: { $0.id == id })?.externalCalendarEventId
 
@@ -254,6 +267,7 @@ class StudyPlanViewModel: ObservableObject {
     }
 
 
+    // Pushes sessions without calendar IDs into the user's calendar and stores the event IDs for future updates/removal.
     func syncAllToCalendar() {
         let pending = studySessions.filter { $0.externalCalendarEventId == nil && $0.status == .scheduled }
         Task {
@@ -317,6 +331,7 @@ class StudyPlanViewModel: ObservableObject {
         availabilitySlots.contains { sessionFits(session, in: $0) }
     }
 
+    // Cleans up sessions that no longer fit any availability slot after slots are loaded, edited, or removed.
     private func pruneSessionsOutsideAvailability(removeAllWhenNoSlots: Bool) {
         guard !studySessions.isEmpty else { return }
         guard removeAllWhenNoSlots || !availabilitySlots.isEmpty else { return }
@@ -335,6 +350,7 @@ class StudyPlanViewModel: ObservableObject {
         }
     }
 
+    // Compares only the day and time window, which keeps date-range and specific-date slots using the same rule.
     private func sessionFits(_ session: StudySession, in slot: AvailabilitySlot) -> Bool {
         let cal = Calendar.current
         let sessionDay = session.scheduledDate

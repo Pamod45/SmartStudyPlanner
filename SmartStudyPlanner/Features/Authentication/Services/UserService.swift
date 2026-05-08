@@ -11,6 +11,9 @@ import FirebaseAuth
 import FirebaseFirestore
 import CoreData
 
+// Manages the user's app profile and settings in Firestore.
+// Every successful fetch or save also updates Core Data so the app has a local cache.
+
 class UserService {
     static let shared = UserService()
     private let db = Firestore.firestore()

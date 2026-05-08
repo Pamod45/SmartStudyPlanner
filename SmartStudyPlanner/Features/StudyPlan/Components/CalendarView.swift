@@ -1,5 +1,6 @@
 import SwiftUI
 
+// Wraps UICalendarView for SwiftUI and decorates days that have availability, sessions, or deadlines.
 struct CalendarView: UIViewRepresentable {
     @Binding var selectedDate: DateComponents?
     var slots: [AvailabilitySlot]
@@ -42,6 +43,7 @@ struct CalendarView: UIViewRepresentable {
         context.coordinator.decoratedDates = decoratedDates()
     }
 
+    // Reloads only dates that need dots. Availability checks the next 60 days so repeating/range slots can be shown.
     private func decoratedDates() -> [DateComponents] {
         var dates: Set<DateComponents> = []
         let calendar = Calendar.current
@@ -80,6 +82,7 @@ struct CalendarView: UIViewRepresentable {
             parent.selectedDate = dateComponents
         }
 
+        // Uses one dot per data type: availability, scheduled session, and deadline.
         func calendarView(_ calendarView: UICalendarView, decorationFor dateComponents: DateComponents) -> UICalendarView.Decoration? {
             guard let date = Calendar.current.date(from: dateComponents) else { return nil }
             let cal = Calendar.current

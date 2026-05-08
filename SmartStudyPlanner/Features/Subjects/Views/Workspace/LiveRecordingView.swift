@@ -1,12 +1,14 @@
 import SwiftUI
 import Combine
 
+// Display line shape for transcript UI.
 struct TranscriptLine: Identifiable {
     let id = UUID()
     let timestamp: String
     let text: String
 }
 
+// Records audio, keeps a live transcript through AudioTranscriptionService, and saves both as a recording resource.
 struct LiveRecordingView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
@@ -220,6 +222,7 @@ struct LiveRecordingView: View {
         .ignoresSafeArea(edges: .bottom)
     }
 
+    // The newest transcript segment is highlighted so the live transcription feels active while recording.
     private var highlightedLiveTranscript: Text {
         let segments = audioService.segments
         guard !segments.isEmpty else {
@@ -249,6 +252,7 @@ struct LiveRecordingView: View {
         waveTimer?.cancel()
     }
 
+    // Stops recording and stores the transcript JSON in Resource.content so playback can highlight words later.
     private func save() {
         stopTimers()
         audioService.stopRecording()

@@ -1,6 +1,9 @@
 import Combine
 import SwiftUI
 
+// Builds the dashboard summary from subjects, study sessions, deadlines, and notifications.
+// The view model keeps only the small slices needed for the home screen.
+
 @MainActor
 class DashboardViewModel: ObservableObject {
     @Published var upcomingSessions: [StudySession] = []
@@ -17,6 +20,7 @@ class DashboardViewModel: ObservableObject {
         Shortcut(title: "TAKE NOTES",        icon: "signature",           color: .purple)
     ]
 
+    // Loads dashboard data in parallel and filters it down to upcoming sessions/deadlines.
     func load(userId: String?) async {
         guard let userId, !userId.isEmpty else { return }
         isLoading = true
@@ -59,6 +63,7 @@ class DashboardViewModel: ObservableObject {
     }
 
 
+    // Cleans up past sessions when the dashboard opens so stale sessions do not stay active/upcoming.
     private func autoResolvePastSessions(_ sessions: [StudySession], now: Date) async -> [StudySession] {
         var updated = sessions
         var toSave: [StudySession] = []

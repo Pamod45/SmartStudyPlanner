@@ -139,32 +139,24 @@ struct LoginView: View {
                 }
             }
             RoundedIconButton(icon: "faceid"){
-                let isFaceIDEnabled = localSettings.faceIDEnabled
-                guard isFaceIDEnabled else {
+                guard localSettings.faceIDEnabled else {
                     vm.errorMessage = "Face ID is not enabled in settings."
                     return
                 }
-                
-                let context = LAContext()
-                var error: NSError?
-                if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-                    context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Log in with Face ID") { success, _ in
-                        DispatchQueue.main.async {
-                            if success {
-                                Task {
-                                    await vm.signInWithFaceID { user in
-                                        if let user = user {
-                                            sessionViewModel.signIn(user: user)
-                                        }
-                                    }
-                                }
-                            } else {
-                                vm.errorMessage = "Face ID authentication failed."
+
+                localSettings.authenticateWithBiometrics { success in
+                    guard success else {
+                        vm.errorMessage = "Face ID authentication failed."
+                        return
+                    }
+
+                    Task {
+                        await vm.signInWithFaceID { user in
+                            if let user = user {
+                                sessionViewModel.signIn(user: user)
                             }
                         }
                     }
-                } else {
-                    vm.errorMessage = "Face ID is not available on this device."
                 }
             }
         }

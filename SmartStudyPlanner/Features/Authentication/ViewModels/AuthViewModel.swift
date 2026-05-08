@@ -11,6 +11,9 @@ import Combine
 import Foundation
 import SwiftUI
 
+// Keeps authentication screen state and passes user actions to AuthService.
+// Views use the completion closures to update the app session after login or signup.
+
 @MainActor
 class AuthViewModel: ObservableObject {
     @Published var isLoading: Bool = false
@@ -35,8 +38,6 @@ class AuthViewModel: ObservableObject {
         errorMessage = nil
         do {
             let user = try await AuthService.shared.signIn(email: email, password: password)
-            
-            // Save credentials for Face ID
             UserDefaults.standard.set(email, forKey: "faceId_email")
             UserDefaults.standard.set(password, forKey: "faceId_password")
             
@@ -49,6 +50,8 @@ class AuthViewModel: ObservableObject {
         }
     }
 
+    // Face ID only unlocks previously saved email/password credentials here.
+    // The actual login still goes through the normal Firebase email/password flow.
     func signInWithFaceID(completion: @escaping (AppUser?) -> Void) async {
         guard let email = UserDefaults.standard.string(forKey: "faceId_email"),
               let password = UserDefaults.standard.string(forKey: "faceId_password") else {

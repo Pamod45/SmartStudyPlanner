@@ -1,6 +1,7 @@
 import SwiftUI
 import PDFKit
 
+// Temporary model for a scanned page while OCR is running.
 struct CapturedPage: Identifiable {
     let id = UUID()
     var image: UIImage
@@ -12,6 +13,7 @@ struct ScannedText: Identifiable {
     let text: String
 }
 
+// Captures pages from camera or photo library, runs OCR, then saves the result as either a note or a PDF resource.
 struct ScannerView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
@@ -273,6 +275,7 @@ struct ScannerView: View {
         }
     }
 
+    // Runs OCR for one captured page and stores the recognized text back on the matching page.
     private func processImage(_ image: UIImage, at index: Int) {
         isProcessing = true
 
@@ -295,11 +298,13 @@ struct ScannerView: View {
         }
     }
 
+    // Combines recognized text from all pages and opens the note editor so the user can clean it before saving.
     private func processCapturedPages() {
         let text = capturedPages.compactMap { $0.recognizedText }.joined(separator: "\n\n")
         scannedTextToEdit = ScannedText(text: text)
     }
 
+    // Builds a PDF from the captured page images and saves only the filename on the Resource model.
     private func saveAsPDF() {
         let pdfDocument = PDFDocument()
         

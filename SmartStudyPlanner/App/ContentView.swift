@@ -20,6 +20,7 @@ struct ContentView: View {
                     EmptyView()
                 }
             } else if sessionViewModel.isAuthenticated || sessionViewModel.isGuest {
+                // Guests and signed-in users share the same tab shell; the view models decide what data they can load.
                 mainTabView
             } else {
                 NavigationStack{
@@ -32,6 +33,7 @@ struct ContentView: View {
         .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
     }
 
+    // Each tab gets its own NavigationStack so navigation history stays separate between sections.
     private var mainTabView: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {

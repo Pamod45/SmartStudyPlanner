@@ -1,6 +1,7 @@
 import SwiftUI
 import AVFoundation
 
+// Plays a saved recording resource and highlights transcript segments as the audio time advances.
 struct RecordingPlayerView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
@@ -34,7 +35,6 @@ struct RecordingPlayerView: View {
             theme.colors.background.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Top Bar
                 HStack {
                     Button {
                         audioPlayer?.stop()
@@ -79,7 +79,6 @@ struct RecordingPlayerView: View {
                         Spacer()
                     }
                 } else {
-                    // Audio Controls
                     VStack(spacing: theme.spacing.md) {
                         Slider(value: $currentTime, in: 0...max(duration, 1), onEditingChanged: { editing in
                             if !editing {
@@ -111,7 +110,6 @@ struct RecordingPlayerView: View {
                     .cornerRadius(theme.radius.xl)
                     .padding(theme.spacing.lg)
                     
-                    // Transcript
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
                             Text("TRANSCRIPT")
@@ -162,6 +160,7 @@ struct RecordingPlayerView: View {
         }
     }
     
+    // Chooses the latest transcript segment whose timestamp is behind the current playback time.
     private var highlightedTranscript: Text {
         let activeIndex = segments.lastIndex(where: { currentTime >= $0.timestamp }) ?? -1
         
@@ -175,6 +174,7 @@ struct RecordingPlayerView: View {
         return combinedText
     }
     
+    // Loads the audio file from Documents and normalizes transcript timestamps saved by the recorder.
     private func setupAudioPlayer() {
         guard let url = getAudioURL(), FileManager.default.fileExists(atPath: url.path) else {
             hasError = true
@@ -245,6 +245,7 @@ struct RecordingPlayerView: View {
         timer = nil
     }
     
+    // Older resources may contain full simulator/device paths, so only the filename is trusted when rebuilding the local URL.
     private func getAudioURL() -> URL? {
         guard let path = resource.localFilePath else { return nil }
         

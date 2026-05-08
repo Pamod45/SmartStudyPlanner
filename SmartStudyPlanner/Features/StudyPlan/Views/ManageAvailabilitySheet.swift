@@ -1,5 +1,6 @@
 import SwiftUI
 
+// Collects the user's available study window before the view model expands and saves it.
 struct ManageAvailabilitySheet: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) private var dismiss
@@ -195,6 +196,7 @@ struct ManageAvailabilitySheet: View {
         }
     }
 
+    // Builds the slot differently for single-date and date-range availability; persistence happens in StudyPlanViewModel.
     private func save() {
         let slot = AvailabilitySlot(
             type:       selectedType,

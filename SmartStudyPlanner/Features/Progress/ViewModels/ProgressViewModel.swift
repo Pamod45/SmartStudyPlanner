@@ -1,5 +1,8 @@
 import SwiftUI
 import Combine
+
+// Builds all data shown in the Progress tab from completed sessions, subjects, quiz attempts, resources, and settings.
+// The views stay mostly display-only; this view model does the progress calculations in memory after loading user data.
 @MainActor
 class ProgressViewModel: ObservableObject {
 
@@ -28,6 +31,8 @@ class ProgressViewModel: ObservableObject {
         return (daily * 7.0) / Double(count)
     }
 
+    // Summary cards are calculated from completed sessions in the current week.
+    // Study time uses actualDurationMinutes when a completed session has it, otherwise it falls back to the planned duration.
     var stats: [StatItem] {
         let weekly = thisWeekSessions
         let totalMinutes = weekly.reduce(0) {
@@ -73,6 +78,8 @@ class ProgressViewModel: ObservableObject {
         ]
     }
 
+    // Subject mastery combines this week's study time and quiz scores.
+    // 70% comes from progress toward the subject's weekly target hours, and 30% comes from average quiz score when attempts exist.
     var subjectProgressItems: [SubjectProgress] {
         let weeklyTarget = perSubjectWeeklyTargetHours
         return subjects.filter { !$0.isArchived }.map { subject in
@@ -113,6 +120,11 @@ class ProgressViewModel: ObservableObject {
         .sorted { $0.mastery > $1.mastery }
     }
 
+    // Insights are simple human-readable patterns from the user's data:
+    // peak day = weekday with the most completed study minutes across all completed sessions,
+    // top subject = subject with the most completed study minutes this week,
+    // trend = this week's completed session count compared with last week's count,
+    // weak quiz area = subject with the lowest average quiz score.
     var insights: [InsightItem] {
         var items: [InsightItem] = []
         let cal = Calendar.current
@@ -204,7 +216,12 @@ class ProgressViewModel: ObservableObject {
         buildActivity(sessions: completedSessions, lookbackDays: 90, grouping: .week)
     }
 
+    // Subject distribution is each subject's share of all completed study minutes.
     var subjectDistribution: [SubjectDistribution] {
+        Self.subjectDistribution(from: completedSessions)
+    }
+
+    static func subjectDistribution(from completedSessions: [StudySession]) -> [SubjectDistribution] {
         let total = Double(completedSessions.reduce(0) {
             $0 + ($1.actualDurationMinutes ?? $1.durationMinutes)
         })
@@ -225,6 +242,7 @@ class ProgressViewModel: ObservableObject {
         .sorted { $0.percentage > $1.percentage }
     }
 
+    // Resource utilization counts saved resources by type so the charts can show what material the user has added.
     var resourceUtilization: [ResourceUtilization] {
         let typeMapping: [(display: String, type: ResourceType, icon: String)] = [
             ("PDFs",       .pdf,       "doc.richtext.fill"),
@@ -249,6 +267,8 @@ class ProgressViewModel: ObservableObject {
         subjects.filter { !$0.isArchived }.map(\.name).sorted()
     }
 
+    // Loads the progress inputs from Firebase-backed services, including per-subject quiz attempts and resources.
+    // Only completed sessions are used for progress calculations because scheduled/skipped sessions should not count as study done.
     func load(userId: String?) async {
         guard let uid = userId, !uid.isEmpty else { return }
         isLoading = true
@@ -287,12 +307,13 @@ class ProgressViewModel: ObservableObject {
 
         let completed = fetchedSessions.filter { $0.status == .completed }
         completedSessions = completed
-        streak = computeStreak(from: completed)
+        streak = ProgressViewModel.computeStreak(from: completed)
 
         Task { await updateSubjectHours(subjects: fetchedSubjects, sessions: completed, userId: uid) }
     }
 
-    private func computeStreak(from sessions: [StudySession]) -> StudyStreak {
+    // Counts unique study days, finds the longest consecutive run, and then checks backwards from today for the current streak.
+    static func computeStreak(from sessions: [StudySession]) -> StudyStreak {
         let cal = Calendar.current
         let studyDays = Set(sessions.map { cal.startOfDay(for: $0.scheduledDate) })
         let sortedDays = studyDays.sorted()
@@ -334,6 +355,7 @@ class ProgressViewModel: ObservableObject {
 
     private enum ActivityGrouping { case day, week }
 
+    // Builds chart points from completed sessions by grouping minutes into days or weeks, then splitting those totals by subject.
     private func buildActivity(sessions: [StudySession],
                                lookbackDays: Int,
                                grouping: ActivityGrouping) -> [DailyActivity] {
@@ -397,6 +419,7 @@ class ProgressViewModel: ObservableObject {
         }
     }
 
+    // Keeps each subject's stored totalHoursStudied aligned with completed session history.
     private func updateSubjectHours(subjects: [Subject], sessions: [StudySession], userId: String) async {
         for subject in subjects {
             let subjectSessions = sessions.filter { $0.subjectId == subject.id }

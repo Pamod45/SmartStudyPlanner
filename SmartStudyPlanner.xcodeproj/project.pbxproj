@@ -29,6 +29,13 @@
 			remoteGlobalIDString = AD7EDA232FABD25B00B1EB53;
 			remoteInfo = SmartStudyPlannerWidgetsExtension;
 		};
+		ADB3B5522FAE0A010045D957 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AD060C5E2F718F47001254E6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AD060C652F718F47001254E6;
+			remoteInfo = SmartStudyPlanner;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -60,6 +67,8 @@
 		AD7EDA242FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SmartStudyPlannerWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD7EDA262FABD25B00B1EB53 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		AD7EDA282FABD25B00B1EB53 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		ADB3B54E2FAE0A010045D957 /* SmartStudyPlannerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SmartStudyPlannerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		ADB3B5632FAE26560045D957 /* SmartStudyPlanner.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = SmartStudyPlanner.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -120,6 +129,11 @@
 			path = SmartStudyPlannerWidgets;
 			sourceTree = "<group>";
 		};
+		ADB3B54F2FAE0A010045D957 /* SmartStudyPlannerTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SmartStudyPlannerTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,16 +161,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		ADB3B54B2FAE0A010045D957 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		AD060C5D2F718F47001254E6 = {
 			isa = PBXGroup;
 			children = (
+				ADB3B5632FAE26560045D957 /* SmartStudyPlanner.xctestplan */,
 				AD7EB66D2FAA40DD005AA717 /* Resources */,
 				AD53B3DA2F8CCADB0002309F /* GoogleService-Info.plist */,
 				AD060C682F718F47001254E6 /* SmartStudyPlanner */,
 				AD7EDA2A2FABD25B00B1EB53 /* SmartStudyPlannerWidgets */,
+				ADB3B54F2FAE0A010045D957 /* SmartStudyPlannerTests */,
 				AD7EDA252FABD25B00B1EB53 /* Frameworks */,
 				AD060C672F718F47001254E6 /* Products */,
 			);
@@ -167,6 +190,7 @@
 			children = (
 				AD060C662F718F47001254E6 /* SmartStudyPlanner.app */,
 				AD7EDA242FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension.appex */,
+				ADB3B54E2FAE0A010045D957 /* SmartStudyPlannerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -239,6 +263,29 @@
 			productReference = AD7EDA242FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		ADB3B54D2FAE0A010045D957 /* SmartStudyPlannerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ADB3B5562FAE0A010045D957 /* Build configuration list for PBXNativeTarget "SmartStudyPlannerTests" */;
+			buildPhases = (
+				ADB3B54A2FAE0A010045D957 /* Sources */,
+				ADB3B54B2FAE0A010045D957 /* Frameworks */,
+				ADB3B54C2FAE0A010045D957 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				ADB3B5532FAE0A010045D957 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				ADB3B54F2FAE0A010045D957 /* SmartStudyPlannerTests */,
+			);
+			name = SmartStudyPlannerTests;
+			packageProductDependencies = (
+			);
+			productName = SmartStudyPlannerTests;
+			productReference = ADB3B54E2FAE0A010045D957 /* SmartStudyPlannerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -254,6 +301,10 @@
 					};
 					AD7EDA232FABD25B00B1EB53 = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					ADB3B54D2FAE0A010045D957 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = AD060C652F718F47001254E6;
 					};
 				};
 			};
@@ -278,6 +329,7 @@
 			targets = (
 				AD060C652F718F47001254E6 /* SmartStudyPlanner */,
 				AD7EDA232FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension */,
+				ADB3B54D2FAE0A010045D957 /* SmartStudyPlannerTests */,
 			);
 		};
 /* End PBXProject section */
@@ -292,6 +344,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AD7EDA222FABD25B00B1EB53 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ADB3B54C2FAE0A010045D957 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -315,6 +374,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		ADB3B54A2FAE0A010045D957 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -322,6 +388,11 @@
 			isa = PBXTargetDependency;
 			target = AD7EDA232FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension */;
 			targetProxy = AD7EDA382FABD25D00B1EB53 /* PBXContainerItemProxy */;
+		};
+		ADB3B5532FAE0A010045D957 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AD060C652F718F47001254E6 /* SmartStudyPlanner */;
+			targetProxy = ADB3B5522FAE0A010045D957 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -585,6 +656,48 @@
 			};
 			name = Release;
 		};
+		ADB3B5542FAE0A010045D957 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2BCJ5647BL;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.003.SmartStudyPlannerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SmartStudyPlanner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SmartStudyPlanner";
+			};
+			name = Debug;
+		};
+		ADB3B5552FAE0A010045D957 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2BCJ5647BL;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.003.SmartStudyPlannerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SmartStudyPlanner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SmartStudyPlanner";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -611,6 +724,15 @@
 			buildConfigurations = (
 				AD7EDA3C2FABD25D00B1EB53 /* Debug */,
 				AD7EDA3D2FABD25D00B1EB53 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ADB3B5562FAE0A010045D957 /* Build configuration list for PBXNativeTarget "SmartStudyPlannerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ADB3B5542FAE0A010045D957 /* Debug */,
+				ADB3B5552FAE0A010045D957 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
