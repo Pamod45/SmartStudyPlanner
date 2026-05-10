@@ -336,12 +336,17 @@ struct SubjectWorkspaceView: View {
         
         let selectedResources = resources.filter { basePath.generatedFromResourceIds.contains($0.id) }
         print("DEBUG: generateStudyPath called with \(selectedResources.count) resources")
+        print("DEBUG: Selected resource ids: \(basePath.generatedFromResourceIds)")
+        selectedResources.forEach { resource in
+            print("DEBUG: Selected resource -> id=\(resource.id), name=\(resource.name), type=\(resource.type.rawValue), contentChars=\(resource.content?.count ?? 0), localFilePath=\(resource.localFilePath ?? "nil")")
+        }
         
         Task {
             do {
                 print("DEBUG: Starting text extraction...")
                 let combinedText = try await ContentExtractionService.shared.extractText(from: selectedResources)
                 print("DEBUG: Text extraction complete. Extracted \(combinedText.count) characters.")
+                print("DEBUG: Extracted text preview: \(String(combinedText.prefix(500)))")
                 
                 await MainActor.run {
                     generationProgressText = "Generating AI Study Path..."
@@ -349,6 +354,7 @@ struct SubjectWorkspaceView: View {
                 
                 print("DEBUG: Starting LLM generation...")
                 let topics = try await StudyContentOrchestrator.shared.buildStudyPath(from: combinedText)
+                print("DEBUG: LLM returned \(topics.count) topic(s): \(topics.map { "\($0.order): \($0.title)" }.joined(separator: " | "))")
 
                 await MainActor.run {
                     var finalPath = basePath
@@ -534,8 +540,4 @@ struct SubjectWorkspaceView: View {
             )
         }
     }
-}
-#Preview {
-    SubjectWorkspaceView(subject: Subject(name: "iOS Development", colorHex: "#3B82F6"))
-        .environment(\.theme, AppTheme.defaultTheme)
 }

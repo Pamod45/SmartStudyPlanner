@@ -299,9 +299,9 @@ The app includes a complete on-device AI backend using **Apple Foundation Models
 | Apple Intelligence | Must be enabled in Settings → Apple Intelligence & Siri |
 | Language | Apple Intelligence is available in English (US) and select other languages |
 
-### 6.2 How to enable the on-device path
+### 6.2 How to disable the on-device path
 
-The Foundation Models backend is commented out in two files. Uncomment the relevant blocks:
+Please comment the the Foundation Models backend in two files to use the hosted LLM
 
 **File 1:** [SmartStudyPlanner/Shared/Services/AIServices/StudyLLMBackend.swift](SmartStudyPlanner/Shared/Services/AIServices/StudyLLMBackend.swift) — inside `LLMBackendSelector.resolve`
 
@@ -326,18 +326,6 @@ if case .available = SystemLanguageModel.default.availability {
     )
 }
 ```
-
-When both blocks are uncommented the app will:
-1. Check `SystemLanguageModel.default.availability` at runtime.
-2. Use `FoundationModelsBackend` (on-device, private, no network) when available.
-3. Fall back to `HostedLLMBackend` automatically on older devices or when Apple Intelligence is off.
-
-### 6.3 FoundationModels entitlement (if required)
-
-Some `FoundationModels` APIs may require the **Foundation Models entitlement** from Apple. If you encounter a runtime error about entitlements:
-
-1. Go to [developer.apple.com](https://developer.apple.com) and request the entitlement for your App ID.
-2. In Xcode, open the `SmartStudyPlanner.entitlements` file and add the required key when Apple provides it.
 
 ---
 

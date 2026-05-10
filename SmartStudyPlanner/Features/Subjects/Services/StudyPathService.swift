@@ -15,6 +15,11 @@ class StudyPathService {
 
     // Replaces the subject's existing generated path with the new topics and updates topicCount.
     func saveStudyPath(_ topics: [StudyPathTopic], for subjectId: String) async throws {
+        print("[StudyPathService] Saving \(topics.count) topic(s) for subject \(subjectId)")
+        topics.forEach { topic in
+            print("[StudyPathService] Topic -> order=\(topic.order), title=\(topic.title), weight=\(topic.weightPercent), subtopics=\(topic.subtopics.count)")
+        }
+
         let batch = db.batch()
         
         let subjectRef = db.collection("subjects").document(subjectId)

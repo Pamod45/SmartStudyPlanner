@@ -13,7 +13,6 @@ struct ChatMessage: Identifiable {
 }
 
 // Defines which study material the assistant should use for a chat response.
-
 enum ChatContext: Identifiable, Equatable {
     case allDocs
     case resource(Resource)
@@ -103,14 +102,14 @@ actor AIAssistantService {
         contextId: String,
         history: [ChatMessage]
     ) async throws -> String {
-//        if case .available = SystemLanguageModel.default.availability {
-//            return try await sendViaFoundationModel(
-//                userMessage: userMessage,
-//                contextText: contextText,
-//                subjectName: subjectName,
-//                contextId: contextId
-//            )
-//        }
+        if case .available = SystemLanguageModel.default.availability {
+            return try await sendViaFoundationModel(
+                userMessage: userMessage,
+                contextText: contextText,
+                subjectName: subjectName,
+                contextId: contextId
+            )
+        }
         return try await sendViaHTTP(
             userMessage: userMessage,
             contextText: contextText,

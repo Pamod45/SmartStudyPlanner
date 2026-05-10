@@ -19,20 +19,26 @@ struct FMStudyPathResponse {
 
 @Generable
 struct FMTopic {
-    @Guide(description: "Topic number starting from 1")
+    @Guide(description: "Should be a number starting from 1 to indicating the sequence of the topics in the study path.")
     var order: Int
 
     @Guide(description: "Short descriptive title, 3-6 words")
     var title: String
 
-    @Guide(description: "One sentence explaining what this topic covers")
+    @Guide(description: "Should be a one-sentence description, less than 20 words.")
     var description: String
 
-    @Guide(description: "2-4 specific subtopics or concepts within this topic")
+    @Guide(description: "Should be a list of 2-5 key concepts or subtopics that fall under the main topic.")
     var subtopics: [String]
 
     @Guide(description: "Integer percentage of total study time. All topics MUST sum to exactly 100. Distribute proportionally by importance.")
     var weightPercent: Int
+    
+    @Guide(description: "Should be an integer from 1 (very easy) to 10 (very difficult) indicating the relative difficulty of the topic compared to the others.")
+    var difficultyLevel: Int
+    
+    @Guide(description: "Should be a realistic estimate of the total study time in minutes that a student would need to master this topic, based on its complexity(difficultyLevel) and weight in the overall material.")
+    var estimatedMinutes: Int
 }
 
 @Generable
@@ -81,11 +87,13 @@ struct FMQuizQuestion {
 }
 
 struct FoundationModelsBackend: StudyLLMBackend {
+    
+    let contextCharacterLimit: Int = 12000
 
     func generateStudyPath(from text: String, topicCount: Int) async throws -> GeneratedStudyPath {
         let session = LanguageModelSession()
 
-        let trimmedText = String(text.prefix(4000))
+        let trimmedText = String(text.prefix(contextCharacterLimit))
 
         let prompt = """
         You are an expert tutor. Analyze the following study material and create \
@@ -95,6 +103,8 @@ struct FoundationModelsBackend: StudyLLMBackend {
         Study material:
         \(trimmedText)
         """
+        
+        print("[FondationalModelBackend] prompt: \(prompt)")
 
         let response = try await session.respond(
             to: prompt,
@@ -108,8 +118,8 @@ struct FoundationModelsBackend: StudyLLMBackend {
                 description:      t.description,
                 subtopics:        t.subtopics,
                 weightPercent:    t.weightPercent,
-                difficultyLevel:  5,
-                estimatedMinutes: max(30, t.weightPercent * 6)
+                difficultyLevel:  t.difficultyLevel,
+                estimatedMinutes: t.estimatedMinutes
             )
         }
 
@@ -118,7 +128,7 @@ struct FoundationModelsBackend: StudyLLMBackend {
 
     func generateQuiz(from text: String, questionCount: Int) async throws -> GeneratedQuiz {
         let session = LanguageModelSession()
-        let trimmedText = String(text.prefix(4000))
+        let trimmedText = String(text.prefix(contextCharacterLimit))
 
         let prompt = """
         You are an expert tutor. Create exactly \(questionCount) quiz questions \
@@ -128,7 +138,7 @@ struct FoundationModelsBackend: StudyLLMBackend {
         Study material:
         \(trimmedText)
         """
-
+        
         let response = try await session.respond(
             to: prompt,
             generating: FMQuizResponse.self
@@ -147,11 +157,11 @@ struct FoundationModelsBackend: StudyLLMBackend {
 
     func generateQuizQuestions(from text: String, questionCount: Int, category: String) async throws -> QuizGenerationResult {
         let session = LanguageModelSession()
-        let trimmedText = String(text.prefix(4000))
+        let trimmedText = String(text.prefix(contextCharacterLimit))
         let clamped = min(questionCount, 10)
 
         let prompt = """
-        You are an expert tutor. Create exactly \(clamped) multiple-choice quiz questions \
+        You are an expert tutor. Create exactly \(clamped+1) multiple-choice quiz questions \
         based on the following study material about "\(category)". \
         Each question must have exactly 4 answer options. \
         The correctOptionIndex must be 0, 1, 2, or 3.
@@ -159,6 +169,8 @@ struct FoundationModelsBackend: StudyLLMBackend {
         Study material:
         \(trimmedText)
         """
+        
+        print("[FondationalModelBackend] prompt: \(prompt)")
 
         let response = try await session.respond(
             to: prompt,
@@ -175,6 +187,14 @@ struct FoundationModelsBackend: StudyLLMBackend {
                 keyword:            q.keyword
             )
         }
+        var i = 0
+        for question in questions {
+            i+=1
+            print("Question Number: \(i) Question: \(question.questionText)")
+            print("Options count: \(question.options.count)")
+        }
+        
+        print("Question count: \(questions.count)")
 
         return QuizGenerationResult(questions: questions)
     }

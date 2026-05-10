@@ -30,6 +30,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             @unknown default:
                 print("❓ Unknown")
             }
+            Task {
+                do {
+                    let session = LanguageModelSession()
+                    let response = try await session.respond(to: "Say hello in one short sentence.")
+                    print("✅ Simple FM response:", response.content)
+                } catch {
+                    print("❌ Simple FM failed:", error)
+                }
+            }
         }
 
         print("--- Listing Bundle Resources ---")

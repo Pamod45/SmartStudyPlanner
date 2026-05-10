@@ -16,7 +16,12 @@ class ContentExtractionService {
             return try await withThrowingTaskGroup(of: String.self) { group in
                 for resource in resources {
                     group.addTask {
-                        try await self.extractText(from: resource)
+                        let text = try await self.extractText(from: resource)
+                        if text.isEmpty { return "" }
+                        return """
+                                Resource: \(resource.name)
+                                \(text)
+                        """
                     }
                 }
                 
@@ -83,17 +88,19 @@ class ContentExtractionService {
                     page.draw(with: .mediaBox, to: ctx.cgContext)
                 }
                 
-                let pageText = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
-                    TextRecognitionService.shared.recognizeText(from: img) { result in
-                        switch result {
-                        case .success(let text):
-                            continuation.resume(returning: text)
-                        case .failure(let error):
-                            print("OCR failed on page \(i): \(error)")
-                            continuation.resume(returning: "")
-                        }
-                    }
-                }
+//                let pageText = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
+//                    TextRecognitionService.shared.recognizeText(from: img) { result in
+//                        switch result {
+//                        case .success(let text):
+//                            continuation.resume(returning: text)
+//                        case .failure(let error):
+//                            print("OCR failed on page \(i): \(error)")
+//                            continuation.resume(returning: "")
+//                        }
+//                    }
+//                }
+                
+                let pageText = (try? await TextRecognitionService.shared.recognizeText(from: img)) ?? ""
                 
                 extractedText += pageText + "\n"
             }
@@ -111,19 +118,42 @@ class ContentExtractionService {
             return ""
         }
         
-        return await withCheckedContinuation { continuation in
-            DispatchQueue.main.async {
-                let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
-                    .documentType: NSAttributedString.DocumentType.html,
-                    .characterEncoding: String.Encoding.utf8.rawValue
-                ]
-                
-                if let attributedString = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
-                    continuation.resume(returning: attributedString.string)
-                } else {
-                    continuation.resume(returning: String(data: data, encoding: .utf8) ?? "")
-                }
+//        return await withCheckedContinuation { continuation in
+//            DispatchQueue.main.async {
+//                let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
+//                    .documentType: NSAttributedString.DocumentType.html,
+//                    .characterEncoding: String.Encoding.utf8.rawValue
+//                ]
+//                
+//                if let attributedString = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
+//                    continuation.resume(returning: attributedString.string)
+//                } else {
+//                    continuation.resume(returning: String(data: data, encoding: .utf8) ?? "")
+//                }
+//            }
+//        }
+        
+        return await MainActor.run {
+            let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
+                .documentType: NSAttributedString.DocumentType.html,
+                .characterEncoding: String.Encoding.utf8.rawValue
+            ]
+            
+            guard let attributedString = try? NSAttributedString(data: data, options: options, documentAttributes: nil) else {
+                return String(data: data, encoding: .utf8) ?? ""
             }
+            
+            let fullText = attributedString.string
+            let paragraphs = fullText.components(separatedBy: .newlines)
+            let cleanContent = paragraphs
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { paragraph in
+                    let words = paragraph.components(separatedBy: .whitespaces)
+                    return words.count > 15
+                }
+                .joined(separator: "\n\n")
+            
+            return cleanContent.isEmpty ? fullText : cleanContent
         }
     }
 }

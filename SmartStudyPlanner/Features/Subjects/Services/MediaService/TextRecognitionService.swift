@@ -51,4 +51,27 @@ class TextRecognitionService {
             }
         }
     }
+    
+    func recognizeText(from image: UIImage) async throws -> String {
+        guard let cgImage = image.cgImage else {
+            throw NSError(domain: "TextRecognitionService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid image"])
+        }
+
+        var request = RecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.recognitionLanguages = [Locale.Language(identifier: "en-US")]
+        request.usesLanguageCorrection = true
+
+        let handler = ImageRequestHandler(cgImage)
+        let observations = try await request.perform(on: cgImage)
+        let recognizedText = observations.compactMap { observation in
+            observation.topCandidates(1).first?.string
+        }.joined(separator: "\n")
+
+        if recognizedText.isEmpty {
+            throw NSError(domain: "TextRecognitionService", code: -3, userInfo: [NSLocalizedDescriptionKey: "No text recognized"])
+        }
+
+        return recognizedText
+    }
 }

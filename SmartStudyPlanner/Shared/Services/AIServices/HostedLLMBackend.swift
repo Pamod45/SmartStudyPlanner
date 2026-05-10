@@ -21,34 +21,62 @@ struct HostedLLMBackend: StudyLLMBackend {
         let systemPrompt = """
         You are an expert tutor. Create a study path from the provided text.
         Output MUST be ONLY valid JSON — no markdown fences, no explanation. MAKE SURE YOU ONLY PROVIDE THE CURRENT GIVEN OUTPUT FORMAT. THAT IS THE ONE AND ONLY ACCEPTABLE OUTPUT.
-        Use exactly this schema (array of \(topicCount) objects, weightPercent must sum to 100):
+        Use exactly this schema (array of \(topicCount) objects,
         [
           {
             "order": 1,
             "title": "Topic Title",
-            "description": "One sentence description.",
+            "description": "One sentence description",
             "subtopics": ["Subtopic A", "Subtopic B"],
             "weightPercent": 20,
             "difficultyLevel": 6,
             "estimatedMinutes": 90
           }
         ]
+        Please note that the above values are just examples, you must follow the schema but generate your own content based on 
+        the study material provided. Please make sure to provide values for each attribute with the following restraints,
+        order: should be a number starting from 1 to \(topicCount) indicating the sequence of the topics in the study path.
+        title: should be a concise name for the topic, less than 6 words.
+        description: should be a one-sentence description, less than 20 words.
+        subtopics: should be a list of 2-5 key concepts or subtopics that fall under the main topic.
+        weightPercent: should be an integer representing the percentage of study time to allocate to this topic, the sum of all weightPercent values across the \(topicCount) and topics must equal 100.
+        difficultyLevel: should be an integer from 1 (very easy) to 10 (very difficult) indicating the relative difficulty of the topic compared to the others.
+        estimatedMinutes: should be a realistic estimate of the total study time in minutes that a student would need to master this topic, based on its complexity(difficultyLevel) and weight in the overall material.
         Rules:
-        - difficultyLevel: 1 (very easy) to 10 (very hard).
-        - estimatedMinutes: realistic total study time a student needs to master this topic.
+        - You MUST return exactly \(topicCount) topic objects, even if the material is short.
+        - Split broad areas into smaller study topics instead of merging them.
         - The first character of your response must be "[".
         - The last character of your response must be "]".
         - Do NOT write notes, comments, explanations, apologies, summaries, or follow-up text after the JSON.
         - Do NOT include any text outside the JSON array.
         """
 
-        let userMessage = "Study material:\n\(limitedWords(from: text, maxWords: studyPathInputWordLimit))\n\nReturn ONLY the JSON array."
+        let limitedText = limitedWords(from: text, maxWords: studyPathInputWordLimit)
+        print("DEBUG: [HostedLLM] Study path requested topicCount=\(topicCount)")
+        print("DEBUG: [HostedLLM] Study path input chars raw=\(text.count), limited=\(limitedText.count)")
+        print("DEBUG: [HostedLLM] Study path input words raw=\(wordCount(text)), limit=\(studyPathInputWordLimit)")
+
+        let userMessage = "Study material:\n\(limitedText)\n\nReturn ONLY the JSON array."
 
         let raw = try await callServer(system: systemPrompt, user: userMessage, maxTokens: 1_400)
 
         print("🔵 [HostedLLM] Study path raw response:\n\(raw)")
 
-        let topics = try parseTopics(from: raw)
+        var topics = try parseTopics(from: raw)
+        if topics.count < topicCount {
+            print("DEBUG: [HostedLLM] Returned \(topics.count) topic(s), retrying to force \(topicCount)")
+            let retryRaw = try await retryStudyPathGeneration(
+                material: limitedText,
+                topicCount: topicCount,
+                previousResponse: raw
+            )
+            print("🔵 [HostedLLM] Study path retry raw response:\n\(retryRaw)")
+            let retryTopics = try parseTopics(from: retryRaw)
+            if retryTopics.count >= topics.count {
+                topics = retryTopics
+            }
+        }
+        print("DEBUG: [HostedLLM] Parsed \(topics.count) study path topic(s)")
         return GeneratedStudyPath(topics: topics)
     }
 
@@ -151,8 +179,49 @@ struct HostedLLMBackend: StudyLLMBackend {
         return content
     }
 
+    private func retryStudyPathGeneration(
+        material: String,
+        topicCount: Int,
+        previousResponse: String
+    ) async throws -> String {
+        let systemPrompt = """
+        You are correcting a study path JSON response.
+        Output MUST be ONLY valid JSON — no markdown fences, no explanation.
+        Return EXACTLY \(topicCount) topic objects.
+        Do not return fewer than \(topicCount).
+        If the material is short, split it into \(topicCount) smaller teachable topics.
+        weightPercent values must sum to 100.
+        The first character must be "[" and the last character must be "]".
+        Schema:
+        [
+          {
+            "order": 1,
+            "title": "Topic Title",
+            "description": "One sentence description.",
+            "subtopics": ["Subtopic A", "Subtopic B"],
+            "weightPercent": 20,
+            "difficultyLevel": 5,
+            "estimatedMinutes": 60
+          }
+        ]
+        """
+
+        let userMessage = """
+        The previous response returned the wrong number of topics:
+        \(previousResponse)
+
+        Rewrite it as EXACTLY \(topicCount) topics using this material:
+        \(material)
+
+        Return ONLY the JSON array.
+        """
+
+        return try await callServer(system: systemPrompt, user: userMessage, maxTokens: 1_600)
+    }
+
     private func parseTopics(from raw: String) throws -> [GeneratedStudyPath.Topic] {
         let clean = jsonArrayString(from: stripMarkdown(raw))
+        print("DEBUG: [HostedLLM] Study path clean JSON candidate chars=\(clean.count)")
 
         struct RawTopic: Decodable {
             let order: Int
@@ -174,6 +243,7 @@ struct HostedLLMBackend: StudyLLMBackend {
         } catch {
             print("[HostedLLM] Study path decode failed. Attempting salvage…")
             let salvaged = salvageCompleteObjects(RawTopic.self, from: clean)
+            print("DEBUG: [HostedLLM] Study path salvage recovered \(salvaged.count) topic object(s)")
             guard !salvaged.isEmpty else { throw error }
             decoded = salvaged
         }
@@ -334,6 +404,10 @@ struct HostedLLMBackend: StudyLLMBackend {
             .split { $0.isWhitespace || $0.isNewline }
             .prefix(maxWords)
         return words.joined(separator: " ")
+    }
+
+    private func wordCount(_ text: String) -> Int {
+        text.split { $0.isWhitespace || $0.isNewline }.count
     }
 
     enum LLMError: LocalizedError {
