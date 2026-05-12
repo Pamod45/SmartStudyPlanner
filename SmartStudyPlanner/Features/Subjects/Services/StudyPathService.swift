@@ -46,6 +46,8 @@ class StudyPathService {
             subject.topicCount = topics.count
             CoreDataService.shared.upsertSubject(subject)
         }
+        
+        
 
         print("[StudyPathService] Saved \(topics.count) topics for subject \(subjectId)")
     }
@@ -64,8 +66,8 @@ class StudyPathService {
 
         CoreDataService.shared.deleteStudyPath(for: subjectId)
         CoreDataService.shared.cacheStudyPath(topics)
+        
 
-        print("[StudyPathService] Fetched \(topics.count) topics from Firestore")
         return topics
     }
     

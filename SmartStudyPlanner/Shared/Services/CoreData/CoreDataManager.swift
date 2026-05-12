@@ -205,8 +205,9 @@ public class CoreDataManager {
     public lazy var persistentContainer: NSPersistentContainer = {
         
         let container = NSPersistentContainer(name: "SmartStudyPlanner")
-        
-        let storeDescription = NSPersistentStoreDescription()
+        let storeURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+                .appendingPathComponent("SmartStudyPlanner.sqlite")
+        let storeDescription = NSPersistentStoreDescription(url: storeURL)
         storeDescription.shouldMigrateStoreAutomatically = true
         storeDescription.shouldInferMappingModelAutomatically = true
         container.persistentStoreDescriptions = [storeDescription]
