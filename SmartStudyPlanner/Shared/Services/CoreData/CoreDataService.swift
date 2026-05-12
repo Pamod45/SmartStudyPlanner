@@ -13,7 +13,7 @@ class CoreDataService {
         request.fetchLimit = 1
         
         do {
-            if let cdUser = try CoreDataStack.shared.context.fetch(request).first {
+            if let cdUser = try CoreDataManager.shared.context.fetch(request).first {
                 return AppUser(
                     id: cdUser.id,
                     email: cdUser.email,
@@ -31,7 +31,7 @@ class CoreDataService {
     }
     
     func cacheProfile(_ user: AppUser) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
         
         let request = NSFetchRequest<CDUserProfile>(entityName: "CDUserProfile")
         request.fetchLimit = 1
@@ -51,7 +51,7 @@ class CoreDataService {
         cdUser.username = user.username
         cdUser.profileImageURL = user.profileImageURL
         
-        CoreDataStack.shared.saveContext()
+        CoreDataManager.shared.saveContext()
     }
     
     func getCachedSettings(for userId: String) -> UserSettings? {
@@ -60,7 +60,7 @@ class CoreDataService {
         request.fetchLimit = 1
 
         do {
-            if let cdSettings = try CoreDataStack.shared.context.fetch(request).first {
+            if let cdSettings = try CoreDataManager.shared.context.fetch(request).first {
                 return UserSettings(
                     id: cdSettings.id,
                     userId: cdSettings.userId,
@@ -104,7 +104,7 @@ class CoreDataService {
     }
 
     func cacheSettings(_ settings: UserSettings) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
 
         let request = NSFetchRequest<CDUserSettings>(entityName: "CDUserSettings")
         request.predicate = NSPredicate(format: "userId == %@", settings.userId)
@@ -149,7 +149,7 @@ class CoreDataService {
         cdSettings.updatedAt = settings.updatedAt
         cdSettings.syncStatus = settings.syncStatus.rawValue
 
-        CoreDataStack.shared.saveContext()
+        CoreDataManager.shared.saveContext()
     }
     
     func getCachedSubjects(for userId: String) -> [Subject] {
@@ -157,7 +157,7 @@ class CoreDataService {
         request.predicate = NSPredicate(format: "userId == %@", userId)
 
         do {
-            let results = try CoreDataStack.shared.context.fetch(request)
+            let results = try CoreDataManager.shared.context.fetch(request)
             return results.map { cdSubject in
                 Subject(
                     id: cdSubject.id,
@@ -192,7 +192,7 @@ class CoreDataService {
         request.fetchLimit = 1
 
         do {
-            if let cdSubject = try CoreDataStack.shared.context.fetch(request).first {
+            if let cdSubject = try CoreDataManager.shared.context.fetch(request).first {
                 return Subject(
                     id: cdSubject.id,
                     userId: cdSubject.userId,
@@ -221,7 +221,7 @@ class CoreDataService {
     }
 
     func upsertSubject(_ subject: Subject) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
 
         let request = NSFetchRequest<CDSubject>(entityName: "CDSubject")
         request.predicate = NSPredicate(format: "id == %@", subject.id)
@@ -253,7 +253,7 @@ class CoreDataService {
         cdSubject.updatedAt = subject.updatedAt
         cdSubject.syncStatus = subject.syncStatus.rawValue
 
-        CoreDataStack.shared.saveContext()
+        CoreDataManager.shared.saveContext()
     }
 
     func cacheSubjects(_ subjects: [Subject]) {
@@ -261,12 +261,12 @@ class CoreDataService {
     }
 
     func deleteSubject(id: String) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
         let request = NSFetchRequest<CDSubject>(entityName: "CDSubject")
         request.predicate = NSPredicate(format: "id == %@", id)
         if let existing = try? context.fetch(request).first {
             context.delete(existing)
-            CoreDataStack.shared.saveContext()
+            CoreDataManager.shared.saveContext()
         }
     }
     
@@ -275,7 +275,7 @@ class CoreDataService {
         request.predicate = NSPredicate(format: "subjectId == %@", subjectId)
 
         do {
-            let results = try CoreDataStack.shared.context.fetch(request)
+            let results = try CoreDataManager.shared.context.fetch(request)
             return results.compactMap { cdResource in
                 guard let resourceType = ResourceType(rawValue: cdResource.resourceType) else { return nil }
                 return Resource(
@@ -304,7 +304,7 @@ class CoreDataService {
     }
 
     func upsertResource(_ resource: Resource) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
 
         let request = NSFetchRequest<CDResource>(entityName: "CDResource")
         request.predicate = NSPredicate(format: "id == %@", resource.id)
@@ -334,7 +334,7 @@ class CoreDataService {
         cdResource.updatedAt = resource.updatedAt
         cdResource.syncStatus = resource.syncStatus.rawValue
 
-        CoreDataStack.shared.saveContext()
+        CoreDataManager.shared.saveContext()
     }
 
     func cacheResources(_ resources: [Resource]) {
@@ -342,12 +342,12 @@ class CoreDataService {
     }
 
     func deleteResource(id: String) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
         let request = NSFetchRequest<CDResource>(entityName: "CDResource")
         request.predicate = NSPredicate(format: "id == %@", id)
         if let existing = try? context.fetch(request).first {
             context.delete(existing)
-            CoreDataStack.shared.saveContext()
+            CoreDataManager.shared.saveContext()
         }
     }
     
@@ -358,7 +358,7 @@ class CoreDataService {
         request.sortDescriptors = [sortDescriptor]
 
         do {
-            let results = try CoreDataStack.shared.context.fetch(request)
+            let results = try CoreDataManager.shared.context.fetch(request)
             return results.map { cdTopic in
                 StudyPathTopic(
                     id: cdTopic.id,
@@ -384,7 +384,7 @@ class CoreDataService {
     }
 
     func upsertStudyPathTopic(_ topic: StudyPathTopic) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
 
         let request = NSFetchRequest<CDStudyPathTopic>(entityName: "CDStudyPathTopic")
         request.predicate = NSPredicate(format: "id == %@", topic.id)
@@ -412,7 +412,7 @@ class CoreDataService {
         cdTopic.generatedAt = topic.generatedAt
         cdTopic.syncStatus = topic.syncStatus.rawValue
 
-        CoreDataStack.shared.saveContext()
+        CoreDataManager.shared.saveContext()
     }
 
     func cacheStudyPath(_ topics: [StudyPathTopic]) {
@@ -420,12 +420,12 @@ class CoreDataService {
     }
 
     func deleteStudyPath(for subjectId: String) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
         let request = NSFetchRequest<NSFetchRequestResult>(entityName: "CDStudyPathTopic")
         request.predicate = NSPredicate(format: "subjectId == %@", subjectId)
         let deleteRequest = NSBatchDeleteRequest(fetchRequest: request)
         try? context.execute(deleteRequest)
-        CoreDataStack.shared.saveContext()
+        CoreDataManager.shared.saveContext()
     }
 
     func getCachedAvailabilitySlots(for userId: String) -> [AvailabilitySlot] {
@@ -434,7 +434,7 @@ class CoreDataService {
         request.sortDescriptors = [NSSortDescriptor(key: "startTime", ascending: true)]
 
         do {
-            let results = try CoreDataStack.shared.context.fetch(request)
+            let results = try CoreDataManager.shared.context.fetch(request)
             return results.compactMap { cdSlot in
                 guard let type = AvailabilityType(rawValue: cdSlot.type) else { return nil }
                 return AvailabilitySlot(
@@ -459,7 +459,7 @@ class CoreDataService {
     }
 
     func upsertAvailabilitySlot(_ slot: AvailabilitySlot) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
 
         let request = NSFetchRequest<CDAvailabilitySlot>(entityName: "CDAvailabilitySlot")
         request.predicate = NSPredicate(format: "id == %@", slot.id)
@@ -485,7 +485,7 @@ class CoreDataService {
         cdSlot.updatedAt = slot.updatedAt
         cdSlot.syncStatus = slot.syncStatus.rawValue
 
-        CoreDataStack.shared.saveContext()
+        CoreDataManager.shared.saveContext()
     }
 
     func cacheAvailabilitySlots(_ slots: [AvailabilitySlot]) {
@@ -493,12 +493,12 @@ class CoreDataService {
     }
 
     func deleteAvailabilitySlot(id: String) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
         let request = NSFetchRequest<CDAvailabilitySlot>(entityName: "CDAvailabilitySlot")
         request.predicate = NSPredicate(format: "id == %@", id)
         if let existing = try? context.fetch(request).first {
             context.delete(existing)
-            CoreDataStack.shared.saveContext()
+            CoreDataManager.shared.saveContext()
         }
     }
 
@@ -508,7 +508,7 @@ class CoreDataService {
         request.sortDescriptors = [NSSortDescriptor(key: "startTime", ascending: true)]
 
         do {
-            let results = try CoreDataStack.shared.context.fetch(request)
+            let results = try CoreDataManager.shared.context.fetch(request)
             return results.map { cdSession in
                 StudySession(
                     id: cdSession.id,
@@ -544,7 +544,7 @@ class CoreDataService {
     }
 
     func upsertStudySession(_ session: StudySession) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
 
         let request = NSFetchRequest<CDStudySession>(entityName: "CDStudySession")
         request.predicate = NSPredicate(format: "id == %@", session.id)
@@ -582,7 +582,7 @@ class CoreDataService {
         cdSession.updatedAt = session.updatedAt
         cdSession.syncStatus = session.syncStatus.rawValue
 
-        CoreDataStack.shared.saveContext()
+        CoreDataManager.shared.saveContext()
     }
 
     func cacheStudySessions(_ sessions: [StudySession]) {
@@ -590,23 +590,23 @@ class CoreDataService {
     }
 
     func deleteStudySession(id: String) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
         let request = NSFetchRequest<CDStudySession>(entityName: "CDStudySession")
         request.predicate = NSPredicate(format: "id == %@", id)
         if let existing = try? context.fetch(request).first {
             context.delete(existing)
-            CoreDataStack.shared.saveContext()
+            CoreDataManager.shared.saveContext()
         }
     }
 
     func deleteStudySessions(ids: [String]) {
         guard !ids.isEmpty else { return }
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
         let request = NSFetchRequest<NSFetchRequestResult>(entityName: "CDStudySession")
         request.predicate = NSPredicate(format: "id IN %@", ids)
         let deleteRequest = NSBatchDeleteRequest(fetchRequest: request)
         try? context.execute(deleteRequest)
-        CoreDataStack.shared.saveContext()
+        CoreDataManager.shared.saveContext()
     }
     
     func getCachedDeadlines(for subjectId: String) -> [Deadline] {
@@ -614,7 +614,7 @@ class CoreDataService {
         request.predicate = NSPredicate(format: "subjectId == %@", subjectId)
         request.sortDescriptors = [NSSortDescriptor(key: "dueDate", ascending: true)]
         do {
-            let results = try CoreDataStack.shared.context.fetch(request)
+            let results = try CoreDataManager.shared.context.fetch(request)
             return results.compactMap { cd in
                 guard let tag = DeadlineTag(rawValue: cd.tag),
                       let priority = DeadlinePriority(rawValue: cd.priority),
@@ -647,7 +647,7 @@ class CoreDataService {
     }
 
     func upsertDeadline(_ deadline: Deadline) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
         let request = NSFetchRequest<CDDeadline>(entityName: "CDDeadline")
         request.predicate = NSPredicate(format: "id == %@", deadline.id)
         request.fetchLimit = 1
@@ -678,7 +678,7 @@ class CoreDataService {
         cd.updatedAt = deadline.updatedAt
         cd.syncStatus = deadline.syncStatus.rawValue
 
-        CoreDataStack.shared.saveContext()
+        CoreDataManager.shared.saveContext()
     }
 
     func cacheDeadlines(_ deadlines: [Deadline]) {
@@ -686,17 +686,17 @@ class CoreDataService {
     }
 
     func deleteDeadline(id: String) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
         let request = NSFetchRequest<CDDeadline>(entityName: "CDDeadline")
         request.predicate = NSPredicate(format: "id == %@", id)
         if let existing = try? context.fetch(request).first {
             context.delete(existing)
-            CoreDataStack.shared.saveContext()
+            CoreDataManager.shared.saveContext()
         }
     }
 
     func clearCache() {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
         let request = NSFetchRequest<NSFetchRequestResult>(entityName: "CDUserProfile")
         let deleteRequest = NSBatchDeleteRequest(fetchRequest: request)
         try? context.execute(deleteRequest)
@@ -729,7 +729,7 @@ class CoreDataService {
         let deadlineDeleteRequest = NSBatchDeleteRequest(fetchRequest: deadlineRequest)
         try? context.execute(deadlineDeleteRequest)
 
-        CoreDataStack.shared.saveContext()
+        CoreDataManager.shared.saveContext()
     }
 
     func getCachedAttempts(for subjectId: String) -> [QuizAttempt] {
@@ -739,7 +739,7 @@ class CoreDataService {
         request.sortDescriptors = [sortDescriptor]
 
         do {
-            let results = try CoreDataStack.shared.context.fetch(request)
+            let results = try CoreDataManager.shared.context.fetch(request)
             return results.compactMap { cd -> QuizAttempt? in
                 let questions: [QuizQuestion] = (try? JSONDecoder().decode([QuizQuestion].self, from: cd.questionsData)) ?? []
                 let selectedAnswers: [String: Int] = (try? JSONDecoder().decode([String: Int].self, from: cd.selectedAnswersData)) ?? [:]
@@ -764,7 +764,7 @@ class CoreDataService {
     }
 
     func upsertAttempt(_ attempt: QuizAttempt) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
 
         let request = NSFetchRequest<CDQuizAttempt>(entityName: "CDQuizAttempt")
         request.predicate = NSPredicate(format: "id == %@", attempt.id)
@@ -792,16 +792,16 @@ class CoreDataService {
         cdAttempt.completedAt        = attempt.completedAt
         cdAttempt.syncStatus         = attempt.syncStatus.rawValue
 
-        CoreDataStack.shared.saveContext()
+        CoreDataManager.shared.saveContext()
     }
 
     func deleteAttempt(id: String) {
-        let context = CoreDataStack.shared.context
+        let context = CoreDataManager.shared.context
         let request = NSFetchRequest<CDQuizAttempt>(entityName: "CDQuizAttempt")
         request.predicate = NSPredicate(format: "id == %@", id)
         if let existing = try? context.fetch(request).first {
             context.delete(existing)
-            CoreDataStack.shared.saveContext()
+            CoreDataManager.shared.saveContext()
         }
     }
 }

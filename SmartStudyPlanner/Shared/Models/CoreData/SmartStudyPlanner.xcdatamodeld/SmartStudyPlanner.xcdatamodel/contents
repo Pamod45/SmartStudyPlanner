@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24837" systemVersion="25E253" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="CDAvailabilitySlot" representedClassName="CDAvailabilitySlot" syncable="YES">
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="endTime" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="label" optional="YES" attributeType="String"/>
+        <attribute name="rangeEnd" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="rangeStart" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="startTime" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="syncStatus" attributeType="String"/>
+        <attribute name="type" attributeType="String"/>
+        <attribute name="updatedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="userId" attributeType="String"/>
+    </entity>
+    <entity name="CDDeadline" representedClassName="CDDeadline" syncable="YES">
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="dueDate" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="hasReminder" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="isHighPriority" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="linkedSessionIds" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformerName"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="notes" attributeType="String"/>
+        <attribute name="notificationId" optional="YES" attributeType="String"/>
+        <attribute name="priority" attributeType="String"/>
+        <attribute name="reminderDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="status" attributeType="String"/>
+        <attribute name="subjectColorHex" attributeType="String"/>
+        <attribute name="subjectId" attributeType="String"/>
+        <attribute name="syncStatus" attributeType="String"/>
+        <attribute name="tag" attributeType="String"/>
+        <attribute name="updatedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="userId" attributeType="String"/>
+    </entity>
+    <entity name="CDQuizAttempt" representedClassName="CDQuizAttempt" syncable="YES">
+        <attribute name="completedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="questionsData" attributeType="Binary" customClassName="Data"/>
+        <attribute name="quizName" attributeType="String"/>
+        <attribute name="scorePercent" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="selectedAnswersData" attributeType="Binary" valueTransformerName="" customClassName="Data"/>
+        <attribute name="subjectId" attributeType="String"/>
+        <attribute name="syncStatus" attributeType="String"/>
+        <attribute name="timeSpentSeconds" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="topicName" attributeType="String"/>
+        <attribute name="userId" attributeType="String"/>
+    </entity>
+    <entity name="CDResource" representedClassName="CDResource" syncable="YES">
+        <attribute name="content" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="fileSize" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="id" optional="YES" attributeType="String"/>
+        <attribute name="isFavorite" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="localFilePath" optional="YES" attributeType="String"/>
+        <attribute name="mimeType" optional="YES" attributeType="String"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="remoteURL" optional="YES" attributeType="String"/>
+        <attribute name="resourceType" attributeType="String"/>
+        <attribute name="size" attributeType="String"/>
+        <attribute name="subjectId" attributeType="String"/>
+        <attribute name="syncStatus" attributeType="String"/>
+        <attribute name="tags" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformerName"/>
+        <attribute name="updatedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="userId" attributeType="String"/>
+    </entity>
+    <entity name="CDStudyPathTopic" representedClassName="CDStudyPathTopic" syncable="YES">
+        <attribute name="completionPercent" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="description_" attributeType="String"/>
+        <attribute name="estimatedHours" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="generatedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="isCompleted" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="order" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="resourceIds" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformerName"/>
+        <attribute name="subjectId" attributeType="String"/>
+        <attribute name="subtopics" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformerName"/>
+        <attribute name="syncStatus" attributeType="String"/>
+        <attribute name="title" attributeType="String"/>
+        <attribute name="userId" attributeType="String"/>
+        <attribute name="weightPercent" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="CDStudySession" representedClassName="CDStudySession" syncable="YES">
+        <attribute name="actualDurationMinutes" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES" customClassName=" NSNumber"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="endTime" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="externalCalendarEventId" optional="YES" attributeType="String"/>
+        <attribute name="hasReminder" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="linkedDeadlineId" optional="YES" attributeType="String"/>
+        <attribute name="linkedPlanId" optional="YES" attributeType="String"/>
+        <attribute name="notes" optional="YES" attributeType="String"/>
+        <attribute name="rating" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="resourceIds" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformerName"/>
+        <attribute name="scheduledDate" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="sessionType" attributeType="String"/>
+        <attribute name="startTime" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="status" attributeType="String"/>
+        <attribute name="subjectColorHex" attributeType="String"/>
+        <attribute name="subjectId" attributeType="String"/>
+        <attribute name="subjectName" attributeType="String"/>
+        <attribute name="syncStatus" attributeType="String"/>
+        <attribute name="title" attributeType="String"/>
+        <attribute name="topic" attributeType="String"/>
+        <attribute name="topicIds" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformerName"/>
+        <attribute name="updatedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="userId" attributeType="String"/>
+    </entity>
+    <entity name="CDSubject" representedClassName="CDSubject" syncable="YES">
+        <attribute name="colorHex" attributeType="String"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="deadlineIds" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformerName"/>
+        <attribute name="iconName" attributeType="String"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="isArchived" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="noteFilePaths" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformerName"/>
+        <attribute name="notes" attributeType="String"/>
+        <attribute name="resourceCount" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="resourceIds" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformerName"/>
+        <attribute name="sessionIds" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformerName"/>
+        <attribute name="syncStatus" attributeType="String"/>
+        <attribute name="targetHoursPerWeek" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="topicCount" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="totalHoursStudied" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="updatedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="userId" attributeType="String"/>
+    </entity>
+    <entity name="CDUserProfile" representedClassName="CDUserProfile" syncable="YES">
+        <attribute name="displayName" attributeType="String"/>
+        <attribute name="domain" optional="YES" attributeType="String"/>
+        <attribute name="email" attributeType="String"/>
+        <attribute name="id" attributeType="String" customClassName="String"/>
+        <attribute name="institute" optional="YES" attributeType="String"/>
+        <attribute name="profileImageURL" optional="YES" attributeType="String"/>
+        <attribute name="username" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="CDUserSettings" representedClassName="CDUserSettings" syncable="YES">
+        <attribute name="accessibilityFontSize" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="breakDurationMinutes" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="calendarSyncEnabled" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="dailyGoalAlertsEnabled" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="dailyGoalAlertTime" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="dailyStudyGoalHours" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="darkModeEnabled" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="deadlineAlertsEnabled" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="deadlineAlertTime" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="deadlineReminderDaysBefore" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="deadlineReminderHoursBefore" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="hapticFeedbackEnabled" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="highContrastEnabled" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="notificationsEnabled" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="preferredSessionDurationMinutes" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="preferredStudyTime" attributeType="String"/>
+        <attribute name="quizReminderMinutesAfter" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="quizzesPendingReminders" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="reduceMotionEnabled" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="sessionReminderMinutesBefore" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="sessionRemindersEnabled" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="sessionReminderTime" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="siriIntegrationEnabled" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="soundEnabled" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="syncStatus" attributeType="String"/>
+        <attribute name="theme" attributeType="String"/>
+        <attribute name="updatedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="userId" attributeType="String"/>
+        <attribute name="weeklyStudyGoalDays" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="widgetConfiguration" attributeType="String"/>
+    </entity>
+</model>

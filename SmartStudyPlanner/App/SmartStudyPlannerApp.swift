@@ -28,15 +28,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             case .unavailable(let reason):
                 print("Reason: \(reason)")
             @unknown default:
-                print("❓ Unknown")
+                print("Unknown")
             }
             Task {
                 do {
                     let session = LanguageModelSession()
                     let response = try await session.respond(to: "Say hello in one short sentence.")
-                    print("✅ Simple FM response:", response.content)
+                    print("Simple FM response:", response.content)
                 } catch {
-                    print("❌ Simple FM failed:", error)
+                    print("Simple FM failed:", error)
                 }
             }
         }
