@@ -88,7 +88,7 @@ struct FMQuizQuestion {
 
 struct FoundationModelsBackend: StudyLLMBackend {
     
-    let contextCharacterLimit: Int = 12000
+    let contextCharacterLimit: Int = 8000
 
     func generateStudyPath(from text: String, topicCount: Int) async throws -> GeneratedStudyPath {
         let session = LanguageModelSession()

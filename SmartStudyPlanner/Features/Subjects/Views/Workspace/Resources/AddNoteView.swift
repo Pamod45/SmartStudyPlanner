@@ -32,7 +32,15 @@ struct AddNoteView: View {
             if let existing = existingResource {
                 title = existing.name
                 if let content = existing.content {
-                    storage = NSAttributedString(string: content)
+                    if let data = Data(base64Encoded: content),
+                       let attributed = try? NSKeyedUnarchiver.unarchivedObject(
+                        ofClass: NSAttributedString.self,
+                        from: data
+                       ) {
+                        storage = attributed
+                    } else {
+                        storage = NSAttributedString(string: content)
+                    }
                 }
             } else if let initial = initialContent {
                 storage = NSAttributedString(string: initial)
@@ -112,7 +120,7 @@ struct AddNoteView: View {
                 name: title.isEmpty ? "Untitled" : title,
                 resourceType: .note,
                 size: existing.size,
-                content: storage.string,
+                content: encodedStorage(),
                 localFilePath: existing.localFilePath,
                 remoteURL: existing.remoteURL,
                 fileSize: existing.fileSize,
@@ -130,7 +138,7 @@ struct AddNoteView: View {
                 subjectId: "",
                 name: title.isEmpty ? "Untitled" : title,
                 resourceType: .note,
-                content: storage.string,
+                content: encodedStorage(),
                 createdAt: Date(),
                 updatedAt: Date(),
                 syncStatus: .localOnly
@@ -140,5 +148,15 @@ struct AddNoteView: View {
         onSave(resource)
         ttsManager.stop()
         dismiss()
+    }
+    
+    private func encodedStorage() -> String {
+        guard let data = try? NSKeyedArchiver.archivedData(
+            withRootObject: storage,
+            requiringSecureCoding: false
+        ) else {
+            return storage.string
+        }
+        return data.base64EncodedString()
     }
 }

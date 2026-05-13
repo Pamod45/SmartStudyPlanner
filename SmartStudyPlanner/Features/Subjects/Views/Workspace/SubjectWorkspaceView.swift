@@ -365,12 +365,12 @@ struct SubjectWorkspaceView: View {
                     Task {
                         do {
                             try await StudyPathService.shared.saveStudyPath(topics, for: subject.id)
-                            print("✅ Study path saved")
+                            print("Study path saved")
                             await MainActor.run {
                                 subjectsVM?.refreshSubjectCounts(for: subject.id)
                             }
                         } catch {
-                            print("❌ Failed to save study path: \(error)")
+                            print("Failed to save study path: \(error)")
                         }
                     }
                 }

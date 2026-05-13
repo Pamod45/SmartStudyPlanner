@@ -37,20 +37,38 @@ class ContentExtractionService {
     }
     
     func extractText(from resource: Resource) async throws -> String {
-        if let content = resource.content, !content.isEmpty {
-            return content
-        }
-        
         switch resource.type {
+        case .note:
+            return extractTextFromNote(resource: resource)
+        case .recording:
+            return extractTextFromRecording(resource: resource)
         case .pdf, .scan:
             return try await extractTextFromPDF(resource: resource)
         case .link:
             return try await extractTextFromLink(resource: resource)
-        case .note, .recording:
-            return resource.content ?? ""
         default:
-            return ""
+            return resource.content ?? ""
         }
+    }
+
+    // Notes are stored as Base64-encoded NSAttributedString; decode to plain text for AI.
+    private func extractTextFromNote(resource: Resource) -> String {
+        guard let content = resource.content, !content.isEmpty else { return "" }
+        if let data = Data(base64Encoded: content),
+           let attributed = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSAttributedString.self, from: data) {
+            return attributed.string
+        }
+        return content
+    }
+
+    // Recording content is JSON-encoded [TranscriptSegment] extract the words as plain text.
+    private func extractTextFromRecording(resource: Resource) -> String {
+        guard let content = resource.content, !content.isEmpty else { return "" }
+        if let data = content.data(using: .utf8),
+           let segments = try? JSONDecoder().decode([TranscriptSegment].self, from: data) {
+            return segments.map { $0.text }.joined(separator: " ")
+        }
+        return content
     }
     
     // Uses PDFKit first. If the PDF has no selectable text, each page is rendered to an image and passed through OCR.
