@@ -55,6 +55,8 @@ Resources/
 PROJECT_CONTEXT.md
 
 # Backend
-backend/
-
+/backend/node_modules/
+/backend/dist/
+/backend/device_containers
+/backend/serviceAccount.json
 functionTester.playground

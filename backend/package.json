@@ -1,0 +1,11 @@
+{
+  "name": "smartstudyplanner-scripts",
+  "version": "1.0.0",
+  "description": "Firebase seed scripts for SmartStudyPlanner",
+  "scripts": {
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.6.1"
+  }
+}

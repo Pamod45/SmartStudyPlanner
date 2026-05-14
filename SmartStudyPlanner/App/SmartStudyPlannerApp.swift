@@ -41,17 +41,19 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             }
         }
 
-        print("--- Listing Bundle Resources ---")
-        if let resourcePath = Bundle.main.resourcePath {
-            do {
-                let items = try FileManager.default.subpathsOfDirectory(atPath: resourcePath)
-                for item in items { print("Resource found: \(item)") }
-            } catch {
-                print("Could not list directory: \(error)")
-            }
-        }
-        print("-------------------------------")
+        // print("--- Listing Bundle Resources ---")
+        // if let resourcePath = Bundle.main.resourcePath {
+        //     do {
+        //         let items = try FileManager.default.subpathsOfDirectory(atPath: resourcePath)
+        //         for item in items { print("Resource found: \(item)") }
+        //     } catch {
+        //         print("Could not list directory: \(error)")
+        //     }
+        // }
+        // print("-------------------------------")
 
+        copySeedAssetsIfNeeded()
+        
         FirebaseApp.configure()
 
         UNUserNotificationCenter.current().delegate = self
@@ -108,6 +110,35 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
         NotificationStore.shared.record(notif)
     }
+
+    // Copies bundled demo data files to Documents on first launch so that
+    // Firestore resources can resolve their localFilePath immediately.
+    private func copySeedAssetsIfNeeded() {
+        let fileManager = FileManager.default
+        let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+
+        let demoFiles = [
+            "41C4FD8C-F117-4199-A8A5-3D2A8B26AD28.m4a", 
+            "B4773C04-4BA6-49CC-A498-E34F0766F563_web_api_concepts.pdf", 
+            "F8A8256D-4D72-4D75-8047-6F64800E48B4_Types of Neural Networks.pdf",
+            "Scanned REST Basics Lec - 4F08B7.pdf"
+        ]
+
+        for filename in demoFiles {
+            let destination = docsURL.appendingPathComponent(filename)
+
+            guard !fileManager.fileExists(atPath: destination.path) else { continue }
+
+            let nsFilename = filename as NSString
+            let name = nsFilename.deletingPathExtension
+            let ext  = nsFilename.pathExtension
+
+            if let source = Bundle.main.url(forResource: name, withExtension: ext) {
+                try? fileManager.copyItem(at: source, to: destination)
+            }
+        }
+    }
+
 }
 
 
