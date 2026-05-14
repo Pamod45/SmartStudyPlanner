@@ -107,7 +107,7 @@ class ProgressViewModel: ObservableObject {
             default:      status = .needsFocus
             }
 
-            let subtitle = String(format: "%.1fh / %.0fh this week", hoursStudied, weeklyTarget)
+            let subtitle = String(format: "%.1fh / %.0fh this week and %d quiz attempts", hoursStudied, weeklyTarget, subjectAttempts.count)
 
             return SubjectProgress(
                 name: subject.name,
@@ -159,7 +159,7 @@ class ProgressViewModel: ObservableObject {
                 tag: "TOP SUBJECT",
                 tagColor: .green,
                 title: "\(firstSession.subjectName) leading this week",
-                body: String(format: "You've put in %.1fh on \(firstSession.subjectName) this week — your most studied subject.", hours),
+                body: String(format: "You've put in %.1fh on \(firstSession.subjectName) this week - your most studied subject.", hours),
                 icon: "star.fill"
             ))
         }
@@ -215,9 +215,20 @@ class ProgressViewModel: ObservableObject {
     var quarterActivity: [DailyActivity] {
         buildActivity(sessions: completedSessions, lookbackDays: 90, grouping: .week)
     }
+    
+    var weekDistribution: [SubjectDistribution] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        let filtered = completedSessions.filter { $0.scheduledDate >= cutoff }
+        return Self.subjectDistribution(from: filtered)
+    }
 
-    // Subject distribution is each subject's share of all completed study minutes.
-    var subjectDistribution: [SubjectDistribution] {
+    var monthDistribution: [SubjectDistribution] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+        let filtered = completedSessions.filter { $0.scheduledDate >= cutoff }
+        return Self.subjectDistribution(from: filtered)
+    }
+
+    var allDistribution: [SubjectDistribution] {
         Self.subjectDistribution(from: completedSessions)
     }
 
@@ -265,6 +276,10 @@ class ProgressViewModel: ObservableObject {
 
     var subjectNames: [String] {
         subjects.filter { !$0.isArchived }.map(\.name).sorted()
+    }
+    
+    var subjectColors: [(name: String, color: Color)] {
+        subjects.filter { !$0.isArchived }.map { ($0.name, Color(hex: $0.colorHex)) }
     }
 
     // Loads the progress inputs from Firebase-backed services, including per-subject quiz attempts and resources.

@@ -26,6 +26,7 @@ struct ChartsView: View {
     @State private var selectedChart: ChartType = .dailyActivity
 
     var allSubjectNames: [String] { vm.subjectNames }
+    var allSubjectColors: [(String,Color)] { vm.subjectColors}
 
     @State private var dateRange: DateRangeFilter = .week
     @State private var timePeriod: TimePeriodFilter = .week
@@ -35,7 +36,7 @@ struct ChartsView: View {
     var allActivity: [DailyActivity]        { vm.dailyActivity }
     var monthActivity: [DailyActivity]      { vm.monthActivity }
     var quarterActivity: [DailyActivity]    { vm.quarterActivity }
-    var distribution: [SubjectDistribution] { vm.subjectDistribution }
+    var distribution: [SubjectDistribution] { vm.allDistribution }
 
     // Activity chart data changes by date range first, then optionally filters to one subject.
     var activityData: [DailyActivity] {
@@ -52,16 +53,9 @@ struct ChartsView: View {
     // Distribution currently starts from completed-study share per subject and adjusts the displayed period view.
     var distributionData: [SubjectDistribution] {
         switch timePeriod {
-        case .week:
-            return distribution
-        case .month:
-            return distribution.map {
-                SubjectDistribution(name: $0.name, percentage: min($0.percentage * 1.15, 1.0), color: $0.color)
-            }
-        case .all:
-            return distribution.map {
-                SubjectDistribution(name: $0.name, percentage: min($0.percentage * 1.3, 1.0), color: $0.color)
-            }
+        case .week:     return vm.weekDistribution
+        case .month:    return vm.monthDistribution
+        case .all:      return vm.allDistribution
         }
     }
 
@@ -201,7 +195,8 @@ struct ChartsView: View {
             dateRange: $dateRange,
             timePeriod: $timePeriod,
             selectedSubject: $selectedSubject,
-            allSubjectNames: allSubjectNames
+            allSubjectNames: allSubjectNames,
+            allSubjectColors: allSubjectColors
         )
     }
 
@@ -403,6 +398,7 @@ struct FilterSheetView: View {
     @Binding var timePeriod: TimePeriodFilter
     @Binding var selectedSubject: String?
     let allSubjectNames: [String]
+    let allSubjectColors: [(String, Color)]
 
     var body: some View {
         ZStack {
@@ -536,7 +532,7 @@ struct FilterSheetView: View {
                     } label: {
                         HStack(spacing: theme.spacing.md) {
                             Circle()
-                                .fill(theme.colors.primary)
+                                .fill(allSubjectColors.first(where: { $0.0 == name })?.1 ?? theme.colors.primary)
                                 .frame(width: 10, height: 10)
                             Text(name)
                                 .font(theme.typography.bodyMedium)

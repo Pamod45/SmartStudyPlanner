@@ -457,6 +457,398 @@ async function seed() {
         console.log(`Computer Vision subject resourceIds updated (${allCvResourceIds.length} total) ✅`)
     }
 
+    // ── Study Paths (all three subjects, 5 topics each) ────────────────────────
+    const studyPaths = [
+        {
+            subjectId: iosId, label: 'iOS',
+            topics: [
+                { id: 'IOS-T1', order: 1, title: 'Variables & Constants',
+                  description: 'Understand mutable vs immutable values with var and let, and how Swift infers types automatically.',
+                  subtopics: ['var vs let', 'Type Inference', 'Type Annotations', 'Constants Best Practice'],
+                  weightPercent: 15, estimatedMinutes: 30, difficultyLevel: 2, completionPercent: 100.0, isCompleted: true },
+                { id: 'IOS-T2', order: 2, title: 'Control Flow',
+                  description: 'Direct program execution using for-in loops, while loops, if-else, and switch with pattern matching.',
+                  subtopics: ['for-in Loop', 'while Loop', 'if-else', 'switch & Pattern Matching'],
+                  weightPercent: 20, estimatedMinutes: 35, difficultyLevel: 2, completionPercent: 100.0, isCompleted: true },
+                { id: 'IOS-T3', order: 3, title: 'Functions & Closures',
+                  description: 'Define reusable functions with labelled parameters and return types, and use closures for callbacks and sorting.',
+                  subtopics: ['Function Definition', 'Parameters & Return Types', 'Closures', 'Trailing Closure Syntax'],
+                  weightPercent: 20, estimatedMinutes: 35, difficultyLevel: 3, completionPercent: 100.0, isCompleted: true },
+                { id: 'IOS-T4', order: 4, title: 'Structs, Classes & Enums',
+                  description: 'Learn value types vs reference types, when to prefer structs, and how Swift enums carry associated values.',
+                  subtopics: ['Structs (Value Types)', 'Classes (Reference Types)', 'Optionals', 'Enums with Associated Values'],
+                  weightPercent: 25, estimatedMinutes: 40, difficultyLevel: 4, completionPercent: 100.0, isCompleted: true },
+                { id: 'IOS-T5', order: 5, title: 'SwiftUI Layouts',
+                  description: 'Build responsive interfaces using SwiftUI stacks, spacing, scrollable content, lists, and grid layouts.',
+                  subtopics: ['VStack / HStack / ZStack', 'Spacer & Padding', 'ScrollView', 'List', 'LazyVGrid'],
+                  weightPercent: 20, estimatedMinutes: 40, difficultyLevel: 4 },
+            ],
+        },
+        {
+            subjectId: webId, label: 'Web Application',
+            topics: [
+                { id: 'WEB-T1', order: 1, title: 'What is an API',
+                  description: 'Understand what an API is, how it defines a contract between systems, and its role in modern web applications.',
+                  subtopics: ['API Definition', 'Request & Response', 'Endpoints', 'Real-world Examples'],
+                  weightPercent: 15, estimatedMinutes: 30, difficultyLevel: 2, completionPercent: 100.0, isCompleted: true },
+                { id: 'WEB-T2', order: 2, title: 'REST Principles',
+                  description: 'Learn the six constraints of REST architecture and how they guide the design of scalable, stateless web services.',
+                  subtopics: ['Statelessness', 'Client-Server', 'Uniform Interface', 'Layered System'],
+                  weightPercent: 20, estimatedMinutes: 35, difficultyLevel: 3 },
+                { id: 'WEB-T3', order: 3, title: 'HTTP Methods & Status Codes',
+                  description: 'Master GET, POST, PUT, PATCH, DELETE and interpret the most common HTTP status codes in API responses.',
+                  subtopics: ['GET / POST / PUT / DELETE', '2xx Success', '4xx Client Errors', '5xx Server Errors'],
+                  weightPercent: 20, estimatedMinutes: 35, difficultyLevel: 3 },
+                { id: 'WEB-T4', order: 4, title: 'JSON & Data Formats',
+                  description: 'Parse and construct JSON payloads, handle nested objects and arrays, and compare JSON with XML.',
+                  subtopics: ['JSON Structure', 'Parsing JSON', 'Nested Objects & Arrays', 'JSON vs XML'],
+                  weightPercent: 20, estimatedMinutes: 35, difficultyLevel: 3 },
+                { id: 'WEB-T5', order: 5, title: 'Authentication & Security',
+                  description: 'Protect API endpoints using API keys, JWT tokens, and OAuth 2.0, and understand HTTPS and CORS.',
+                  subtopics: ['API Keys', 'JWT Tokens', 'OAuth 2.0', 'HTTPS & CORS'],
+                  weightPercent: 25, estimatedMinutes: 45, difficultyLevel: 5 },
+            ],
+        },
+        {
+            subjectId: cvId, label: 'Computer Vision',
+            topics: [
+                { id: 'CV-T1', order: 1, title: 'Image Fundamentals',
+                  description: 'Understand how images are represented as arrays of numbers, including grayscale 2D arrays and colour 3D arrays.',
+                  subtopics: ['Images as Arrays', 'Pixel Values', 'Grayscale vs Colour', 'Channel Order (BGR vs RGB)'],
+                  weightPercent: 15, estimatedMinutes: 30, difficultyLevel: 2, completionPercent: 100.0, isCompleted: true },
+                { id: 'CV-T2', order: 2, title: 'Colour Spaces & Thresholding',
+                  description: 'Convert between BGR, HSV, and Grayscale colour spaces and apply thresholding to isolate objects from backgrounds.',
+                  subtopics: ['cvtColor', 'HSV Colour Space', 'Binary Thresholding', 'Adaptive & Otsu Thresholding'],
+                  weightPercent: 20, estimatedMinutes: 40, difficultyLevel: 3, completionPercent: 100.0, isCompleted: true },
+                { id: 'CV-T3', order: 3, title: 'Edge & Contour Detection',
+                  description: 'Detect boundaries and shapes using Canny edge detection and contour analysis to count and measure objects.',
+                  subtopics: ['Canny Edge Detection', 'findContours', 'contourArea', 'drawContours'],
+                  weightPercent: 20, estimatedMinutes: 45, difficultyLevel: 4 },
+                { id: 'CV-T4', order: 4, title: 'Blurring & Feature Detection',
+                  description: 'Reduce noise with blur filters then identify stable keypoints using ORB for object matching across images.',
+                  subtopics: ['Gaussian Blur', 'Bilateral Filter', 'ORB Keypoints', 'detectAndCompute'],
+                  weightPercent: 20, estimatedMinutes: 40, difficultyLevel: 4 },
+                { id: 'CV-T5', order: 5, title: 'Object Detection with YOLO',
+                  description: 'Apply the YOLO model to predict bounding boxes and class labels in a single forward pass through a neural network.',
+                  subtopics: ['YOLO Architecture', 'Bounding Boxes', 'Confidence Scores', 'Non-Max Suppression'],
+                  weightPercent: 25, estimatedMinutes: 60, difficultyLevel: 7 },
+            ],
+        },
+    ]
+
+    for (const path of studyPaths) {
+        const pathRef = db.collection('subjects').doc(path.subjectId).collection('studyPath')
+        const existing = await pathRef.get()
+        for (const doc of existing.docs) await doc.ref.delete()
+        if (existing.size > 0) console.log(`Cleared ${existing.size} existing topic(s) for ${path.label}`)
+
+        const batch = db.batch()
+        for (const t of path.topics) {
+            batch.set(pathRef.doc(t.id), {
+                id: t.id, subjectId: path.subjectId, userId: uid,
+                order: t.order, title: t.title, description: t.description,
+                subtopics: t.subtopics, weightPercent: t.weightPercent,
+                estimatedMinutes: t.estimatedMinutes, difficultyLevel: t.difficultyLevel,
+                resourceIds: [], completionPercent: t.completionPercent ?? 0.0, isCompleted: t.isCompleted ?? false,
+                syncStatus: 'synced', generatedAt: ts(new Date('2026-05-01T00:00:00Z')),
+            })
+        }
+        await batch.commit()
+        await db.collection('subjects').doc(path.subjectId).update({
+            topicCount: path.topics.length,
+            updatedAt:  ts(new Date()),
+        })
+        console.log(`${path.label} study path: ${path.topics.length} topics ✅`)
+    }
+
+    // ── Quiz Attempts ──────────────────────────────────────────────────────────
+
+    // Helper: build a selectedAnswers map, answering correctly for the given indices.
+    function makeAnswers(questions, correctIndices) {
+        const map = {}
+        questions.forEach((q, i) => {
+            map[q.id] = correctIndices.includes(i) ? q.correctOptionIndex : (q.correctOptionIndex === 0 ? 1 : 0)
+        })
+        return map
+    }
+
+    // ── Questions banks ──────────────────────────────────────────────────────
+
+    const cvQ1 = [ // Image Fundamentals — 5 questions
+        { id: 'CVQ1-Q1', number: 1, category: 'Image Fundamentals', questionText: 'What data type does OpenCV use to represent a grayscale image?', questionType: 'multipleChoice', options: ['2D NumPy array', '3D NumPy array', 'Python list', 'PIL Image'], correctOptionIndex: 0, expertTip: 'Grayscale images are 2D arrays of shape (height, width).', keyword: 'grayscale', points: 1 },
+        { id: 'CVQ1-Q2', number: 2, category: 'Image Fundamentals', questionText: 'What is the shape of a colour image with height 480, width 640?', questionType: 'multipleChoice', options: ['(640, 480, 3)', '(480, 640, 3)', '(480, 640)', '(3, 480, 640)'], correctOptionIndex: 1, expertTip: 'OpenCV uses (height, width, channels) ordering.', keyword: 'shape', points: 1 },
+        { id: 'CVQ1-Q3', number: 3, category: 'Image Fundamentals', questionText: 'What channel order does OpenCV use by default?', questionType: 'multipleChoice', options: ['RGB', 'BGR', 'HSV', 'RGBA'], correctOptionIndex: 1, expertTip: 'OpenCV loads images in BGR order, not RGB.', keyword: 'BGR', points: 1 },
+        { id: 'CVQ1-Q4', number: 4, category: 'Image Fundamentals', questionText: 'What is the pixel value range for a standard 8-bit image?', questionType: 'multipleChoice', options: ['0 to 1', '0 to 255', '-128 to 127', '0 to 1024'], correctOptionIndex: 1, expertTip: '8-bit images store values from 0 (black) to 255 (white).', keyword: 'pixel value', points: 1 },
+        { id: 'CVQ1-Q5', number: 5, category: 'Image Fundamentals', questionText: 'Which function reads an image file in OpenCV?', questionType: 'multipleChoice', options: ['cv2.open()', 'cv2.imread()', 'cv2.load()', 'cv2.read()'], correctOptionIndex: 1, expertTip: 'cv2.imread() returns the image as a NumPy array.', keyword: 'imread', points: 1 },
+    ]
+
+    const cvQ2 = [ // Colour Spaces & Thresholding — 6 questions
+        { id: 'CVQ2-Q1', number: 1, category: 'Colour Spaces', questionText: 'Which function converts an image between colour spaces in OpenCV?', questionType: 'multipleChoice', options: ['cv2.changeColor()', 'cv2.cvtColor()', 'cv2.convert()', 'cv2.colorSpace()'], correctOptionIndex: 1, expertTip: 'cv2.cvtColor(img, code) handles all colour space conversions.', keyword: 'cvtColor', points: 1 },
+        { id: 'CVQ2-Q2', number: 2, category: 'Colour Spaces', questionText: 'Why is HSV preferred over BGR for colour-based object detection?', questionType: 'multipleChoice', options: ['HSV is faster to compute', 'HSV separates hue from lighting', 'HSV uses less memory', 'HSV is more accurate'], correctOptionIndex: 1, expertTip: 'HSV isolates hue so lighting changes don\'t affect colour detection.', keyword: 'HSV', points: 1 },
+        { id: 'CVQ2-Q3', number: 3, category: 'Thresholding', questionText: 'What does cv2.threshold() return?', questionType: 'multipleChoice', options: ['Just the threshold image', 'The threshold value and the image', 'Only the threshold value', 'A list of contours'], correctOptionIndex: 1, expertTip: 'cv2.threshold() returns a tuple: (retval, thresholdedImage).', keyword: 'threshold', points: 1 },
+        { id: 'CVQ2-Q4', number: 4, category: 'Thresholding', questionText: 'Which thresholding method works best under uneven lighting?', questionType: 'multipleChoice', options: ['Binary thresholding', 'Otsu\'s method', 'Adaptive thresholding', 'Inverse thresholding'], correctOptionIndex: 2, expertTip: 'Adaptive thresholding calculates different thresholds for regions of the image.', keyword: 'adaptive', points: 1 },
+        { id: 'CVQ2-Q5', number: 5, category: 'Thresholding', questionText: 'What does Otsu\'s thresholding automatically determine?', questionType: 'multipleChoice', options: ['Image brightness', 'Optimal threshold value', 'Contour count', 'Colour space'], correctOptionIndex: 1, expertTip: 'Otsu\'s method finds the threshold that minimises intra-class variance.', keyword: 'Otsu', points: 1 },
+        { id: 'CVQ2-Q6', number: 6, category: 'Colour Spaces', questionText: 'What code converts BGR to Grayscale in OpenCV?', questionType: 'multipleChoice', options: ['cv2.COLOR_BGR2GRAY', 'cv2.COLOR_RGB2GRAY', 'cv2.GRAY', 'cv2.BGR_GRAY'], correctOptionIndex: 0, expertTip: 'cv2.COLOR_BGR2GRAY is the correct conversion code.', keyword: 'grayscale', points: 1 },
+    ]
+
+    const iosQ1 = [ // Variables & Constants — 5 questions
+        { id: 'IOSQ1-Q1', number: 1, category: 'Variables & Constants', questionText: 'Which keyword declares a constant in Swift?', questionType: 'multipleChoice', options: ['var', 'let', 'const', 'val'], correctOptionIndex: 1, expertTip: 'let declares constants that cannot be changed after assignment.', keyword: 'let', points: 1 },
+        { id: 'IOSQ1-Q2', number: 2, category: 'Variables & Constants', questionText: 'What does Swift type inference do?', questionType: 'multipleChoice', options: ['Forces you to declare all types', 'Automatically determines a variable\'s type from its value', 'Converts types at runtime', 'Requires explicit type annotations'], correctOptionIndex: 1, expertTip: 'Swift infers the type from the assigned value so you don\'t always need to write it.', keyword: 'type inference', points: 1 },
+        { id: 'IOSQ1-Q3', number: 3, category: 'Variables & Constants', questionText: 'What is the correct type annotation syntax for a Double?', questionType: 'multipleChoice', options: ['var x = Double', 'var x: Double = 0.0', 'var x as Double', 'Double var x'], correctOptionIndex: 1, expertTip: 'Type annotations use a colon: var name: Type = value.', keyword: 'annotation', points: 1 },
+        { id: 'IOSQ1-Q4', number: 4, category: 'Variables & Constants', questionText: 'Which of these causes a compile error in Swift?', questionType: 'multipleChoice', options: ['var x = 5; x = 10', 'let y = 5', 'var z: String = "hello"', 'let n = 1; n = 2'], correctOptionIndex: 3, expertTip: 'You cannot reassign a let constant after its initial value is set.', keyword: 'constant', points: 1 },
+        { id: 'IOSQ1-Q5', number: 5, category: 'Variables & Constants', questionText: 'What type does Swift infer for: var score = 100?', questionType: 'multipleChoice', options: ['Double', 'Float', 'Int', 'Number'], correctOptionIndex: 2, expertTip: 'Integer literals without a decimal point are inferred as Int.', keyword: 'Int', points: 1 },
+    ]
+
+    const iosQ2 = [ // Control Flow — 5 questions
+        { id: 'IOSQ2-Q1', number: 1, category: 'Control Flow', questionText: 'What does the for-in loop iterate over?', questionType: 'multipleChoice', options: ['Only arrays', 'Ranges and collections', 'Only dictionaries', 'Only integers'], correctOptionIndex: 1, expertTip: 'for-in works with any Sequence, including ranges, arrays, and strings.', keyword: 'for-in', points: 1 },
+        { id: 'IOSQ2-Q2', number: 2, category: 'Control Flow', questionText: 'What range operator creates a range that EXCLUDES the upper bound?', questionType: 'multipleChoice', options: ['1...5', '1..<5', '1..5', '1->5'], correctOptionIndex: 1, expertTip: '1..<5 produces 1, 2, 3, 4. Use ... to include the upper bound.', keyword: 'range', points: 1 },
+        { id: 'IOSQ2-Q3', number: 3, category: 'Control Flow', questionText: 'Does Swift\'s switch statement fall through by default?', questionType: 'multipleChoice', options: ['Yes, like C', 'No, each case breaks automatically', 'Only for integer cases', 'Only with the fallthrough keyword'], correctOptionIndex: 1, expertTip: 'Swift switch cases break automatically. Use fallthrough explicitly if needed.', keyword: 'switch', points: 1 },
+        { id: 'IOSQ2-Q4', number: 4, category: 'Control Flow', questionText: 'Which loop is guaranteed to run its body at least once?', questionType: 'multipleChoice', options: ['for-in', 'while', 'repeat-while', 'guard'], correctOptionIndex: 2, expertTip: 'repeat-while checks its condition after the body executes.', keyword: 'repeat-while', points: 1 },
+        { id: 'IOSQ2-Q5', number: 5, category: 'Control Flow', questionText: 'Can a Swift switch case match a range?', questionType: 'multipleChoice', options: ['No', 'Yes, using range patterns', 'Only with if-let', 'Only for strings'], correctOptionIndex: 1, expertTip: 'Swift switch supports range patterns: case 1...10: print("low").', keyword: 'pattern matching', points: 1 },
+    ]
+
+    const iosQ3 = [ // Functions & Closures — 6 questions
+        { id: 'IOSQ3-Q1', number: 1, category: 'Functions', questionText: 'What symbol specifies a function\'s return type in Swift?', questionType: 'multipleChoice', options: [':', '=>', '->', '::'], correctOptionIndex: 2, expertTip: 'func greet() -> String specifies that the function returns a String.', keyword: 'return type', points: 1 },
+        { id: 'IOSQ3-Q2', number: 2, category: 'Functions', questionText: 'In Swift, what is the external parameter label used for?', questionType: 'multipleChoice', options: ['Naming the return value', 'Labelling arguments at the call site', 'Declaring optional parameters', 'Setting default values'], correctOptionIndex: 1, expertTip: 'External labels make call sites readable: greet(name: "Ana").', keyword: 'parameter label', points: 1 },
+        { id: 'IOSQ3-Q3', number: 3, category: 'Closures', questionText: 'What is a closure in Swift?', questionType: 'multipleChoice', options: ['A type of class', 'A self-contained block of functionality', 'A protocol', 'A property wrapper'], correctOptionIndex: 1, expertTip: 'Closures are anonymous functions that can capture values from their surrounding scope.', keyword: 'closure', points: 1 },
+        { id: 'IOSQ3-Q4', number: 4, category: 'Closures', questionText: 'What does $0 refer to inside a closure?', questionType: 'multipleChoice', options: ['The closure\'s return value', 'The first argument', 'The closure itself', 'The captured variable'], correctOptionIndex: 1, expertTip: '$0, $1 etc. are shorthand argument names for closure parameters.', keyword: 'shorthand arguments', points: 1 },
+        { id: 'IOSQ3-Q5', number: 5, category: 'Functions', questionText: 'How do you use _ to suppress an external parameter label?', questionType: 'multipleChoice', options: ['func f(x _: Int)', 'func f(_ x: Int)', 'func f(x: _ Int)', 'func f(-x: Int)'], correctOptionIndex: 1, expertTip: 'func greet(_ name: String) allows calling greet("Ana") without a label.', keyword: 'underscore', points: 1 },
+        { id: 'IOSQ3-Q6', number: 6, category: 'Closures', questionText: 'When a closure is the last argument, it can be written as a...?', questionType: 'multipleChoice', options: ['Inline closure', 'Trailing closure', 'Escaping closure', 'Capture closure'], correctOptionIndex: 1, expertTip: 'Trailing closure syntax moves the closure outside the parentheses for readability.', keyword: 'trailing closure', points: 1 },
+    ]
+
+    const iosQ4 = [ // Structs, Classes & Enums — 6 questions
+        { id: 'IOSQ4-Q1', number: 1, category: 'Structs & Classes', questionText: 'What is the key difference between a struct and a class in Swift?', questionType: 'multipleChoice', options: ['Structs can\'t have methods', 'Structs are value types, classes are reference types', 'Classes can\'t conform to protocols', 'Structs are slower'], correctOptionIndex: 1, expertTip: 'Structs are copied on assignment; classes share a reference.', keyword: 'value vs reference', points: 1 },
+        { id: 'IOSQ4-Q2', number: 2, category: 'Structs & Classes', questionText: 'Which is generally preferred in Swift for simple data models?', questionType: 'multipleChoice', options: ['Classes', 'Structs', 'Enums', 'Protocols'], correctOptionIndex: 1, expertTip: 'Apple recommends structs for most data models because they\'re safer with value semantics.', keyword: 'struct preference', points: 1 },
+        { id: 'IOSQ4-Q3', number: 3, category: 'Optionals', questionText: 'What does var age: Int? mean in Swift?', questionType: 'multipleChoice', options: ['age must always have a value', 'age can be nil', 'age is a Double', 'age is optional only in classes'], correctOptionIndex: 1, expertTip: 'The ? marks a type as Optional, meaning it can hold a value or nil.', keyword: 'optional', points: 1 },
+        { id: 'IOSQ4-Q4', number: 4, category: 'Optionals', questionText: 'Which is the safest way to unwrap an optional?', questionType: 'multipleChoice', options: ['Force unwrap with !', 'if let binding', 'Ignoring the optional', 'Using as! cast'], correctOptionIndex: 1, expertTip: 'if let safely unwraps only when the value is non-nil.', keyword: 'if let', points: 1 },
+        { id: 'IOSQ4-Q5', number: 5, category: 'Enums', questionText: 'Can Swift enums have associated values?', questionType: 'multipleChoice', options: ['No', 'Yes', 'Only string values', 'Only in classes'], correctOptionIndex: 1, expertTip: 'Swift enums can carry associated values: case success(String), case failure(Error).', keyword: 'associated values', points: 1 },
+        { id: 'IOSQ4-Q6', number: 6, category: 'Enums', questionText: 'What is a raw value enum?', questionType: 'multipleChoice', options: ['An enum with no cases', 'An enum where each case maps to a fixed underlying value', 'An enum without methods', 'An enum that conforms to Codable only'], correctOptionIndex: 1, expertTip: 'enum Direction: String gives each case a String raw value.', keyword: 'raw value', points: 1 },
+    ]
+
+    const webQ1 = [ // What is an API — 5 questions
+        { id: 'WEBQ1-Q1', number: 1, category: 'API Basics', questionText: 'What does API stand for?', questionType: 'multipleChoice', options: ['Application Performance Interface', 'Application Programming Interface', 'Automated Processing Interface', 'Application Protocol Integration'], correctOptionIndex: 1, expertTip: 'API = Application Programming Interface — a contract for how software components interact.', keyword: 'API definition', points: 1 },
+        { id: 'WEBQ1-Q2', number: 2, category: 'API Basics', questionText: 'What is an API endpoint?', questionType: 'multipleChoice', options: ['A database table', 'A specific URL where an API can be accessed', 'A programming language', 'A server hardware component'], correctOptionIndex: 1, expertTip: 'An endpoint is the URL path where a specific API operation is available.', keyword: 'endpoint', points: 1 },
+        { id: 'WEBQ1-Q3', number: 3, category: 'API Basics', questionText: 'In an API request-response cycle, who initiates the request?', questionType: 'multipleChoice', options: ['The server', 'The database', 'The client', 'The API gateway'], correctOptionIndex: 2, expertTip: 'The client (app/browser) sends requests; the server processes and responds.', keyword: 'client-server', points: 1 },
+        { id: 'WEBQ1-Q4', number: 4, category: 'API Basics', questionText: 'Which real-world analogy best describes an API?', questionType: 'multipleChoice', options: ['A filing cabinet', 'A waiter taking orders between customer and kitchen', 'A telephone line', 'A database index'], correctOptionIndex: 1, expertTip: 'Like a waiter, the API carries requests to the backend and brings results back.', keyword: 'analogy', points: 1 },
+        { id: 'WEBQ1-Q5', number: 5, category: 'API Basics', questionText: 'What does an API response typically contain?', questionType: 'multipleChoice', options: ['Only error codes', 'Data and a status code', 'Only the requested HTML page', 'The server\'s IP address'], correctOptionIndex: 1, expertTip: 'API responses include a status code and a body (usually JSON data).', keyword: 'response', points: 1 },
+    ]
+
+    // ── Build attempt documents ──────────────────────────────────────────────
+
+    const quizAttempts = [
+        // CV Topic 1 — 2 attempts
+        {
+            id: 'QA-CV1-A1', quizName: 'Image Fundamentals Quiz', topicName: 'Image Fundamentals',
+            subjectId: cvId, questions: cvQ1, correctIndices: [0, 2, 3],          // 3/5 = 60%
+            timeSpentSeconds: 312, completedAt: new Date('2026-05-05T08:00:00Z'),
+        },
+        {
+            id: 'QA-CV1-A2', quizName: 'Image Fundamentals Quiz', topicName: 'Image Fundamentals',
+            subjectId: cvId, questions: cvQ1, correctIndices: [0, 1, 2, 4],       // 4/5 = 80%
+            timeSpentSeconds: 278, completedAt: new Date('2026-05-06T09:00:00Z'),
+        },
+        // CV Topic 2 — 3 attempts
+        {
+            id: 'QA-CV2-A1', quizName: 'Colour Spaces & Thresholding Quiz', topicName: 'Colour Spaces & Thresholding',
+            subjectId: cvId, questions: cvQ2, correctIndices: [0, 1, 3],          // 3/6 = 50%
+            timeSpentSeconds: 420, completedAt: new Date('2026-05-08T10:00:00Z'),
+        },
+        {
+            id: 'QA-CV2-A2', quizName: 'Colour Spaces & Thresholding Quiz', topicName: 'Colour Spaces & Thresholding',
+            subjectId: cvId, questions: cvQ2, correctIndices: [0, 1, 2, 4],       // 4/6 = 67%
+            timeSpentSeconds: 385, completedAt: new Date('2026-05-09T11:00:00Z'),
+        },
+        {
+            id: 'QA-CV2-A3', quizName: 'Colour Spaces & Thresholding Quiz', topicName: 'Colour Spaces & Thresholding',
+            subjectId: cvId, questions: cvQ2, correctIndices: [0, 1, 2, 3, 5],    // 5/6 = 83%
+            timeSpentSeconds: 340, completedAt: new Date('2026-05-10T12:00:00Z'),
+        },
+        // iOS — 4 quizzes, 1 attempt each
+        {
+            id: 'QA-IOS1-A1', quizName: 'Variables & Constants Quiz', topicName: 'Variables & Constants',
+            subjectId: iosId, questions: iosQ1, correctIndices: [0, 1, 2, 4],     // 4/5 = 80%
+            timeSpentSeconds: 290, completedAt: new Date('2026-05-03T08:00:00Z'),
+        },
+        {
+            id: 'QA-IOS2-A1', quizName: 'Control Flow Quiz', topicName: 'Control Flow',
+            subjectId: iosId, questions: iosQ2, correctIndices: [0, 1, 2, 3],     // 4/5 = 80%
+            timeSpentSeconds: 310, completedAt: new Date('2026-05-05T09:00:00Z'),
+        },
+        {
+            id: 'QA-IOS3-A1', quizName: 'Functions & Closures Quiz', topicName: 'Functions & Closures',
+            subjectId: iosId, questions: iosQ3, correctIndices: [0, 1, 2, 3, 5],  // 5/6 = 83%
+            timeSpentSeconds: 360, completedAt: new Date('2026-05-07T10:00:00Z'),
+        },
+        {
+            id: 'QA-IOS4-A1', quizName: 'Structs, Classes & Enums Quiz', topicName: 'Structs, Classes & Enums',
+            subjectId: iosId, questions: iosQ4, correctIndices: [0, 1, 3, 4],     // 4/6 = 67%
+            timeSpentSeconds: 410, completedAt: new Date('2026-05-09T11:00:00Z'),
+        },
+        // Web — 1 quiz, 1 attempt
+        {
+            id: 'QA-WEB1-A1', quizName: 'What is an API Quiz', topicName: 'What is an API',
+            subjectId: webId, questions: webQ1, correctIndices: [0, 1, 2, 4],     // 4/5 = 80%
+            timeSpentSeconds: 265, completedAt: new Date('2026-05-04T08:00:00Z'),
+        },
+    ]
+
+    for (const a of quizAttempts) {
+        const existing = await db.collection('quizAttempts').doc(a.id).get()
+        if (existing.exists) { console.log(`Quiz attempt "${a.quizName}" (${a.id}) already exists — skipping`); continue }
+
+        const selectedAnswers = makeAnswers(a.questions, a.correctIndices)
+        const scorePercent    = Math.round(a.correctIndices.length * 100 / a.questions.length)
+
+        const questionsData = a.questions.map(q => ({
+            id: q.id, number: q.number, category: q.category,
+            questionText: q.questionText, questionType: q.questionType,
+            options: q.options, correctOptionIndex: q.correctOptionIndex,
+            expertTip: q.expertTip, keyword: q.keyword,
+            hint: q.hint ?? null, points: q.points,
+        }))
+
+        await db.collection('quizAttempts').doc(a.id).set({
+            id:               a.id,
+            userId:           uid,
+            quizId:           '',
+            quizName:         a.quizName,
+            topicName:        a.topicName,
+            subjectId:        a.subjectId,
+            questions:        questionsData,
+            selectedAnswers,
+            scorePercent,
+            timeSpentSeconds: a.timeSpentSeconds,
+            completedAt:      ts(a.completedAt),
+            createdAt:        ts(a.completedAt),
+            updatedAt:        ts(a.completedAt),
+            syncStatus:       'synced',
+        })
+        console.log(`Quiz attempt "${a.quizName}" — ${scorePercent}% ✅`)
+    }
+
+    // ── Availability Slot ──────────────────────────────────────────────────────
+    const slotId = 'AVAIL-SLOT-01'
+    const existingSlot = await db.collection('availabilitySlots').doc(slotId).get()
+    if (existingSlot.exists) {
+        console.log('Availability slot already exists — skipping')
+    } else {
+        // One Date Range slot: May 2–16, 5:30–9:30 PM LK (12:00–16:00 UTC)
+        const slotTimeRef = new Date('2026-05-02T00:00:00Z')
+        const slotStart   = new Date('2026-05-02T12:00:00Z') // 17:30 LK
+        const slotEnd     = new Date('2026-05-02T16:00:00Z') // 21:30 LK
+        await db.collection('availabilitySlots').doc(slotId).set({
+            id:         slotId,
+            userId:     uid,
+            type:       'Date Range',
+            startTime:  ts(slotStart),
+            endTime:    ts(slotEnd),
+            rangeStart: ts(new Date('2026-05-02T00:00:00Z')),
+            rangeEnd:   ts(new Date('2026-05-16T00:00:00Z')),
+            label:      'Evening Study Block',
+            syncStatus: 'synced',
+            createdAt:  ts(new Date('2026-05-01T00:00:00Z')),
+            updatedAt:  ts(new Date('2026-05-01T00:00:00Z')),
+        })
+        console.log('Availability slot created (May 2–16, 5:30–9:30 PM) ✅')
+    }
+
+    // ── Study Sessions ─────────────────────────────────────────────────────────
+    const sessionDefs = [
+        // Before current week — not in streak window
+        { id: 'SS-IOS-1', date: '2026-05-02', start: '2026-05-02T12:00:00Z', end: '2026-05-02T13:00:00Z',
+          subjectId: iosId, subjectName: 'iOS', subjectColorHex: '#3B82F6',
+          title: 'Variables & Constants', topic: 'Variables & Constants',
+          topicIds: ['IOS-T1'], actualDurationMinutes: 60, sessionType: 'focused', rating: 4 },
+        { id: 'SS-WEB-1', date: '2026-05-05', start: '2026-05-05T12:30:00Z', end: '2026-05-05T13:45:00Z',
+          subjectId: webId, subjectName: 'Web Application', subjectColorHex: '#10B981',
+          title: 'What is an API', topic: 'What is an API',
+          topicIds: ['WEB-T1'], actualDurationMinutes: 75, sessionType: 'focused', rating: 4 },
+        // Streak start: May 8–14 (7 consecutive days)
+        { id: 'SS-CV-1', date: '2026-05-08', start: '2026-05-08T12:00:00Z', end: '2026-05-08T13:15:00Z',
+          subjectId: cvId, subjectName: 'Computer Vision', subjectColorHex: '#EC4899',
+          title: 'Image Fundamentals', topic: 'Image Fundamentals',
+          topicIds: ['CV-T1'], actualDurationMinutes: 75, sessionType: 'focused', rating: 3 },
+        { id: 'SS-IOS-2', date: '2026-05-09', start: '2026-05-09T12:30:00Z', end: '2026-05-09T14:00:00Z',
+          subjectId: iosId, subjectName: 'iOS', subjectColorHex: '#3B82F6',
+          title: 'Control Flow', topic: 'Control Flow',
+          topicIds: ['IOS-T2'], actualDurationMinutes: 90, sessionType: 'focused', rating: 5 },
+        { id: 'SS-CV-2', date: '2026-05-10', start: '2026-05-10T12:00:00Z', end: '2026-05-10T13:15:00Z',
+          subjectId: cvId, subjectName: 'Computer Vision', subjectColorHex: '#EC4899',
+          title: 'Colour Spaces & Thresholding', topic: 'Colour Spaces & Thresholding',
+          topicIds: ['CV-T2'], actualDurationMinutes: 75, sessionType: 'focused', rating: 4 },
+        // This week: May 11–14 (4 sessions > last week's 3 = IMPROVING)
+        { id: 'SS-IOS-3', date: '2026-05-11', start: '2026-05-11T12:30:00Z', end: '2026-05-11T14:00:00Z',
+          subjectId: iosId, subjectName: 'iOS', subjectColorHex: '#3B82F6',
+          title: 'Functions & Closures', topic: 'Functions & Closures',
+          topicIds: ['IOS-T3'], actualDurationMinutes: 90, sessionType: 'focused', rating: 4 },
+        { id: 'SS-IOS-4', date: '2026-05-12', start: '2026-05-12T12:00:00Z', end: '2026-05-12T13:30:00Z',
+          subjectId: iosId, subjectName: 'iOS', subjectColorHex: '#3B82F6',
+          title: 'Structs, Classes & Enums', topic: 'Structs, Classes & Enums',
+          topicIds: ['IOS-T4'], actualDurationMinutes: 90, sessionType: 'focused', rating: 3 },
+        { id: 'SS-WEB-2', date: '2026-05-13', start: '2026-05-13T12:30:00Z', end: '2026-05-13T13:30:00Z',
+          subjectId: webId, subjectName: 'Web Application', subjectColorHex: '#10B981',
+          title: 'API Review', topic: 'What is an API',
+          topicIds: ['WEB-T1'], actualDurationMinutes: 60, sessionType: 'review', rating: 4 },
+        { id: 'SS-CV-3', date: '2026-05-14', start: '2026-05-14T12:00:00Z', end: '2026-05-14T12:45:00Z',
+          subjectId: cvId, subjectName: 'Computer Vision', subjectColorHex: '#EC4899',
+          title: 'CV Practice', topic: 'Colour Spaces & Thresholding',
+          topicIds: ['CV-T2'], actualDurationMinutes: 45, sessionType: 'practice', rating: 5 },
+    ]
+
+    for (const s of sessionDefs) {
+        const existingSession = await db.collection('studySessions').doc(s.id).get()
+        if (existingSession.exists) { console.log(`Session "${s.title}" (${s.id}) already exists — skipping`); continue }
+
+        await db.collection('studySessions').doc(s.id).set({
+            id:                    s.id,
+            userId:                uid,
+            subjectId:             s.subjectId,
+            subjectName:           s.subjectName,
+            subjectColorHex:       s.subjectColorHex,
+            title:                 s.title,
+            topic:                 s.topic,
+            scheduledDate:         ts(new Date(s.date + 'T00:00:00Z')),
+            startTime:             ts(new Date(s.start)),
+            endTime:               ts(new Date(s.end)),
+            actualDurationMinutes: s.actualDurationMinutes,
+            status:                'completed',
+            sessionType:           s.sessionType,
+            topicIds:              s.topicIds,
+            resourceIds:           [],
+            hasReminder:           false,
+            rating:                s.rating,
+            syncStatus:            'synced',
+            createdAt:             ts(new Date(s.start)),
+            updatedAt:             ts(new Date(s.start)),
+        })
+        console.log(`Session "${s.title}" on ${s.date} (${s.actualDurationMinutes} min) ✅`)
+    }
+
+    // ── Update subjects with sessionIds and totalHoursStudied ──────────────────
+    const subjectSessionMap = {
+        [iosId]: {
+            ids:   ['SS-IOS-1', 'SS-IOS-2', 'SS-IOS-3', 'SS-IOS-4'],
+            hours: (60 + 90 + 90 + 90) / 60,  // 5.5h
+        },
+        [webId]: {
+            ids:   ['SS-WEB-1', 'SS-WEB-2'],
+            hours: (75 + 60) / 60,             // 2.25h
+        },
+        [cvId]: {
+            ids:   ['SS-CV-1', 'SS-CV-2', 'SS-CV-3'],
+            hours: (75 + 75 + 45) / 60,        // 3.25h
+        },
+    }
+
+    for (const [subjectId, data] of Object.entries(subjectSessionMap)) {
+        await db.collection('subjects').doc(subjectId).update({
+            sessionIds:       admin.firestore.FieldValue.arrayUnion(...data.ids),
+            totalHoursStudied: data.hours,
+            updatedAt:         ts(new Date()),
+        })
+        console.log(`Subject ${subjectId} — sessionIds & totalHoursStudied updated ✅`)
+    }
+
     console.log('\nDone')
     console.log(`  Email:    ${DEMO_EMAIL}`)
     console.log(`  Password: ${DEMO_PASSWORD}`)
