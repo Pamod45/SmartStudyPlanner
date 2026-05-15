@@ -21,147 +21,158 @@ private extension Color {
     }
 }
 
+
 struct SmartStudyPlannerWidgetsLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: StudyTimerAttributes.self) { context in
-
-            HStack(spacing: 14) {
+             HStack(spacing: 14) {
+ 
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(hex: context.attributes.subjectColorHex).opacity(0.18))
-                        .frame(width: 46, height: 46)
+                    Circle()
+                        .stroke(Color(hex: context.attributes.subjectColorHex).opacity(0.25), lineWidth: 2)
+                        .frame(width: 52, height: 52)
+ 
+                    Circle()
+                        .fill(Color(hex: context.attributes.subjectColorHex).opacity(0.15))
+                        .frame(width: 44, height: 44)
+ 
                     Image(systemName: "book.fill")
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(Color(hex: context.attributes.subjectColorHex))
                 }
-
-                VStack(alignment: .leading, spacing: 2) {
+ 
+                VStack(alignment: .leading, spacing: 3) {
                     Text(context.attributes.sessionTitle)
-                        .font(.headline)
+                        .font(.subheadline.bold())
                         .foregroundStyle(.white)
                         .lineLimit(1)
-                    Text(context.attributes.subjectName)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.65))
+ 
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color(hex: context.attributes.subjectColorHex))
+                            .frame(width: 6, height: 6)
+                        Text(context.attributes.subjectName)
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
                 }
-
+ 
                 Spacer()
-
-                VStack(alignment: .trailing, spacing: 2) {
+ 
+                VStack(alignment: .trailing, spacing: 3) {
                     Text(context.state.startDate, style: .timer)
                         .font(.title3.monospacedDigit().bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color(hex: context.attributes.subjectColorHex))
                         .frame(minWidth: 64, alignment: .trailing)
                     Text("elapsed")
                         .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.55))
+                        .foregroundStyle(.white.opacity(0.45))
                 }
+                .padding(.leading, 12)
+                .overlay(
+                    Rectangle()
+                        .fill(Color(hex: context.attributes.subjectColorHex).opacity(0.4))
+                        .frame(width: 2),
+                    alignment: .leading
+                )
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .activityBackgroundTint(Color(hex: "#0A0A0B").opacity(0.95))
-
+            .activityBackgroundTint(Color(hex: "#0A0A0B").opacity(0.96))
+ 
         } dynamicIsland: { context in
             DynamicIsland {
-
-                DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "book.fill")
-                            .font(.body.bold())
-                            .foregroundStyle(Color(hex: context.attributes.subjectColorHex))
-                        VStack(alignment: .leading, spacing: 1) {
+                 DynamicIslandExpandedRegion(.leading) {
+                    HStack(spacing: 10) {
+                        ZStack {
+                            Circle()
+                                .fill(Color(hex: context.attributes.subjectColorHex).opacity(0.2))
+                                .frame(width: 32, height: 32)
+                            Image(systemName: "book.fill")
+                                .font(.caption.bold())
+                                .foregroundStyle(Color(hex: context.attributes.subjectColorHex))
+                        }
+ 
+                        VStack(alignment: .leading, spacing: 2) {
                             Text(context.attributes.subjectName)
                                 .font(.caption2.bold())
                                 .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
                             Text(context.attributes.sessionTitle)
                                 .font(.callout.bold())
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                         }
                     }
-                    .padding(.leading, 6)
+                    .padding(.leading, 4)
                 }
-
-                DynamicIslandExpandedRegion(.trailing) {
-                    VStack(alignment: .trailing, spacing: 1) {
+                 DynamicIslandExpandedRegion(.trailing) {
+                    VStack(alignment: .trailing, spacing: 3) {
                         Text(context.state.startDate, style: .timer)
                             .font(.title3.monospacedDigit().bold())
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color(hex: context.attributes.subjectColorHex))
                         Text("elapsed")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
-                    .padding(.trailing, 6)
+                    .padding(.trailing, 4)
                 }
-
-                DynamicIslandExpandedRegion(.bottom) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "brain.head.profile")
-                            .font(.caption)
-                        Text("Session in progress")
-                            .font(.caption)
+                 DynamicIslandExpandedRegion(.bottom) {
+                    HStack(spacing: 0) {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 6, height: 6)
+                            Text("Session in progress")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+ 
+                        Spacer()
+ 
+                        Link(destination: URL(string: "smartstudyplanner://session")!) {
+                            HStack(spacing: 4) {
+                                Text("Manage")
+                                    .font(.caption2.bold())
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 8, weight: .bold))
+                            }
+                            .foregroundStyle(Color(hex: context.attributes.subjectColorHex))
+                        }
                     }
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 6)
-                    .padding(.top, 2)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 4)
                 }
-
+ 
             } compactLeading: {
-                Image(systemName: "book.fill")
-                    .font(.caption.bold())
-                    .foregroundStyle(Color(hex: context.attributes.subjectColorHex))
-                    .padding(.leading, 4)
-
+                 ZStack {
+                    Circle()
+                        .fill(Color(hex: context.attributes.subjectColorHex).opacity(0.25))
+                        .frame(width: 22, height: 22)
+                    Image(systemName: "book.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color(hex: context.attributes.subjectColorHex))
+                }
+                .padding(.leading, 4)
+ 
             } compactTrailing: {
-                Text(context.state.startDate, style: .timer)
+                 Text(context.state.startDate, style: .timer)
                     .font(.caption.monospacedDigit().bold())
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color(hex: context.attributes.subjectColorHex))
                     .frame(minWidth: 44)
                     .padding(.trailing, 4)
-
+ 
             } minimal: {
-                Image(systemName: "book.fill")
-                    .font(.caption)
-                    .foregroundStyle(Color(hex: context.attributes.subjectColorHex))
+                 ZStack {
+                    Circle()
+                        .fill(Color(hex: context.attributes.subjectColorHex).opacity(0.25))
+                    Image(systemName: "book.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(Color(hex: context.attributes.subjectColorHex))
+                }
             }
             .widgetURL(URL(string: "smartstudyplanner://session"))
             .keylineTint(Color(hex: context.attributes.subjectColorHex))
         }
     }
-}
-
-extension StudyTimerAttributes {
-    fileprivate static var preview: StudyTimerAttributes {
-        StudyTimerAttributes(
-            sessionId: "preview",
-            sessionTitle: "Advanced Algorithms",
-            subjectName: "iOS Development",
-            subjectColorHex: "#44A5FF"
-        )
-    }
-}
-
-extension StudyTimerAttributes.ContentState {
-    fileprivate static var active: StudyTimerAttributes.ContentState {
-        .init(startDate: Date().addingTimeInterval(-754))
-    }
-}
-
-#Preview("Lock Screen", as: .content, using: StudyTimerAttributes.preview) {
-    SmartStudyPlannerWidgetsLiveActivity()
-} contentStates: {
-    StudyTimerAttributes.ContentState.active
-}
-
-#Preview("Dynamic Island Compact", as: .dynamicIsland(.compact), using: StudyTimerAttributes.preview) {
-    SmartStudyPlannerWidgetsLiveActivity()
-} contentStates: {
-    StudyTimerAttributes.ContentState.active
-}
-
-#Preview("Dynamic Island Expanded", as: .dynamicIsland(.expanded), using: StudyTimerAttributes.preview) {
-    SmartStudyPlannerWidgetsLiveActivity()
-} contentStates: {
-    StudyTimerAttributes.ContentState.active
 }

@@ -72,6 +72,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AD2388D62FB756C700AB5103 /* Exceptions for "SmartStudyPlanner" folder in "SmartStudyPlannerWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+			);
+			target = AD7EDA232FABD25B00B1EB53 /* SmartStudyPlannerWidgetsExtension */;
+		};
 		AD7EDA3E2FABD25D00B1EB53 /* Exceptions for "SmartStudyPlannerWidgets" folder in "SmartStudyPlannerWidgetsExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -93,6 +100,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				AD94F9A72FAA0FB200F6BBBE /* Exceptions for "SmartStudyPlanner" folder in "SmartStudyPlanner" target */,
+				AD2388D62FB756C700AB5103 /* Exceptions for "SmartStudyPlanner" folder in "SmartStudyPlannerWidgetsExtension" target */,
 			);
 			path = SmartStudyPlanner;
 			sourceTree = "<group>";

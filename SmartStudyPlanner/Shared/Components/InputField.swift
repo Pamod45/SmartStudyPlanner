@@ -47,6 +47,8 @@ struct InputField: View {
                 .foregroundColor(theme.colors.textSecondary))
                 .font(theme.typography.bodyMedium)
                 .foregroundColor(theme.colors.textPrimary)
+                .textContentType(.oneTimeCode)
+                .autocorrectionDisabled(true)
 
         case .text:
             TextField("", text: $value, prompt: Text(placeholder)

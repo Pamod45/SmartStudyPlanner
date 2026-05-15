@@ -103,7 +103,6 @@ class SettingsViewModel: ObservableObject {
     }
 
     // Saves settings optimistically to Core Data, then marks them synced after Firebase accepts the update.
-    // Daily goal notifications are rescheduled after a successful save because their timing may have changed.
     func saveSettings() async {
         guard !settings.userId.isEmpty else { return }
         var updated = settings
@@ -119,7 +118,7 @@ class SettingsViewModel: ObservableObject {
             settings = synced
             CoreDataService.shared.cacheSettings(synced)
 
-            NotificationService.shared.rescheduleDailyGoalAlert(settings: synced)
+            // NotificationService.shared.rescheduleDailyGoalAlert(settings: synced)
         } catch {
         }
     }

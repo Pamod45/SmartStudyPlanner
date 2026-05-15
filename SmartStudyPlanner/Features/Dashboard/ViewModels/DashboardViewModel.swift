@@ -51,14 +51,14 @@ class DashboardViewModel: ObservableObject {
                     return session.scheduledDate >= today && session.scheduledDate <= weekFromNow
                 }
                 .sorted { $0.startTime < $1.startTime }
-                .prefix(5)
+                .prefix(3)
         )
 
         upcomingDeadlines = Array(
             deadlines
                 .filter { $0.status == .upcoming && $0.dueDate >= today }
                 .sorted { $0.dueDate < $1.dueDate }
-                .prefix(5)
+                .prefix(3)
         )
     }
 

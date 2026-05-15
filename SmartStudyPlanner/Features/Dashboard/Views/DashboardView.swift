@@ -78,14 +78,22 @@ struct DashboardView: View {
                 existingDeadline: deadline,
                 onSave: { _ in },
                 onUpdate: { updated in
-                    if let idx = vm.upcomingDeadlines.firstIndex(where: { $0.id == updated.id }) {
-                        vm.upcomingDeadlines[idx] = updated
+                    Task {
+                        let eventId = try? await CalendarSyncService.shared.export(updated)
+                        var synced = updated
+                        if let eventId { synced.externalCalendarEventId = eventId }
+                        try? await DeadlineService.shared.updateDeadline(synced)
+                        if let idx = vm.upcomingDeadlines.firstIndex(where: { $0.id == synced.id }) {
+                            vm.upcomingDeadlines[idx] = synced
+                        }
                     }
-                    Task { try? await DeadlineService.shared.updateDeadline(updated) }
                 },
                 onDelete: { deleted in
                     vm.upcomingDeadlines.removeAll { $0.id == deleted.id }
                     Task {
+                        if let calId = deleted.externalCalendarEventId {
+                            try? CalendarSyncService.shared.removeEvent(id: calId)
+                        }
                         try? await DeadlineService.shared.deleteDeadline(
                             id: deleted.id,
                             subjectId: deleted.subjectId
@@ -153,7 +161,7 @@ struct DashboardView: View {
     private var profileAvatar: some View {
         let user = sessionVM.currentUser
         let initial = user?.displayName
-            .components(separatedBy: " ").first?.prefix(1).uppercased() ?? "?"
+            .components(separatedBy: " ").first?.prefix(1).uppercased() ?? "U"
 
         let avatarImage: UIImage? = {
             guard let path = user?.profileImageURL, !path.isEmpty,
@@ -280,19 +288,19 @@ struct DashboardView: View {
                         DeadlineCard(deadline: deadline, action: {
                             editingDeadline = deadline
                         })
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                vm.upcomingDeadlines.removeAll { $0.id == deadline.id }
-                                Task {
-                                    try? await DeadlineService.shared.deleteDeadline(
-                                        id: deadline.id,
-                                        subjectId: deadline.subjectId
-                                    )
-                                }
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
+//                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+//                            Button(role: .destructive) {
+//                                vm.upcomingDeadlines.removeAll { $0.id == deadline.id }
+//                                Task {
+//                                    try? await DeadlineService.shared.deleteDeadline(
+//                                        id: deadline.id,
+//                                        subjectId: deadline.subjectId
+//                                    )
+//                                }
+//                            } label: {
+//                                Label("Delete", systemImage: "trash")
+//                            }
+//                        }
                     }
                 }
             }

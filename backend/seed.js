@@ -723,34 +723,39 @@ async function seed() {
             updatedAt:        ts(a.completedAt),
             syncStatus:       'synced',
         })
-        console.log(`Quiz attempt "${a.quizName}" — ${scorePercent}% ✅`)
+        console.log(`Quiz attempt "${a.quizName}" — ${scorePercent}% `)
     }
 
-    // ── Availability Slot ──────────────────────────────────────────────────────
-    const slotId = 'AVAIL-SLOT-01'
-    const existingSlot = await db.collection('availabilitySlots').doc(slotId).get()
-    if (existingSlot.exists) {
-        console.log('Availability slot already exists — skipping')
-    } else {
-        // One Date Range slot: May 2–16, 5:30–9:30 PM LK (12:00–16:00 UTC)
-        const slotTimeRef = new Date('2026-05-02T00:00:00Z')
-        const slotStart   = new Date('2026-05-02T12:00:00Z') // 17:30 LK
-        const slotEnd     = new Date('2026-05-02T16:00:00Z') // 21:30 LK
+    // ── Availability Slots — delete only known seeded IDs, leave user slots untouched ──
+    const seededSlotIds = Array.from({length: 15}, (_, i) => `AVAIL-SLOT-${String(i+1).padStart(2,'0')}`)
+    for (const id of seededSlotIds) {
+        await db.collection('availabilitySlots').doc(id).delete()
+    }
+    console.log('Cleared previous seeded availability slots')
+
+    // Seed one specificDate slot per day (May 2–16) — same format the app produces via expandRangeSlot().
+    const slotStart = new Date('2026-05-02T12:00:00Z') // 17:30 LK
+    const slotEnd   = new Date('2026-05-02T16:00:00Z') // 21:30 LK
+
+    for (let i = 0; i < 15; i++) {
+        const slotId  = `AVAIL-SLOT-${String(i+1).padStart(2,'0')}`
+        const slotDay = new Date('2026-05-02T00:00:00Z')
+        slotDay.setUTCDate(slotDay.getUTCDate() + i)  // May 2, 3, 4 … 16
+
         await db.collection('availabilitySlots').doc(slotId).set({
             id:         slotId,
             userId:     uid,
-            type:       'Date Range',
+            type:       'Date',          // specificDate — matches what the app writes
             startTime:  ts(slotStart),
             endTime:    ts(slotEnd),
-            rangeStart: ts(new Date('2026-05-02T00:00:00Z')),
-            rangeEnd:   ts(new Date('2026-05-16T00:00:00Z')),
+            date:       ts(slotDay),    // required field for specificDate slots
             label:      'Evening Study Block',
             syncStatus: 'synced',
             createdAt:  ts(new Date('2026-05-01T00:00:00Z')),
             updatedAt:  ts(new Date('2026-05-01T00:00:00Z')),
         })
-        console.log('Availability slot created (May 2–16, 5:30–9:30 PM) ✅')
     }
+    console.log('Availability slots created (May 2–16, one per day, 5:30–9:30 PM) ✅')
 
     // ── Study Sessions ─────────────────────────────────────────────────────────
     const sessionDefs = [
@@ -795,9 +800,14 @@ async function seed() {
           topicIds: ['CV-T2'], actualDurationMinutes: 45, sessionType: 'practice', rating: 5 },
     ]
 
+    // Delete all existing sessions for this user before re-seeding
+    const existingSessions = await db.collection('studySessions').where('userId', '==', uid).get()
+    for (const doc of existingSessions.docs) {
+        await db.collection('studySessions').doc(doc.id).delete()
+    }
+    console.log(`Deleted ${existingSessions.size} existing study session(s)`)
+
     for (const s of sessionDefs) {
-        const existingSession = await db.collection('studySessions').doc(s.id).get()
-        if (existingSession.exists) { console.log(`Session "${s.title}" (${s.id}) already exists — skipping`); continue }
 
         await db.collection('studySessions').doc(s.id).set({
             id:                    s.id,

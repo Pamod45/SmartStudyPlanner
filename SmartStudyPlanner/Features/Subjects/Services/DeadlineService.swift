@@ -32,6 +32,7 @@ class DeadlineService {
         ]
         if let reminderDate = deadline.reminderDate { data["reminderDate"] = reminderDate }
         if let notificationId = deadline.notificationId { data["notificationId"] = notificationId }
+        if let calId = deadline.externalCalendarEventId { data["externalCalendarEventId"] = calId }
 
         let batch = db.batch()
         batch.setData(data, forDocument: db.collection("deadlines").document(deadline.id))
@@ -84,6 +85,7 @@ class DeadlineService {
                 reminderDate: (data["reminderDate"] as? Timestamp)?.dateValue(),
                 linkedSessionIds: data["linkedSessionIds"] as? [String] ?? [],
                 notificationId: data["notificationId"] as? String,
+                externalCalendarEventId: data["externalCalendarEventId"] as? String,
                 createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
                 updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date(),
                 syncStatus: .synced
@@ -115,6 +117,7 @@ class DeadlineService {
         ]
         if let reminderDate = deadline.reminderDate { data["reminderDate"] = reminderDate }
         if let notificationId = deadline.notificationId { data["notificationId"] = notificationId }
+        if let calId = deadline.externalCalendarEventId { data["externalCalendarEventId"] = calId }
 
         try await db.collection("deadlines").document(deadline.id).setData(data, merge: true)
 
@@ -153,6 +156,7 @@ class DeadlineService {
                 reminderDate: (data["reminderDate"] as? Timestamp)?.dateValue(),
                 linkedSessionIds: data["linkedSessionIds"] as? [String] ?? [],
                 notificationId: data["notificationId"] as? String,
+                externalCalendarEventId: data["externalCalendarEventId"] as? String,
                 createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
                 updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date(),
                 syncStatus: .synced

@@ -40,7 +40,14 @@ final class StudyTimerService: ObservableObject {
     // Starts a fresh timer for a study session.
     func start(session: StudySession) {
         accumulatedSeconds = 0
-        _startTimer(session: session)
+        Task {
+                if #available(iOS 16.1, *) {
+                    for activity in Activity<StudyTimerAttributes>.activities {
+                        await activity.end(nil, dismissalPolicy: .immediate)
+                    }
+                }
+                _startTimer(session: session)
+            }
     }
     
     // Resumes a paused session by keeping the already accumulated seconds.

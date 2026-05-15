@@ -138,7 +138,10 @@ class StudyPlanViewModel: ObservableObject {
     // Removing availability also removes sessions inside that slot from UI, Core Data, Firebase, Calendar, and notifications.
     func removeAvailabilitySlot(id: String) {
         guard let slot = availabilitySlots.first(where: { $0.id == id }) else { return }
-        let sessionsToDelete = studySessions.filter { sessionBelongs($0, to: slot) }
+        // Only remove sessions that are still active — completed/skipped sessions are historical records.
+        let sessionsToDelete = studySessions.filter {
+            $0.status == .scheduled || $0.status == .inProgress || $0.status == .rescheduled
+        }.filter { sessionBelongs($0, to: slot) }
         let sessionIdsToDelete = sessionsToDelete.map(\.id)
 
         availabilitySlots.removeAll { $0.id == id }
@@ -349,14 +352,17 @@ class StudyPlanViewModel: ObservableObject {
         availabilitySlots.contains { sessionFits(session, in: $0) }
     }
 
-    // Cleans up sessions that no longer fit any availability slot after slots are loaded, edited, or removed.
+    // Cleans up sessions that no longer fit any remaining availability slot.
+    // When no slots are left, returns immediately - sessions tied to the deleted slot were
+    // already removed explicitly in removeAvailabilitySlot, so there is nothing left to prune.
     private func pruneSessionsOutsideAvailability(removeAllWhenNoSlots: Bool) {
         guard !studySessions.isEmpty else { return }
-        guard removeAllWhenNoSlots || !availabilitySlots.isEmpty else { return }
+        guard !availabilitySlots.isEmpty else { return }
 
         let invalidSessionIds = studySessions
-            .filter { session in
-                availabilitySlots.isEmpty || !sessionFitsAnyAvailabilitySlot(session)
+            .filter {
+                ($0.status == .scheduled || $0.status == .inProgress || $0.status == .rescheduled)
+                && !sessionFitsAnyAvailabilitySlot($0)
             }
             .map(\.id)
         guard !invalidSessionIds.isEmpty else { return }

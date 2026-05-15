@@ -51,8 +51,6 @@ final class NotificationService {
         center.removeAllPendingNotificationRequests()
     }
 
-
-
     func scheduleSessionReminder(session: StudySession, settings: UserSettings) {
         let notifId = sessionReminderId(session.id)
         cancelNotification(id: notifId)
@@ -94,8 +92,8 @@ final class NotificationService {
         let fireInterval: TimeInterval = delayMinutes == 0 ? 5 : TimeInterval(delayMinutes * 60)
 
         let content = UNMutableNotificationContent()
-        content.title = "Quiz Time! 📝"
-        content.body  = "You just finished \"\(session.subjectName)\". Test your knowledge with a quick quiz!"
+        content.title = "Quiz Time!"
+        content.body = "You just finished \"\(session.subjectName) - \(session.title)\". Test your knowledge with a quick quiz!"
         content.sound = .default
         content.userInfo = [
             "type":        NotificationType.quiz.rawValue,
@@ -113,7 +111,7 @@ final class NotificationService {
 
     func scheduleDeadlineAlert(deadline: Deadline, settings: UserSettings) {
         let notifId = deadlineAlertId(deadline.id)
-        cancelNotification(id: notifId)         // always cancel stale one first
+        cancelNotification(id: notifId)
 
         guard settings.deadlineAlertsEnabled, deadline.hasReminder else { return }
 
@@ -132,7 +130,7 @@ final class NotificationService {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = "Deadline Approaching ⚠️"
+        content.title = "Deadline Approaching!"
         content.body  = "\"\(deadline.name)\" is due \(timeLabel). Stay on track!"
         content.sound = .default
         content.userInfo = [
@@ -186,7 +184,7 @@ final class NotificationService {
     func rescheduleAll(sessions: [StudySession], deadlines: [Deadline], settings: UserSettings) {
         cancelAllPendingNotifications()
 
-        rescheduleDailyGoalAlert(settings: settings)
+//        rescheduleDailyGoalAlert(settings: settings)
 
         for session in sessions where session.status == .scheduled {
             scheduleSessionReminder(session: session, settings: settings)

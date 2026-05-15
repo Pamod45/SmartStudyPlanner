@@ -214,7 +214,12 @@ struct ChartsView: View {
         let grouped = Dictionary(grouping: data, by: \.day)
         let orderedDays: [String]
         switch dateRange {
-        case .week:    orderedDays = ["MON","TUE","WED","THU","FRI","SAT","SUN"]
+        case .week:
+            let cal = Calendar.current
+            let dayLabels = ["SUN","MON","TUE","WED","THU","FRI","SAT"]
+            orderedDays = (0..<7).compactMap { offset in
+                cal.date(byAdding: .day, value: -(6 - offset), to: Date())
+            }.map { dayLabels[cal.component(.weekday, from: $0) - 1] }
         case .month:   orderedDays = (1...30).map { "\($0)" }
         case .quarter: orderedDays = (1...13).map { "W\($0)" }
         }

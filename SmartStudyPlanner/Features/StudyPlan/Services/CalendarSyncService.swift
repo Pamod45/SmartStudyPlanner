@@ -56,6 +56,39 @@ final class CalendarSyncService {
         return event.eventIdentifier
     }
 
+    // Creates or updates a calendar event for a deadline. Returns the EventKit identifier to store on the deadline.
+    @discardableResult
+    func export(_ deadline: Deadline) async throws -> String {
+        if !hasPermission {
+            let granted = await requestPermission()
+            guard granted else { throw CalendarSyncError.permissionDenied }
+        }
+
+        let event = EKEvent(eventStore: store)
+        event.title     = "[\(deadline.tag.rawValue)] \(deadline.name)"
+        event.startDate = deadline.dueDate
+        event.endDate   = deadline.dueDate.addingTimeInterval(3600)
+        event.notes     = deadline.notes.isEmpty ? nil : deadline.notes
+        event.calendar  = store.defaultCalendarForNewEvents
+
+        if deadline.hasReminder, let reminder = deadline.reminderDate {
+            event.addAlarm(EKAlarm(relativeOffset: reminder.timeIntervalSince(deadline.dueDate)))
+        }
+
+        if let existingId = deadline.externalCalendarEventId,
+           let existing = store.event(withIdentifier: existingId) {
+            existing.title     = event.title
+            existing.startDate = event.startDate
+            existing.endDate   = event.endDate
+            existing.notes     = event.notes
+            try store.save(existing, span: .thisEvent)
+            return existing.eventIdentifier
+        }
+
+        try store.save(event, span: .thisEvent)
+        return event.eventIdentifier
+    }
+
     // Exports many sessions and returns sessionId -> eventId so callers can store the calendar links.
     func exportAll(_ sessions: [StudySession]) async -> [String: String] {
         var mapping: [String: String] = [:]

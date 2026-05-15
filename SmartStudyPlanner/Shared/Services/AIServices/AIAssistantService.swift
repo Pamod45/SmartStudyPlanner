@@ -61,7 +61,7 @@ actor AIAssistantService {
 
     private var sessions: [String: LanguageModelSession] = [:]
 
-    private let serverURL = URL(string: "http://192.168.1.21:8080/v1/chat/completions")!
+    private let serverURL = URL(string: "http://192.168.42.21:8080/v1/chat/completions")!
     private let timeoutInterval: TimeInterval = 120
 
     nonisolated var isUsingOnDeviceModel: Bool {

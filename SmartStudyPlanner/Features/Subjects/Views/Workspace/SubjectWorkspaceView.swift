@@ -130,6 +130,14 @@ struct SubjectWorkspaceView: View {
                 Task {
                     do {
                         try await DeadlineService.shared.createDeadline(deadline)
+                        if let eventId = try? await CalendarSyncService.shared.export(deadline) {
+                            var synced = deadline
+                            synced.externalCalendarEventId = eventId
+                            if let idx = deadlines.firstIndex(where: { $0.id == synced.id }) {
+                                deadlines[idx] = synced
+                            }
+                            try? await DeadlineService.shared.updateDeadline(synced)
+                        }
                     } catch {
                         print("Failed to save deadline: \(error)")
                     }
@@ -160,7 +168,13 @@ struct SubjectWorkspaceView: View {
                     }
                     Task {
                         do {
-                            try await DeadlineService.shared.updateDeadline(updated)
+                            let eventId = try? await CalendarSyncService.shared.export(updated)
+                            var synced = updated
+                            if let eventId { synced.externalCalendarEventId = eventId }
+                            try await DeadlineService.shared.updateDeadline(synced)
+                            if let idx = deadlines.firstIndex(where: { $0.id == synced.id }) {
+                                deadlines[idx] = synced
+                            }
                         } catch {
                             print("Failed to update deadline: \(error)")
                         }
@@ -304,6 +318,9 @@ struct SubjectWorkspaceView: View {
         deadlines.removeAll { $0.id == deadline.id }
         Task {
             do {
+                if let calId = deadline.externalCalendarEventId {
+                    try? CalendarSyncService.shared.removeEvent(id: calId)
+                }
                 try await DeadlineService.shared.deleteDeadline(id: deadline.id, subjectId: subject.id)
             } catch {
                 print("Failed to delete deadline: \(error)")

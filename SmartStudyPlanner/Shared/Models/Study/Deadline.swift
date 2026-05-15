@@ -47,6 +47,7 @@ struct Deadline: Identifiable, Codable, Syncable {
     var reminderDate: Date?
     var linkedSessionIds: [String]
     var notificationId: String?
+    var externalCalendarEventId: String?
     var createdAt: Date
     var updatedAt: Date
     var syncStatus: SyncStatus
@@ -100,6 +101,7 @@ struct Deadline: Identifiable, Codable, Syncable {
         reminderDate: Date? = nil,
         linkedSessionIds: [String] = [],
         notificationId: String? = nil,
+        externalCalendarEventId: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         syncStatus: SyncStatus = .localOnly
@@ -119,6 +121,7 @@ struct Deadline: Identifiable, Codable, Syncable {
         self.reminderDate = reminderDate
         self.linkedSessionIds = linkedSessionIds
         self.notificationId = notificationId
+        self.externalCalendarEventId = externalCalendarEventId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.syncStatus = syncStatus

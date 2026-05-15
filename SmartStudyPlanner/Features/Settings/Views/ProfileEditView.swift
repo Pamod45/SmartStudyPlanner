@@ -60,7 +60,6 @@ struct ProfileEditView: View {
         }
         .navigationBarHidden(true)
         .onChange(of: photoPickerItem) { newItem in
-            // PhotosPicker returns data asynchronously; the view model saves the final UIImage to disk on save.
             Task {
                 if let data = try? await newItem?.loadTransferable(type: Data.self),
                    let uiImage = UIImage(data: data) {
