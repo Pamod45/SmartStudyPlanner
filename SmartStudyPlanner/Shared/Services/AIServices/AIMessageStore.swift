@@ -10,6 +10,7 @@ final class AIMessageStore: ObservableObject {
     private init() {}
 
     @Published private var store: [String: [ChatMessage]] = [:]
+    private var selectedContextIds: [String: String] = [:]
 
     func messages(for contextId: String) -> [ChatMessage] {
         store[contextId] ?? []
@@ -19,7 +20,16 @@ final class AIMessageStore: ObservableObject {
         store[contextId, default: []].append(message)
     }
 
+    func savedContextId(for subjectId: String) -> String? {
+        selectedContextIds[subjectId]
+    }
+
+    func saveContextId(_ contextId: String, for subjectId: String) {
+        selectedContextIds[subjectId] = contextId
+    }
+
     func clearAll() {
         store = [:]
+        selectedContextIds = [:]
     }
 }

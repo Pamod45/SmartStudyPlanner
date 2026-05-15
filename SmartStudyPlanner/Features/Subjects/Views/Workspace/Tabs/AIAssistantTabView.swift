@@ -18,8 +18,11 @@ struct AIAssistantTabView: View {
     @State private var selectedContext: ChatContext = .allDocs
     @State private var inputText: String = ""
     @State private var isThinking: Bool = false
+    @FocusState private var isInputFocused: Bool
 
-    private var messages: [ChatMessage] { messageStore.messages(for: selectedContext.id) }
+    private func scopedId(for context: ChatContext) -> String { "\(subject.id)_\(context.id)" }
+
+    private var messages: [ChatMessage] { messageStore.messages(for: scopedId(for: selectedContext)) }
     private var availableContexts: [ChatContext] {
         var ctxs: [ChatContext] = [.allDocs]
         ctxs += resources.map { .resource($0) }
@@ -37,6 +40,15 @@ struct AIAssistantTabView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.bottom, theme.spacing.xl)
+        .onAppear {
+            if let savedId = messageStore.savedContextId(for: subject.id),
+               let match = availableContexts.first(where: { $0.id == savedId }) {
+                selectedContext = match
+            }
+        }
+        .onChange(of: selectedContext) { _, newCtx in
+            messageStore.saveContextId(newCtx.id, for: subject.id)
+        }
     }
 
     private var contextPickerStrip: some View {
@@ -189,6 +201,7 @@ struct AIAssistantTabView: View {
                 .background(theme.colors.surface)
                 .clipShape(RoundedRectangle(cornerRadius: theme.radius.lg, style: .continuous))
                 .lineLimit(1...4)
+                .focused($isInputFocused)
                 .disabled(isThinking)
 
             Button(action: sendMessage) {
@@ -212,8 +225,9 @@ struct AIAssistantTabView: View {
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        messageStore.append(ChatMessage(role: .user, content: trimmed), for: selectedContext.id)
+        messageStore.append(ChatMessage(role: .user, content: trimmed), for: scopedId(for: selectedContext))
         inputText = ""
+        isInputFocused = false
         isThinking = true
 
         let ctx = selectedContext
@@ -231,11 +245,11 @@ struct AIAssistantTabView: View {
                     userMessage: trimmed,
                     contextText: contextText,
                     subjectName: name,
-                    contextId: ctx.id,
+                    contextId: scopedId(for: ctx),
                     history: historySnapshot
                 )
                 await MainActor.run {
-                    messageStore.append(ChatMessage(role: .assistant, content: reply), for: ctx.id)
+                    messageStore.append(ChatMessage(role: .assistant, content: reply), for: scopedId(for: ctx))
                     isThinking = false
                 }
             } catch {
@@ -243,7 +257,7 @@ struct AIAssistantTabView: View {
                     let msg = error is URLError
                         ? "Couldn't reach the AI server. Check your connection and try again."
                         : "Apple Intelligence couldn't generate a response. Try again."
-                    messageStore.append(ChatMessage(role: .error, content: msg), for: ctx.id)
+                    messageStore.append(ChatMessage(role: .error, content: msg), for: scopedId(for: ctx))
                     isThinking = false
                 }
             }

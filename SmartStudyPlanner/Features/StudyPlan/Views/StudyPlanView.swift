@@ -31,6 +31,13 @@ struct StudyPlanView: View {
         return vm.deadlinesForDate(date)
     }
 
+    private var effectiveSelectedDate: Date {
+        let today = Calendar.current.startOfDay(for: .now)
+        guard let components = selectedDate,
+              let date = Calendar.current.date(from: components) else { return today }
+        return max(today, Calendar.current.startOfDay(for: date))
+    }
+
     var body: some View {
         ZStack {
             theme.colors.background.ignoresSafeArea()
@@ -66,13 +73,14 @@ struct StudyPlanView: View {
             }
         }
         .sheet(isPresented: $showManageAvailability) {
-            ManageAvailabilitySheet { newSlot in
+            ManageAvailabilitySheet(initialDate: effectiveSelectedDate) { newSlot in
                 vm.addAvailabilitySlot(newSlot)
             }
             .environment(\.theme, theme)
         }
         .sheet(isPresented: $showCreateStudyPlan) {
             CreateStudyPlanSheet(
+                initialDate:       effectiveSelectedDate,
                 availabilitySlots: vm.availabilitySlots,
                 subjects:          vm.subjects,
                 studyPathTopics:   vm.studyPathTopics,

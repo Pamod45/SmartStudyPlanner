@@ -10,8 +10,25 @@ struct CreateStudyPlanSheet: View {
     var studyPathTopics: [String: [StudyPathTopic]] = [:]
     var onPlanCreated: (([StudySession]) -> Void)? = nil
 
-    @State private var startDate: Date = .now
-    @State private var endDate: Date   = Calendar.current.date(byAdding: .month, value: 1, to: .now) ?? .now
+    @State private var startDate: Date
+    @State private var endDate: Date
+
+    init(
+        initialDate: Date = .now,
+        availabilitySlots: [AvailabilitySlot] = [],
+        subjects: [Subject] = [],
+        studyPathTopics: [String: [StudyPathTopic]] = [:],
+        onPlanCreated: (([StudySession]) -> Void)? = nil
+    ) {
+        self.availabilitySlots = availabilitySlots
+        self.subjects = subjects
+        self.studyPathTopics = studyPathTopics
+        self.onPlanCreated = onPlanCreated
+        let cal = Calendar.current
+        let effective = max(cal.startOfDay(for: .now), cal.startOfDay(for: initialDate))
+        _startDate = State(initialValue: effective)
+        _endDate   = State(initialValue: cal.date(byAdding: .month, value: 1, to: effective) ?? effective)
+    }
     @State private var expandedSubjectID: String? = nil
     @State private var selectedSubjectIDs: Set<String> = []
     @State private var selectedTopicIDs: Set<String> = []

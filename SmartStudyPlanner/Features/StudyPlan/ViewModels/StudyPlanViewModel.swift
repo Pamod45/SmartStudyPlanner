@@ -24,12 +24,12 @@ class StudyPlanViewModel: ObservableObject {
 
         let cachedSlots = CoreDataService.shared.getCachedAvailabilitySlots(for: userId)
         if !cachedSlots.isEmpty {
-            availabilitySlots = cachedSlots
+            availabilitySlots = sortedByStartTime(cachedSlots)
         }
 
         let cachedSessions = CoreDataService.shared.getCachedStudySessions(for: userId)
         if !cachedSessions.isEmpty {
-            studySessions = cachedSessions
+            studySessions = cachedSessions.sorted { $0.startTime < $1.startTime }
         }
 
         async let fetchedSlots    = try? AvailabilitySlotService.shared.fetchAll(userId: userId)
@@ -37,10 +37,10 @@ class StudyPlanViewModel: ObservableObject {
         async let fetchedSubjects = try? SubjectService.shared.fetchSubjects(userId: userId)
 
         if let remoteSlots = await fetchedSlots {
-            availabilitySlots = remoteSlots
+            availabilitySlots = sortedByStartTime(remoteSlots)
         }
         if let remoteSessions = await fetchedSessions {
-            studySessions = remoteSessions
+            studySessions = remoteSessions.sorted { $0.startTime < $1.startTime }
         }
         subjects = await fetchedSubjects ?? []
         pruneSessionsOutsideAvailability(removeAllWhenNoSlots: false)
@@ -282,11 +282,29 @@ class StudyPlanViewModel: ObservableObject {
     }
 
     func slotsForDate(_ date: Date) -> [AvailabilitySlot] {
-        availabilitySlots.filter { $0.applies(on: date) }
+        let cal = Calendar.current
+        return availabilitySlots
+            .filter { $0.applies(on: date) }
+            .sorted {
+                let lh = cal.component(.hour, from: $0.startTime) * 60 + cal.component(.minute, from: $0.startTime)
+                let rh = cal.component(.hour, from: $1.startTime) * 60 + cal.component(.minute, from: $1.startTime)
+                return lh < rh
+            }
     }
 
     func sessionsForDate(_ date: Date) -> [StudySession] {
-        studySessions.filter { Calendar.current.isDate($0.startTime, inSameDayAs: date) }
+        studySessions
+            .filter { Calendar.current.isDate($0.startTime, inSameDayAs: date) }
+            .sorted { $0.startTime < $1.startTime }
+    }
+
+    private func sortedByStartTime(_ slots: [AvailabilitySlot]) -> [AvailabilitySlot] {
+        let cal = Calendar.current
+        return slots.sorted {
+            let lh = cal.component(.hour, from: $0.startTime) * 60 + cal.component(.minute, from: $0.startTime)
+            let rh = cal.component(.hour, from: $1.startTime) * 60 + cal.component(.minute, from: $1.startTime)
+            return lh < rh
+        }
     }
 
     func deadlinesForDate(_ date: Date) -> [Deadline] {

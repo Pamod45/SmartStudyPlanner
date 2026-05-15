@@ -53,7 +53,7 @@ struct StudySessionCard: View {
                     .lineLimit(2)
                     .frame(height: 58, alignment: .topLeading)
 
-                Text(session.timeRange)
+                Text(session.timeRange + " •" + session.sessionDate)
                     .font(theme.typography.caption)
                     .foregroundColor(session.subjectColor)
                     .lineLimit(1)
@@ -84,7 +84,7 @@ struct StudySessionCard: View {
             }
         }
         .padding(theme.spacing.md)
-        .frame(width: 270, height: 230, alignment: .topLeading)
+        .frame(width: 270, height: 290, alignment: .topLeading)
         .background(theme.colors.surface)
         .cornerRadius(theme.radius.xl)
         .overlay(

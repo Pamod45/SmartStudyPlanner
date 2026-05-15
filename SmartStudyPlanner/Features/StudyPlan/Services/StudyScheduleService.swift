@@ -76,10 +76,11 @@ final class StudyScheduleService {
         let priorityScore: Double
     }
 
-    // Creates a priority queue from topics. Deadline pressure, difficulty, and topic weight decide what gets scheduled first.
+    // Creates a priority queue from topics. Subjects with higher deadline pressure go first.
+    // Within each subject, topics always follow their defined curriculum order so topic N never precedes topic N-1.
     private func buildQueue(entries: [SubjectEntry]) -> [QueueEntry] {
         let today = Date()
-        var queue: [QueueEntry] = []
+        var subjectGroups: [(priority: Double, topics: [QueueEntry])] = []
 
         for entry in entries {
             let deadlinePressure: Double
@@ -90,20 +91,33 @@ final class StudyScheduleService {
                 deadlinePressure = 0
             }
 
-            for topic in entry.topics {
+            let subjectScore = deadlinePressure * 3
+            let orderedTopics = entry.topics.sorted { $0.order < $1.order }
+            let groupEntries = orderedTopics.map { topic -> QueueEntry in
                 let minutes = topic.estimatedMinutes > 0 ? topic.estimatedMinutes : max(30, topic.weightPercent * 6)
-                let score   = deadlinePressure * 3 + Double(topic.difficultyLevel) * 2 + Double(topic.weightPercent)
-                queue.append(QueueEntry(
+                return QueueEntry(
                     topic:            topic,
                     subject:          entry.subject,
                     nearestDeadline:  entry.nearestDeadline,
                     remainingMinutes: minutes,
-                    priorityScore:    score
-                ))
+                    priorityScore:    subjectScore
+                )
             }
+            subjectGroups.append((priority: subjectScore, topics: groupEntries))
         }
 
-        return queue.sorted { $0.priorityScore > $1.priorityScore }
+        // Round-robin across subjects so sessions alternate between subjects rather than
+        // exhausting one subject before moving to the next. Within each subject the
+        // topics stay in their sorted curriculum order.
+        let sortedGroups = subjectGroups.sorted { $0.priority > $1.priority }
+        let maxCount = sortedGroups.map(\.topics.count).max() ?? 0
+        var result: [QueueEntry] = []
+        for round in 0..<maxCount {
+            for group in sortedGroups where round < group.topics.count {
+                result.append(group.topics[round])
+            }
+        }
+        return result
     }
 
     // Walks through each availability block and fills it with topic work while leaving breaks between sessions.
@@ -127,7 +141,7 @@ final class StudyScheduleService {
                 guard availableMinutes >= minSessionMinutes else { break }
 
                 let sessionDuration = min(queue[topicIndex].remainingMinutes, availableMinutes)
-                guard sessionDuration >= minSessionMinutes else {
+                guard sessionDuration > 0 else {
                     topicIndex += 1
                     continue
                 }

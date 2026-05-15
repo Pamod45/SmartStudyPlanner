@@ -75,6 +75,12 @@ struct StudySession: Identifiable, Codable, Syncable {
         return hour + minute / 60.0
     }
 
+    var sessionDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: startTime)
+    }
+    
     init(
         id: String = UUID().uuidString,
         userId: String = "",

@@ -10,9 +10,18 @@ struct ManageAvailabilitySheet: View {
     @State private var selectedType: AvailabilityType = .specificDate
     @State private var startTime: Date = Calendar.current.date(bySettingHour: 17, minute: 30, second: 0, of: .now) ?? .now
     @State private var endTime: Date   = Calendar.current.date(bySettingHour: 21, minute: 30, second: 0, of: .now) ?? .now
-    @State private var selectedDate: Date = .now
-    @State private var rangeStart: Date  = .now
-    @State private var rangeEnd: Date    = Calendar.current.date(byAdding: .day, value: 6, to: .now) ?? .now
+    @State private var selectedDate: Date
+    @State private var rangeStart: Date
+    @State private var rangeEnd: Date
+
+    init(initialDate: Date = .now, onSave: @escaping (AvailabilitySlot) -> Void) {
+        self.onSave = onSave
+        let cal = Calendar.current
+        let effective = max(cal.startOfDay(for: .now), cal.startOfDay(for: initialDate))
+        _selectedDate = State(initialValue: effective)
+        _rangeStart   = State(initialValue: effective)
+        _rangeEnd     = State(initialValue: cal.date(byAdding: .day, value: 6, to: effective) ?? effective)
+    }
 
     private var todayStart: Date {
         Calendar.current.startOfDay(for: .now)
@@ -212,6 +221,6 @@ struct ManageAvailabilitySheet: View {
 }
 
 #Preview {
-    ManageAvailabilitySheet { _ in }
+    ManageAvailabilitySheet(onSave: { _ in })
         .environment(\.theme, AppTheme.defaultTheme)
 }

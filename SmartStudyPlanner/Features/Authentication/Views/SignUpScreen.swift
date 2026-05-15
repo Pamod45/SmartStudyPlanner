@@ -95,7 +95,7 @@ struct SignUpView: View {
 
                 HStack(spacing: theme.spacing.lg) {
                     RoundedIconButton(icon: "g.circle.fill") {}
-                    RoundedIconButton(icon: "apple.logo") {}
+//                    RoundedIconButton(icon: "apple.logo") {}
                     RoundedIconButton(icon: "faceid") {}
                 }
 

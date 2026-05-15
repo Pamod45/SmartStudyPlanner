@@ -50,7 +50,7 @@ class DashboardViewModel: ObservableObject {
                     if session.status == .inProgress { return true }
                     return session.scheduledDate >= today && session.scheduledDate <= weekFromNow
                 }
-                .sorted { $0.scheduledDate < $1.scheduledDate }
+                .sorted { $0.startTime < $1.startTime }
                 .prefix(5)
         )
 

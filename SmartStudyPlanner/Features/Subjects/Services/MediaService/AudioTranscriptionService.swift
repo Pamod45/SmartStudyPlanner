@@ -24,6 +24,7 @@ class AudioTranscriptionService: NSObject, ObservableObject {
     
     private var speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
 //    private var speechRecognizer = SFSpeechRecognizer()
+
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
